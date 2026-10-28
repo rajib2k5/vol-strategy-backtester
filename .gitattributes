@@ -1,0 +1,13 @@
+# Line endings are part of the committed bytes: tools/build_notebooks.py --check and the
+# exporter's drift test compare files byte for byte, so a Windows checkout that converted
+# LF to CRLF would make both report drift. Pin them to LF.
+*.ipynb text eol=lf
+*.json text eol=lf
+*.py text eol=lf
+*.svg text eol=lf
+*.mmd text eol=lf
+*.md text eol=lf
+*.ts text eol=lf
+*.tsx text eol=lf
+*.png binary
+*.sh text eol=lf

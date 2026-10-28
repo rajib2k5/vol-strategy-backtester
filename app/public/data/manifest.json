@@ -1,0 +1,13 @@
+{
+  "schema_version": "0.1.0",
+  "generated_at": "2026-10-28T17:19:31Z",
+  "source_commit": "uncommitted",
+  "datasets": [
+    {
+      "name": "illustrative_surface",
+      "path": "illustrative_surface.json",
+      "schema_version": "0.1.0",
+      "description": "Illustrative SSVI implied-vol surface for the milestone-0 3D hero. Not market data."
+    }
+  ]
+}

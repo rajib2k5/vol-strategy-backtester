@@ -1,0 +1,87 @@
+%% Generated from specs/data-flow.yaml - edit the YAML, not this file.
+%% Data flow from vendor files to the app
+flowchart TB
+  subgraph vendors["Vendors"]
+    direction LR
+    v_optionsdx(["raw_optionsdx_eod"])
+    v_dolthub(["raw_dolthub_option_chain"])
+    v_yf[["yfinance SPY OHLC + dividends"]]
+    v_fred[["FRED DGS3MO"]]
+    v_cboe[["Cboe VIX and VIX3M"]]
+  end
+  subgraph ingest["Ingest and clean (M1)"]
+    direction LR
+    i_ref["Load reference series"]
+    s_ref[("underlying_bars, rates, dividends, vix_daily")]
+    i_cal["Build trading_calendar from SPY bars"]
+    i_load["Load chains + pin schema"]
+    i_flags["Reshape long, OSI symbol, quality_flags"]
+    g_quality{"Quality report within tolerance?"}
+    s_quotes[("option_quotes")]
+    i_mask["DoltHub sampling mask for surface-gap runs"]
+  end
+  subgraph features["Pricing build (M2)"]
+    direction LR
+    f_forward["Parity forward per expiry, de-Americanised"]
+    f_iv["IV solve on de-Americanised OTM mids"]
+    f_smile["Smile nodes in total variance"]
+    s_iv[("expiry_forwards, quote_iv, smile_fits")]
+  end
+  subgraph simulation["Simulation (M3 to M5)"]
+    direction LR
+    e_view["MarketView as_of t"]
+    e_sig["Signals from the view: RV, HAR/GARCH, IV30 minus RV forecast"]
+    e_loop["Daily loop: fills, expiry, marks, hedge, risk, orders"]
+    s_ledger[("runs, signals, orders, order_legs, fills, positions, lots, position_marks, hedges, expiry_events, risk_events, greeks_snapshots, daily_pnl")]
+  end
+  subgraph results["Results (M6)"]
+    direction LR
+    r_metrics["Metrics, PSR/DSR, regimes, stress windows"]
+    r_attr["Greek P&L attribution"]
+    r_grid["Spot x vol stress grid"]
+    r_export["Export + JSON Schema validation"]
+  end
+  subgraph presentation["Presentation"]
+    direction LR
+    a_json[/"manifest.json + dataset JSON files"/]
+    u_app("React app renders")
+  end
+  v_yf -->|"OHLC, dividends"| i_ref
+  v_fred -->|"yield, percent"| i_ref
+  v_cboe -->|"daily closes"| i_ref
+  i_ref -->|"typed tables"| s_ref
+  s_ref -->|"SPY sessions"| i_cal
+  v_optionsdx -->|"parquet"| i_load
+  v_dolthub -->|"dolt sql, read-only"| i_load
+  i_load -->|"wide rows"| i_flags
+  i_cal -->|"session check, relabel rule"| i_flags
+  s_ref -->|"SPY close for UNDERLYING_MISMATCH"| i_flags
+  i_flags -->|"flag counts"| g_quality
+  g_quality -->|"pass"| s_quotes
+  g_quality -->|"fail: fix loader"| i_load
+  s_quotes -->|"call and put mids"| f_forward
+  s_ref -->|"r_cc, dividends"| f_forward
+  f_forward -->|"F, DF, tau"| f_iv
+  s_quotes -->|"OTM mids"| f_iv
+  f_iv -->|"IV by strike"| f_smile
+  f_smile -->|"derived tables"| s_iv
+  f_forward -->|"forwards"| s_iv
+  s_quotes -->|"quotes for t"| e_view
+  s_quotes -->|"OptionsDX and DoltHub rows, 2020-2023"| i_mask
+  i_mask -->|"masked chain, chain_mask dolthub"| e_view
+  s_iv -->|"surface for t"| e_view
+  s_ref -->|"S, r, dividends, VIX"| e_view
+  e_view -->|"SPY bars, VIX, surface up to t"| e_sig
+  e_sig -->|"signal values at t"| e_loop
+  e_view -->|"one session"| e_loop
+  e_loop -->|"append rows"| s_ledger
+  s_ledger -->|"daily_pnl"| r_metrics
+  s_ledger -->|"position_marks"| r_attr
+  s_ledger -->|"lots at as_of"| r_grid
+  r_metrics -->|"metrics"| r_export
+  r_attr -->|"pnl_attribution"| r_export
+  r_grid -->|"stress_grid"| r_export
+  s_iv -->|"surface_frames"| r_export
+  s_ledger -->|"blotter, positions, greeks"| r_export
+  r_export -->|"write"| a_json
+  a_json -->|"fetch"| u_app

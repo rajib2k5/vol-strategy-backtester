@@ -1,0 +1,593 @@
+# Every stored table, plus the Python -> app JSON contract entities.
+# Types are DuckDB/Parquet types for tables; JSON types (string, number, boolean, array<...>, object) for json_* entities.
+# Column names and enums match ADR-0002..0010. Interim diagram schema (see ../README.md).
+# Revised after the M0 review: order-date volume cap, integer-cent prices, net margin, stress budget, de-Americanised forwards, causal signals, trial accounting.
+kind: erd
+id: data-model
+title: "vol-strategy-backtester data model"
+entities:
+  # ---------------------------------------------------------------- raw vendor data (read-only)
+  - name: raw_optionsdx_eod
+    description: "Kaggle OptionsDX parquet exactly as delivered, one wide row per (date, expiry, strike). Column names contain literal square brackets. Measured 2026-10-28."
+    columns:
+      - {name: "[QUOTE_UNIXTIME]", type: BIGINT, note: "16:00 America/New_York on every row"}
+      - {name: "[QUOTE_READTIME]", type: VARCHAR, note: "'YYYY-MM-DD 16:00'"}
+      - {name: "[QUOTE_DATE]", type: VARCHAR, pk: true, note: "natural key part; key unique on all 9,468,584 rows"}
+      - {name: "[QUOTE_TIME_HOURS]", type: DOUBLE, note: "16.0 on every row"}
+      - {name: "[UNDERLYING_LAST]", type: DOUBLE, note: "one value per date"}
+      - {name: "[EXPIRE_DATE]", type: VARCHAR, pk: true}
+      - {name: "[EXPIRE_UNIX]", type: BIGINT, note: "16:00 ET"}
+      - {name: "[DTE]", type: DOUBLE, note: "fractional on DST crossings; not used (ADR-0008)"}
+      - {name: "[C_DELTA]", type: DOUBLE, nullable: true}
+      - {name: "[C_GAMMA]", type: DOUBLE, nullable: true}
+      - {name: "[C_VEGA]", type: DOUBLE, nullable: true, note: "per vol point"}
+      - {name: "[C_THETA]", type: DOUBLE, nullable: true, note: "convention does not reconcile"}
+      - {name: "[C_RHO]", type: DOUBLE, nullable: true}
+      - {name: "[C_IV]", type: DOUBLE, nullable: true, note: "decimal"}
+      - {name: "[C_VOLUME]", type: DOUBLE, nullable: true, note: "null on 37.6% of rows; under-counted before 2021"}
+      - {name: "[C_LAST]", type: DOUBLE, nullable: true}
+      - {name: "[C_SIZE]", type: VARCHAR, note: "'bid_size x ask_size'"}
+      - {name: "[C_BID]", type: DOUBLE, nullable: true}
+      - {name: "[C_ASK]", type: DOUBLE, nullable: true}
+      - {name: "[STRIKE]", type: DOUBLE, pk: true}
+      - {name: "[P_BID]", type: DOUBLE, nullable: true}
+      - {name: "[P_ASK]", type: DOUBLE, nullable: true}
+      - {name: "[P_SIZE]", type: VARCHAR}
+      - {name: "[P_LAST]", type: DOUBLE, nullable: true}
+      - {name: "[P_DELTA]", type: DOUBLE, nullable: true}
+      - {name: "[P_GAMMA]", type: DOUBLE, nullable: true}
+      - {name: "[P_VEGA]", type: DOUBLE, nullable: true}
+      - {name: "[P_THETA]", type: DOUBLE, nullable: true}
+      - {name: "[P_RHO]", type: DOUBLE, nullable: true}
+      - {name: "[P_IV]", type: DOUBLE, nullable: true}
+      - {name: "[P_VOLUME]", type: DOUBLE, nullable: true}
+      - {name: "[STRIKE_DISTANCE]", type: DOUBLE}
+      - {name: "[STRIKE_DISTANCE_PCT]", type: DOUBLE}
+  - name: raw_dolthub_option_chain
+    description: "DoltHub post-no-preference/options table option_chain, read-only shared clone. No volume, sizes, last or underlying price; snapshot time unknown."
+    columns:
+      - {name: date, type: DATE, pk: true, note: "leading key: always filter on it first"}
+      - {name: act_symbol, type: "VARCHAR(64)", pk: true, note: "'SPY'"}
+      - {name: expiration, type: DATE, pk: true}
+      - {name: strike, type: "DECIMAL(7,2)", pk: true}
+      - {name: call_put, type: "VARCHAR(64)", pk: true, note: "'Call' or 'Put'"}
+      - {name: bid, type: "DECIMAL(7,2)", nullable: true}
+      - {name: ask, type: "DECIMAL(7,2)", nullable: true}
+      - {name: vol, type: "DECIMAL(5,4)", nullable: true, note: "IV, decimal"}
+      - {name: delta, type: "DECIMAL(5,4)", nullable: true}
+      - {name: gamma, type: "DECIMAL(5,4)", nullable: true}
+      - {name: theta, type: "DECIMAL(5,4)", nullable: true}
+      - {name: vega, type: "DECIMAL(5,4)", nullable: true}
+      - {name: rho, type: "DECIMAL(5,4)", nullable: true}
+  # ---------------------------------------------------------------- reference data (M1)
+  - name: trading_calendar
+    description: "Exchange sessions, derived from SPY daily bars, never from chain dates (ADR-0009)."
+    columns:
+      - {name: session_date, type: DATE, pk: true}
+      - {name: prev_session, type: DATE, nullable: true}
+      - {name: next_session, type: DATE, nullable: true}
+      - {name: has_optionsdx_snapshot, type: BOOLEAN}
+      - {name: has_dolthub_snapshot, type: BOOLEAN}
+      - {name: is_early_close, type: BOOLEAN}
+  - name: underlying_bars
+    description: "SPY daily OHLC from yfinance with auto_adjust=False."
+    columns:
+      - {name: symbol, type: VARCHAR, pk: true}
+      - {name: session_date, type: DATE, pk: true, fk: trading_calendar.session_date}
+      - {name: open, type: DOUBLE}
+      - {name: high, type: DOUBLE}
+      - {name: low, type: DOUBLE}
+      - {name: close, type: DOUBLE, note: "unadjusted official close; settlement and hedge price"}
+      - {name: adj_close, type: DOUBLE, note: "total-return series, benchmarks only"}
+      - {name: volume, type: BIGINT}
+      - {name: source, type: VARCHAR}
+      - {name: fetched_at, type: TIMESTAMP}
+  - name: rates
+    description: "FRED DGS3MO, percent, investment basis, converted to a continuous rate (ADR-0007)."
+    columns:
+      - {name: series, type: VARCHAR, pk: true, note: "'DGS3MO'"}
+      - {name: obs_date, type: DATE, pk: true}
+      - {name: value_pct, type: DOUBLE, nullable: true, note: "null where FRED shows '.'"}
+      - {name: r_cc, type: DOUBLE, note: "(365/91) ln(1 + y/100 * 91/365)"}
+      - {name: is_carried_forward, type: BOOLEAN}
+  - name: dividends
+    description: "SPY cash dividends from yfinance, cross-checked against the State Street distributions file."
+    columns:
+      - {name: symbol, type: VARCHAR, pk: true}
+      - {name: ex_date, type: DATE, pk: true}
+      - {name: record_date, type: DATE, nullable: true}
+      - {name: pay_date, type: DATE, nullable: true}
+      - {name: amount, type: DOUBLE, note: "USD per share, booked on ex_date"}
+      - {name: forecast_amount, type: DOUBLE, note: "last amount paid before ex_date; used for early-exercise decisions"}
+      - {name: source, type: VARCHAR}
+  - name: vix_daily
+    description: "Cboe VIX daily history (and VIX3M if available) for regimes."
+    columns:
+      - {name: obs_date, type: DATE, pk: true}
+      - {name: vix_open, type: DOUBLE}
+      - {name: vix_high, type: DOUBLE}
+      - {name: vix_low, type: DOUBLE}
+      - {name: vix_close, type: DOUBLE}
+      - {name: vix3m_close, type: DOUBLE, nullable: true}
+      - {name: source, type: VARCHAR}
+  # ---------------------------------------------------------------- clean chain (M1) and pricing build (M2)
+  - name: option_quotes
+    description: "Cleaned long-format quotes, one row per source, session and contract; flagged, not dropped (ADR-0009)."
+    columns:
+      - {name: source, type: VARCHAR, pk: true, note: "'optionsdx' or 'dolthub'"}
+      - {name: quote_date, type: DATE, pk: true, fk: trading_calendar.session_date}
+      - {name: osi_symbol, type: VARCHAR, pk: true, note: "e.g. 'SPY   240315C00450000'"}
+      - {name: raw_quote_date, type: DATE, note: "differs only when RELABELLED"}
+      - {name: expiry, type: DATE}
+      - {name: strike, type: DOUBLE}
+      - {name: option_right, type: VARCHAR, note: "'C' or 'P'"}
+      - {name: bid, type: DOUBLE, nullable: true}
+      - {name: ask, type: DOUBLE, nullable: true}
+      - {name: mid, type: DOUBLE, nullable: true}
+      - {name: last, type: DOUBLE, nullable: true, note: "OptionsDX only"}
+      - {name: bid_size, type: INTEGER, nullable: true, note: "parsed from [C_SIZE]/[P_SIZE]"}
+      - {name: ask_size, type: INTEGER, nullable: true}
+      - {name: volume, type: BIGINT, nullable: true}
+      - {name: underlying_last, type: DOUBLE, nullable: true, note: "OptionsDX only"}
+      - {name: dte_days, type: INTEGER, note: "expiry - quote_date in ET calendar days"}
+      - {name: vendor_iv, type: DOUBLE, nullable: true}
+      - {name: vendor_delta, type: DOUBLE, nullable: true}
+      - {name: vendor_gamma, type: DOUBLE, nullable: true}
+      - {name: vendor_vega, type: DOUBLE, nullable: true}
+      - {name: vendor_theta, type: DOUBLE, nullable: true}
+      - {name: vendor_rho, type: DOUBLE, nullable: true}
+      - {name: quality_flags, type: INTEGER, note: "bitmask: BID_NULL, ASK_NULL, ZERO_BID, CROSSED, LOCKED, WIDE, STALE, NON_SESSION_DATE, RELABELLED, VOLUME_UNRELIABLE, UNDERLYING_MISMATCH, VENDOR_IV_NULL, EXPIRY_DAY"}
+  - name: expiry_forwards
+    description: "Put-call-parity forward per source, session and expiry (ADR-0008)."
+    columns:
+      - {name: source, type: VARCHAR, pk: true}
+      - {name: quote_date, type: DATE, pk: true}
+      - {name: expiry, type: DATE, pk: true}
+      - {name: tau_years, type: DOUBLE, note: "calendar days / 365"}
+      - {name: r_cc, type: DOUBLE}
+      - {name: discount_factor, type: DOUBLE}
+      - {name: forward, type: DOUBLE, note: "after de-Americanisation (ADR-0008 3a)"}
+      - {name: forward_raw, type: DOUBLE, nullable: true, note: "parity forward from raw mids, before de-Americanisation"}
+      - {name: k_star, type: DOUBLE, note: "strike with min |C_mid - P_mid|"}
+      - {name: n_pairs_used, type: INTEGER}
+      - {name: n_deamericanised, type: INTEGER, note: "near-K* quotes corrected for the early-exercise premium"}
+      - {name: fk_slope_per_strike, type: DOUBLE, nullable: true, note: "slope of raw F_K against K; about -0.036 on 2023-06-15"}
+      - {name: forward_mad_rel, type: DOUBLE}
+      - {name: method, type: VARCHAR, note: "'parity_median5_deam' or 'dividend_fallback'"}
+      - {name: flags, type: INTEGER}
+  - name: quote_iv
+    description: "Recomputed implied vol per quote, Black-76 on the parity forward."
+    columns:
+      - {name: source, type: VARCHAR, pk: true, fk: option_quotes.source}
+      - {name: quote_date, type: DATE, pk: true, fk: option_quotes.quote_date}
+      - {name: osi_symbol, type: VARCHAR, pk: true, fk: option_quotes.osi_symbol}
+      - {name: expiry, type: DATE, fk: expiry_forwards.expiry}
+      - {name: log_moneyness, type: DOUBLE, note: "ln(K/F)"}
+      - {name: is_otm, type: BOOLEAN}
+      - {name: iv, type: DOUBLE, nullable: true, note: "Black-76 IV of the de-Americanised mid"}
+      - {name: eep, type: DOUBLE, nullable: true, note: "early-exercise premium removed from the mid (CRR); null outside |k| <= 0.15"}
+      - {name: iv_flags, type: INTEGER, note: "IV_FAIL, PARITY_OUTLIER, FORWARD_FALLBACK"}
+      - {name: solver, type: VARCHAR, nullable: true, note: "'newton' or 'bisection'"}
+      - {name: iterations, type: INTEGER, nullable: true}
+  - name: smile_fits
+    description: "Per-expiry smile nodes in total variance over log-moneyness, used for model marks (ADR-0004)."
+    columns:
+      - {name: source, type: VARCHAR, pk: true, fk: expiry_forwards.source}
+      - {name: quote_date, type: DATE, pk: true, fk: expiry_forwards.quote_date}
+      - {name: expiry, type: DATE, pk: true, fk: expiry_forwards.expiry}
+      - {name: k_nodes, type: "DOUBLE[]"}
+      - {name: total_var_nodes, type: "DOUBLE[]"}
+      - {name: n_points, type: INTEGER}
+      - {name: atm_iv, type: DOUBLE}
+      - {name: fit_flags, type: INTEGER}
+  # ---------------------------------------------------------------- run ledger (M3-M6), one set per run_id
+  - name: runs
+    description: "One row per backtest run; also the trial log for DSR (ADR-0010)."
+    columns:
+      - {name: run_id, type: VARCHAR, pk: true}
+      - {name: created_at, type: TIMESTAMP, note: "metadata only; never read by the engine"}
+      - {name: source_commit, type: VARCHAR}
+      - {name: config_hash, type: VARCHAR}
+      - {name: config_json, type: JSON}
+      - {name: data_fingerprint, type: VARCHAR}
+      - {name: data_source, type: VARCHAR, note: "'optionsdx' or 'dolthub'"}
+      - {name: execution_mode, type: VARCHAR, note: "'quote' or 'surface'"}
+      - {name: fill_timing, type: VARCHAR, note: "'next_close' or 'same_close'"}
+      - {name: cap_mode, type: VARCHAR, note: "'hard_only' (rule of record, every split) or 'volume' (validation diagnostic from 2021-01-04)"}
+      - {name: chain_mask, type: VARCHAR, note: "'none', 'dolthub' or 'dolthub_daily' (ADR-0009 surface-gap runs)"}
+      - {name: split, type: VARCHAR, note: "'development', 'validation' or 'holdout'"}
+      - {name: run_purpose, type: VARCHAR, note: "'trial' or 'diagnostic'; diagnostics are not counted for the DSR"}
+      - {name: trial_group, type: VARCHAR}
+      - {name: rerun_of, type: VARCHAR, nullable: true, note: "run_id of the validation run of record this re-run repeats; at most 2 per config_hash"}
+      - {name: rerun_reason, type: VARCHAR, nullable: true, note: "defect and commit that justify the re-run"}
+      - {name: sample_start, type: DATE}
+      - {name: sample_end, type: DATE}
+      - {name: status, type: VARCHAR, note: "'ok', 'ruin' or 'failed'"}
+  - name: signals
+    description: "Signal values per session, computed in the daily loop from MarketView(as_of = session); never from a full-sample fit (ADR-0001)."
+    columns:
+      - {name: run_id, type: VARCHAR, pk: true, fk: runs.run_id}
+      - {name: session_date, type: DATE, pk: true}
+      - {name: signal_name, type: VARCHAR, pk: true}
+      - {name: iv30, type: DOUBLE, nullable: true}
+      - {name: rv_forecast, type: DOUBLE, nullable: true}
+      - {name: rv_model, type: VARCHAR, note: "'har' or 'garch' or 'gjr'"}
+      - {name: model_fit_date, type: DATE, nullable: true, note: "last scheduled refit on or before session_date; the fit used only data up to it"}
+      - {name: vrp_spread, type: DOUBLE, nullable: true, note: "iv30 - rv_forecast"}
+      - {name: zscore, type: DOUBLE, nullable: true}
+      - {name: vix_bucket, type: VARCHAR, note: "previous-session VIX bucket"}
+      - {name: vol_regime, type: VARCHAR, note: "'shock', 'post_shock' or 'calm'"}
+  - name: positions
+    description: "A strategy position: one structure (straddle, strangle, calendar, vol-arb) made of lots."
+    columns:
+      - {name: run_id, type: VARCHAR, pk: true, fk: runs.run_id}
+      - {name: position_id, type: BIGINT, pk: true}
+      - {name: strategy_id, type: VARCHAR}
+      - {name: structure, type: VARCHAR}
+      - {name: opened_date, type: DATE}
+      - {name: closed_date, type: DATE, nullable: true}
+      - {name: status, type: VARCHAR, note: "'open' or 'closed'"}
+      - {name: entry_signal, type: DOUBLE, nullable: true}
+      - {name: exit_reason, type: VARCHAR, nullable: true, note: "'profit_target', 'stop', 'dte', 'signal', 'risk', 'margin', 'expiry'"}
+  - name: orders
+    description: "Orders created after snapshot t; filled against snapshot t+1 (ADR-0002)."
+    columns:
+      - {name: run_id, type: VARCHAR, pk: true, fk: runs.run_id}
+      - {name: order_id, type: BIGINT, pk: true}
+      - {name: position_id, type: BIGINT, nullable: true, fk: positions.position_id, note: "null for share liquidation"}
+      - {name: created_date, type: DATE}
+      - {name: target_fill_date, type: DATE, note: "next session with a snapshot"}
+      - {name: intent, type: VARCHAR, note: "'open', 'close', 'reduce_risk', 'margin_liquidation', 'share_liquidation'"}
+      - {name: reduce_only, type: BOOLEAN}
+      - {name: packages_requested, type: INTEGER}
+      - {name: packages_after_risk, type: INTEGER}
+      - {name: risk_action, type: VARCHAR, note: "'none', 'scaled' or 'rejected'"}
+      - {name: status, type: VARCHAR, note: "'pending', 'filled', 'partial', 'cancelled', 'rejected'"}
+      - {name: cancel_reason, type: VARCHAR, nullable: true, note: "'NO_QUOTE', 'ZERO_BID', 'ILLIQUID', 'CAP', 'LOT_REMOVED'"}
+  - name: order_legs
+    description: "Legs of a package order with signed ratios."
+    columns:
+      - {name: run_id, type: VARCHAR, pk: true, fk: orders.run_id}
+      - {name: order_id, type: BIGINT, pk: true, fk: orders.order_id}
+      - {name: leg_no, type: SMALLINT, pk: true}
+      - {name: instrument, type: VARCHAR, note: "'option' or 'share'"}
+      - {name: osi_symbol, type: VARCHAR, nullable: true}
+      - {name: ratio, type: INTEGER, note: "signed contracts (or shares) per package"}
+      - {name: cap_volume, type: BIGINT, nullable: true, note: "contract volume V_t in the snapshot of the order's created_date; the only volume the cap may use"}
+      - {name: cap_volume_date, type: DATE, nullable: true, note: "information date of cap_volume (= created_date)"}
+  - name: fills
+    description: "Executions, one per leg per fill day, with the full price decomposition."
+    columns:
+      - {name: run_id, type: VARCHAR, pk: true, fk: runs.run_id}
+      - {name: fill_id, type: BIGINT, pk: true}
+      - {name: order_id, type: BIGINT, fk: orders.order_id}
+      - {name: leg_no, type: SMALLINT}
+      - {name: fill_date, type: DATE}
+      - {name: osi_symbol, type: VARCHAR, nullable: true}
+      - {name: qty, type: INTEGER, note: "signed contracts or shares"}
+      - {name: price_cents, type: INTEGER, note: "fill price computed in integer cents (ADR-0002)"}
+      - {name: price, type: DOUBLE, note: "price_cents / 100"}
+      - {name: bid, type: DOUBLE, nullable: true}
+      - {name: ask, type: DOUBLE, nullable: true}
+      - {name: mid, type: DOUBLE, nullable: true}
+      - {name: half_spread, type: DOUBLE, nullable: true}
+      - {name: k_half_spread, type: DOUBLE}
+      - {name: fees, type: DOUBLE}
+      - {name: fill_source, type: VARCHAR, note: "'quote' or 'surface'"}
+      - {name: cap_contracts, type: INTEGER, nullable: true}
+      - {name: cap_type, type: VARCHAR, note: "'volume', 'hard' or 'none'"}
+      - {name: cap_volume, type: BIGINT, nullable: true, note: "copied from order_legs.cap_volume"}
+      - {name: cap_volume_date, type: DATE, nullable: true, note: "information date of the volume behind cap_contracts; always before fill_date"}
+      - {name: volume_reliable, type: BOOLEAN}
+  - name: lots
+    description: "Contract holdings inside a position (one per leg); quantities change only via fills and expiry events."
+    columns:
+      - {name: run_id, type: VARCHAR, pk: true, fk: runs.run_id}
+      - {name: lot_id, type: BIGINT, pk: true, note: "assigned in creation order (determinism)"}
+      - {name: position_id, type: BIGINT, fk: positions.position_id}
+      - {name: osi_symbol, type: VARCHAR}
+      - {name: expiry, type: DATE}
+      - {name: strike, type: DOUBLE}
+      - {name: option_right, type: VARCHAR}
+      - {name: qty_open, type: INTEGER, note: "signed contracts"}
+      - {name: avg_open_price, type: DOUBLE}
+      - {name: opened_date, type: DATE}
+      - {name: closed_date, type: DATE, nullable: true}
+  - name: position_marks
+    description: "Daily mark and greeks per lot (ADR-0004, ADR-0006 units)."
+    columns:
+      - {name: run_id, type: VARCHAR, pk: true, fk: runs.run_id}
+      - {name: session_date, type: DATE, pk: true}
+      - {name: lot_id, type: BIGINT, pk: true, fk: lots.lot_id}
+      - {name: mark_price, type: DOUBLE}
+      - {name: mark_iv, type: DOUBLE, nullable: true}
+      - {name: mark_source, type: VARCHAR, note: "'INTRINSIC', 'QUOTE_MID', 'ZERO_BID_MID', 'SURFACE_MODEL', 'STALE_SURFACE'"}
+      - {name: quality_flags, type: INTEGER}
+      - {name: value_mid_usd, type: DOUBLE}
+      - {name: value_liq_usd, type: DOUBLE}
+      - {name: delta_shares, type: DOUBLE}
+      - {name: gamma_1pct_usd, type: DOUBLE}
+      - {name: vega_1vol_usd, type: DOUBLE}
+      - {name: theta_1d_usd, type: DOUBLE}
+      - {name: pnl_residual_usd, type: DOUBLE}
+      - {name: mark_flags, type: INTEGER, note: "IV_FAIL, ATTRIBUTION_BREAK, MARK_JUMP, SURFACE_EXTRAP_STRIKE, SURFACE_CROSS_EXPIRY, SURFACE_EXTRAP_TENOR"}
+  - name: hedges
+    description: "SPY share hedge per session (ADR-0005)."
+    columns:
+      - {name: run_id, type: VARCHAR, pk: true, fk: runs.run_id}
+      - {name: session_date, type: DATE, pk: true, fk: underlying_bars.session_date}
+      - {name: trigger, type: VARCHAR, note: "'schedule', 'band' or 'none'"}
+      - {name: timing, type: VARCHAR, note: "'same_close' or 'next_open'"}
+      - {name: delta_before_shares, type: DOUBLE}
+      - {name: shares_traded, type: INTEGER}
+      - {name: price, type: DOUBLE}
+      - {name: commission, type: DOUBLE}
+      - {name: slippage, type: DOUBLE}
+      - {name: shares_after, type: INTEGER}
+      - {name: delta_after_shares, type: DOUBLE}
+  - name: expiry_events
+    description: "Expiry, exercise and assignment events (ADR-0003)."
+    columns:
+      - {name: run_id, type: VARCHAR, pk: true, fk: runs.run_id}
+      - {name: event_id, type: BIGINT, pk: true}
+      - {name: session_date, type: DATE, note: "date the decision was made"}
+      - {name: effective_date, type: DATE, note: "date shares are booked"}
+      - {name: lot_id, type: BIGINT, fk: lots.lot_id}
+      - {name: event_type, type: VARCHAR, note: "'expired_worthless', 'exercised', 'assigned', 'early_exercised', 'early_assigned'"}
+      - {name: contracts, type: INTEGER}
+      - {name: shares_delivered, type: INTEGER, note: "signed"}
+      - {name: strike, type: DOUBLE}
+      - {name: settlement_price, type: DOUBLE, nullable: true}
+      - {name: dividend_ex_date, type: DATE, nullable: true, fk: dividends.ex_date}
+      - {name: decision_method, type: VARCHAR, nullable: true, note: "'call_closed_form' or 'crr' for early events"}
+      - {name: decision_iv, type: DOUBLE, nullable: true, note: "surface IV used for the early-exercise decision"}
+      - {name: threshold_value, type: DOUBLE, nullable: true, note: "calls: P_E + K(1-e^-r tau), compared with D; puts: CRR continuation minus intrinsic, exercise if <= 0.005"}
+      - {name: pin_flag, type: BOOLEAN}
+  - name: risk_events
+    description: "Pre-trade scaling and rejections, end-of-day breaches, margin calls, ruin (ADR-0006, ADR-0007)."
+    columns:
+      - {name: run_id, type: VARCHAR, pk: true, fk: runs.run_id}
+      - {name: event_id, type: BIGINT, pk: true}
+      - {name: session_date, type: DATE}
+      - {name: kind, type: VARCHAR, note: "'pretrade_scale', 'pretrade_reject', 'eod_breach', 'margin_cap', 'margin_call', 'ruin'"}
+      - {name: greek, type: VARCHAR, nullable: true, note: "'gamma', 'vega', 'theta', 'stress_core', 'stress_worst', 'margin' or null"}
+      - {name: value, type: DOUBLE}
+      - {name: limit_value, type: DOUBLE}
+      - {name: order_id, type: BIGINT, nullable: true, fk: orders.order_id}
+      - {name: action, type: VARCHAR}
+  - name: greeks_snapshots
+    description: "Portfolio greeks and budget use per session, after the hedge."
+    columns:
+      - {name: run_id, type: VARCHAR, pk: true, fk: runs.run_id}
+      - {name: session_date, type: DATE, pk: true}
+      - {name: delta_shares, type: DOUBLE}
+      - {name: delta_usd, type: DOUBLE}
+      - {name: gamma_1pct_usd, type: DOUBLE}
+      - {name: vega_1vol_usd, type: DOUBLE}
+      - {name: vega_30d_weighted_usd, type: DOUBLE, note: "reported, not budgeted"}
+      - {name: theta_1d_usd, type: DOUBLE}
+      - {name: budget_gamma_1pct_usd, type: DOUBLE}
+      - {name: budget_vega_1vol_usd, type: DOUBLE}
+      - {name: budget_theta_1d_usd, type: DOUBLE}
+      - {name: stress_core_pnl_usd, type: DOUBLE, note: "full revaluation at (-10%, +20 vol)"}
+      - {name: stress_worst_pnl_usd, type: DOUBLE, note: "worst of the 63 ADR-0010 grid cells"}
+      - {name: stress_worst_cell, type: VARCHAR, note: "e.g. '-20%,+40'"}
+      - {name: budget_stress_core_usd, type: DOUBLE, note: "15% of NAV_mid"}
+      - {name: budget_stress_worst_usd, type: DOUBLE, note: "35% of NAV_mid"}
+      - {name: breach_flags, type: INTEGER}
+  - name: daily_pnl
+    description: "NAV, attribution, margin and mark quality per session; the input to every metric."
+    columns:
+      - {name: run_id, type: VARCHAR, pk: true, fk: runs.run_id}
+      - {name: session_date, type: DATE, pk: true, fk: trading_calendar.session_date}
+      - {name: nav_mid, type: DOUBLE}
+      - {name: nav_liq, type: DOUBLE}
+      - {name: cash, type: DOUBLE}
+      - {name: shares, type: INTEGER}
+      - {name: share_value, type: DOUBLE}
+      - {name: option_value_mid, type: DOUBLE}
+      - {name: pnl_total, type: DOUBLE}
+      - {name: pnl_delta, type: DOUBLE}
+      - {name: pnl_gamma, type: DOUBLE}
+      - {name: pnl_vega, type: DOUBLE}
+      - {name: pnl_theta, type: DOUBLE}
+      - {name: pnl_fees, type: DOUBLE}
+      - {name: pnl_interest, type: DOUBLE}
+      - {name: pnl_dividends, type: DOUBLE}
+      - {name: pnl_residual, type: DOUBLE}
+      - {name: daily_return, type: DOUBLE}
+      - {name: rf_return, type: DOUBLE}
+      - {name: margin_req_gross_usd, type: DOUBLE, note: "Cboe/FINRA rule as written, incl. 100% of short option value"}
+      - {name: short_option_mv_usd, type: DOUBLE}
+      - {name: margin_req_net_usd, type: DOUBLE, note: "gross minus short option value; compared with nav_mid (ADR-0007)"}
+      - {name: excess_liquidity_usd, type: DOUBLE, note: "nav_mid - margin_req_net_usd"}
+      - {name: share_nav_model_marked, type: DOUBLE}
+      - {name: mark_quality, type: VARCHAR, note: "'OK' or 'DEGRADED'"}
+  # ---------------------------------------------------------------- Python -> app JSON contract (ADR-0001)
+  - name: json_manifest
+    description: "app/public/data/manifest.json (M0, implemented)."
+    columns:
+      - {name: schema_version, type: string, note: "MAJOR.MINOR.PATCH"}
+      - {name: generated_at, type: string, note: "UTC ISO-8601 with Z"}
+      - {name: source_commit, type: string, note: "sha, sha-dirty or uncommitted"}
+      - {name: datasets, type: "array<json_manifest_dataset>"}
+  - name: json_manifest_dataset
+    description: "One entry in manifest.datasets (M0, implemented)."
+    columns:
+      - {name: name, type: string, pk: true}
+      - {name: path, type: string}
+      - {name: schema_version, type: string}
+      - {name: description, type: string}
+  - name: json_illustrative_surface
+    description: "illustrative_surface.json (M0, implemented): SSVI surface for the hero, not market data."
+    columns:
+      - {name: schema_version, type: string}
+      - {name: generated_at, type: string}
+      - {name: source_commit, type: string}
+      - {name: illustrative, type: boolean, note: "always true"}
+      - {name: label, type: string}
+      - {name: moneyness, type: "array<number>", note: "log-moneyness, increasing"}
+      - {name: dte, type: "array<number>", note: "days, increasing"}
+      - {name: iv, type: "array<array<number>>", note: "iv[i_dte][j_moneyness], decimal"}
+      - {name: params, type: object}
+  - name: json_run
+    description: "Provenance block every results dataset carries after the envelope (planned, MINOR bump)."
+    columns:
+      - {name: run_id, type: string, pk: true, fk: runs.run_id}
+      - {name: config_hash, type: string}
+      - {name: data_fingerprint, type: string}
+      - {name: data_source, type: string}
+      - {name: execution_mode, type: string}
+      - {name: fill_timing, type: string}
+      - {name: cap_mode, type: string}
+      - {name: chain_mask, type: string}
+      - {name: sample_start, type: string}
+      - {name: sample_end, type: string}
+  - name: json_surface_frames
+    description: "surface_frames.json (M2): weekly IV surfaces on a fixed grid."
+    columns:
+      - {name: schema_version, type: string}
+      - {name: generated_at, type: string}
+      - {name: source_commit, type: string}
+      - {name: run, type: json_run, fk: json_run.run_id, note: "run_id names the pricing build; execution fields are null"}
+      - {name: illustrative, type: boolean, note: "false"}
+      - {name: units, type: object}
+      - {name: grid_moneyness, type: "array<number>"}
+      - {name: grid_dte, type: "array<number>"}
+      - {name: frames, type: "array<object>", note: "{date, spot, atm_iv_30d, iv[dte][k], quoted_share}"}
+  - name: json_blotter
+    description: "blotter.json (M3): every fill."
+    columns:
+      - {name: schema_version, type: string}
+      - {name: generated_at, type: string}
+      - {name: source_commit, type: string}
+      - {name: run, type: json_run, fk: json_run.run_id}
+      - {name: units, type: object}
+      - {name: fills, type: "array<object>", note: "{fill_id, date, osi_symbol, qty, price, mid, half_spread, fees, fill_source, intent}"}
+  - name: json_positions_timeline
+    description: "positions_timeline.json (M3)."
+    columns:
+      - {name: schema_version, type: string}
+      - {name: generated_at, type: string}
+      - {name: source_commit, type: string}
+      - {name: run, type: json_run, fk: json_run.run_id}
+      - {name: units, type: object}
+      - {name: positions, type: "array<object>", note: "{position_id, structure, opened, closed, legs[], exit_reason}"}
+      - {name: dates, type: "array<string>"}
+      - {name: open_count, type: "array<number>"}
+  - name: json_greeks_timeline
+    description: "greeks_timeline.json (M5), column-wise."
+    columns:
+      - {name: schema_version, type: string}
+      - {name: generated_at, type: string}
+      - {name: source_commit, type: string}
+      - {name: run, type: json_run, fk: json_run.run_id}
+      - {name: units, type: object}
+      - {name: dates, type: "array<string>"}
+      - {name: delta_usd, type: "array<number>"}
+      - {name: gamma_1pct_usd, type: "array<number>"}
+      - {name: vega_1vol_usd, type: "array<number>"}
+      - {name: theta_1d_usd, type: "array<number>"}
+      - {name: budgets, type: object}
+  - name: json_pnl_attribution
+    description: "pnl_attribution.json (M6), column-wise."
+    columns:
+      - {name: schema_version, type: string}
+      - {name: generated_at, type: string}
+      - {name: source_commit, type: string}
+      - {name: run, type: json_run, fk: json_run.run_id}
+      - {name: units, type: object}
+      - {name: dates, type: "array<string>"}
+      - {name: nav_mid, type: "array<number>"}
+      - {name: nav_liq, type: "array<number>"}
+      - {name: pnl_delta, type: "array<number>"}
+      - {name: pnl_gamma, type: "array<number>"}
+      - {name: pnl_vega, type: "array<number>"}
+      - {name: pnl_theta, type: "array<number>"}
+      - {name: pnl_fees, type: "array<number>"}
+      - {name: pnl_interest, type: "array<number>"}
+      - {name: pnl_residual, type: "array<number>"}
+  - name: json_stress_grid
+    description: "stress_grid.json (M6): full-revaluation spot x vol grid."
+    columns:
+      - {name: schema_version, type: string}
+      - {name: generated_at, type: string}
+      - {name: source_commit, type: string}
+      - {name: run, type: json_run, fk: json_run.run_id}
+      - {name: units, type: object}
+      - {name: as_of, type: string}
+      - {name: spot_shocks_pct, type: "array<number>"}
+      - {name: vol_shocks_pts, type: "array<number>"}
+      - {name: pnl_usd, type: "array<array<number>>", note: "pnl_usd[i_vol][j_spot]"}
+  - name: json_metrics
+    description: "metrics.json (M6)."
+    columns:
+      - {name: schema_version, type: string}
+      - {name: generated_at, type: string}
+      - {name: source_commit, type: string}
+      - {name: run, type: json_run, fk: json_run.run_id}
+      - {name: units, type: object}
+      - {name: overall, type: object, note: "cagr, sharpe, sortino, calmar, max_dd_mid, max_dd_liq, skew, kurtosis, avg and peak margin use"}
+      - {name: by_regime, type: "array<object>"}
+      - {name: by_stress_window, type: "array<object>", note: "includes Aug-2024 with status NO_DATA"}
+      - {name: n_trials, type: number, note: "N_raw: trials plus re-runs plus logged design choices (ADR-0010)"}
+      - {name: n_trials_eff, type: number, note: "N_eff, clustered at rho* = 0.5; reported, never used alone (ADR-0010)"}
+      - {name: psr, type: number}
+      - {name: dsr, type: number, note: "headline: min(dsr_raw, dsr_eff)"}
+      - {name: dsr_raw, type: number}
+      - {name: dsr_eff, type: number}
+relations:
+  - {from: raw_optionsdx_eod, to: option_quotes, cardinality: "1:N", label: "reshaped: one wide row to call and put rows"}
+  - {from: raw_dolthub_option_chain, to: option_quotes, cardinality: "1:1", label: "cleaned"}
+  - {from: trading_calendar, to: option_quotes, cardinality: "1:N", label: "session of"}
+  - {from: trading_calendar, to: underlying_bars, cardinality: "1:N", label: "session of"}
+  - {from: trading_calendar, to: daily_pnl, cardinality: "1:N", label: "session of"}
+  - {from: option_quotes, to: quote_iv, cardinality: "1:1", label: "implied vol of"}
+  - {from: expiry_forwards, to: quote_iv, cardinality: "1:N", label: "forward used by"}
+  - {from: expiry_forwards, to: smile_fits, cardinality: "1:1", label: "smile for"}
+  - {from: rates, to: expiry_forwards, cardinality: "1:N", label: "discounting"}
+  - {from: runs, to: signals, cardinality: "1:N", label: "produces"}
+  - {from: runs, to: positions, cardinality: "1:N", label: "produces"}
+  - {from: runs, to: orders, cardinality: "1:N", label: "produces"}
+  - {from: runs, to: fills, cardinality: "1:N", label: "produces"}
+  - {from: runs, to: hedges, cardinality: "1:N", label: "produces"}
+  - {from: runs, to: expiry_events, cardinality: "1:N", label: "produces"}
+  - {from: runs, to: risk_events, cardinality: "1:N", label: "produces"}
+  - {from: runs, to: greeks_snapshots, cardinality: "1:N", label: "produces"}
+  - {from: runs, to: daily_pnl, cardinality: "1:N", label: "produces"}
+  - {from: positions, to: lots, cardinality: "1:N", label: "holds"}
+  - {from: positions, to: orders, cardinality: "1:N", label: "opened and closed by"}
+  - {from: orders, to: order_legs, cardinality: "1:N", label: "has legs"}
+  - {from: orders, to: fills, cardinality: "1:N", label: "executed as"}
+  - {from: orders, to: risk_events, cardinality: "1:N", label: "scaled or rejected by"}
+  - {from: lots, to: position_marks, cardinality: "1:N", label: "marked daily"}
+  - {from: lots, to: expiry_events, cardinality: "1:N", label: "settled by"}
+  - {from: option_quotes, to: position_marks, cardinality: "1:N", label: "quote mark source"}
+  - {from: smile_fits, to: position_marks, cardinality: "1:N", label: "model mark source"}
+  - {from: dividends, to: expiry_events, cardinality: "1:N", label: "early-exercise test"}
+  - {from: underlying_bars, to: hedges, cardinality: "1:N", label: "hedge price"}
+  - {from: vix_daily, to: signals, cardinality: "1:N", label: "regime label"}
+  - {from: json_manifest, to: json_manifest_dataset, cardinality: "1:N", label: "lists"}
+  - {from: json_manifest_dataset, to: json_illustrative_surface, cardinality: "1:1", label: "describes"}
+  - {from: json_manifest_dataset, to: json_surface_frames, cardinality: "1:1", label: "describes"}
+  - {from: json_manifest_dataset, to: json_blotter, cardinality: "1:1", label: "describes"}
+  - {from: json_manifest_dataset, to: json_positions_timeline, cardinality: "1:1", label: "describes"}
+  - {from: json_manifest_dataset, to: json_greeks_timeline, cardinality: "1:1", label: "describes"}
+  - {from: json_manifest_dataset, to: json_pnl_attribution, cardinality: "1:1", label: "describes"}
+  - {from: json_manifest_dataset, to: json_stress_grid, cardinality: "1:1", label: "describes"}
+  - {from: json_manifest_dataset, to: json_metrics, cardinality: "1:1", label: "describes"}
+  - {from: runs, to: json_run, cardinality: "1:1", label: "serialised as"}
+  - {from: json_run, to: json_surface_frames, cardinality: "1:N", label: "provenance"}
+  - {from: json_run, to: json_blotter, cardinality: "1:N", label: "provenance"}
+  - {from: json_run, to: json_positions_timeline, cardinality: "1:N", label: "provenance"}
+  - {from: json_run, to: json_greeks_timeline, cardinality: "1:N", label: "provenance"}
+  - {from: json_run, to: json_pnl_attribution, cardinality: "1:N", label: "provenance"}
+  - {from: json_run, to: json_stress_grid, cardinality: "1:N", label: "provenance"}
+  - {from: json_run, to: json_metrics, cardinality: "1:N", label: "provenance"}
+  - {from: smile_fits, to: json_surface_frames, cardinality: "N:M", label: "exported"}
+  - {from: fills, to: json_blotter, cardinality: "N:M", label: "exported"}
+  - {from: positions, to: json_positions_timeline, cardinality: "N:M", label: "exported"}
+  - {from: greeks_snapshots, to: json_greeks_timeline, cardinality: "N:M", label: "exported"}
+  - {from: daily_pnl, to: json_pnl_attribution, cardinality: "N:M", label: "exported"}
+  - {from: position_marks, to: json_stress_grid, cardinality: "N:M", label: "revalued into"}
+  - {from: daily_pnl, to: json_metrics, cardinality: "N:M", label: "summarised into"}

@@ -1,0 +1,57 @@
+# The research and backtest process, including quality gates and adversarial review.
+# Sample splits and trial counting follow ADR-0010. Interim diagram schema (see ../README.md).
+# Revised after the M0 review: one cap rule of record, capped validation re-runs, N_eff for the DSR, semi-blind holdout.
+kind: flow
+id: process
+title: "Research and backtest process with gates"
+lanes:
+  - {id: owner, label: "Owner"}
+  - {id: pipeline, label: "Automated pipeline"}
+  - {id: gates, label: "Gates and adversarial review"}
+  - {id: publish, label: "Publish"}
+nodes:
+  - {id: o_hyp, label: "State hypothesis and pre-register config grid", type: process, lane: owner}
+  - {id: o_adr, label: "ADR or config change committed", type: artifact, lane: owner}
+  - {id: p_ingest, label: "M1 ingest and quality flags", type: process, lane: pipeline}
+  - {id: g_quality, label: "Quality gate", type: decision, lane: gates, note: "Schema pinned, flag report reviewed, cross-vendor overlap within tolerance"}
+  - {id: p_pricing, label: "M2 forwards, IV, smiles", type: process, lane: pipeline}
+  - {id: g_pricing, label: "Pricing gate", type: decision, lane: gates, note: "IV round-trip property test, parity dispersion, vendor reconciliation report"}
+  - {id: p_dev, label: "Development runs 2010-2019", type: process, lane: pipeline, note: "Each distinct config_hash is a trial"}
+  - {id: s_trials, label: "runs table: trial log", type: store, lane: pipeline}
+  - {id: g_attr, label: "Attribution and mark-quality gate", type: decision, lane: gates, note: "Residual within tolerance, DEGRADED days explained"}
+  - {id: r_method, label: "Adversarial review of method", type: process, lane: gates, note: "Opus reviewer attacks numbered claims; default verdict is broken"}
+  - {id: o_freeze, label: "Freeze config", type: process, lane: owner, note: "Stop and regime rules frozen with a written rationale; no rule may cite a 2024-2026 event"}
+  - {id: p_val, label: "Validation run 2020-2023, quote mode, hard cap of record", type: process, lane: pipeline, note: "Diagnostics: volume cap 2021-2023, surface runs S, M (DoltHub-masked), M-prime (ADR-0009, ADR-0010)"}
+  - {id: p_oos, label: "Holdout run 2024-2026 DoltHub, once", type: process, lane: pipeline, note: "Semi-blind: holdout events are discussed in the background doc"}
+  - {id: p_report, label: "Metrics, DSR, regimes, stress windows, grid", type: process, lane: pipeline}
+  - {id: r_results, label: "Adversarial review of results", type: process, lane: gates}
+  - {id: g_publish, label: "Publish gate", type: decision, lane: gates, note: "Every claim measured; determinism re-run identical"}
+  - {id: p_export, label: "Export schema-validated JSON", type: process, lane: publish}
+  - {id: a_log, label: "LEARNING_LOG.md entry", type: artifact, lane: owner}
+  - {id: u_app, label: "App renders results", type: ui, lane: publish}
+edges:
+  - {from: o_hyp, to: o_adr, label: "write down"}
+  - {from: o_adr, to: p_ingest, label: "start"}
+  - {from: p_ingest, to: g_quality, label: "quality report"}
+  - {from: g_quality, to: p_ingest, label: "fail: fix and re-run"}
+  - {from: g_quality, to: p_pricing, label: "pass"}
+  - {from: p_pricing, to: g_pricing, label: "pricing report"}
+  - {from: g_pricing, to: p_pricing, label: "fail"}
+  - {from: g_pricing, to: p_dev, label: "pass"}
+  - {from: p_dev, to: s_trials, label: "log trial"}
+  - {from: p_dev, to: g_attr, label: "ledger"}
+  - {from: g_attr, to: p_dev, label: "fail: bug or bad marks"}
+  - {from: g_attr, to: r_method, label: "pass"}
+  - {from: r_method, to: o_hyp, label: "refuted: revise"}
+  - {from: r_method, to: o_freeze, label: "survives"}
+  - {from: o_freeze, to: p_val, label: "frozen config_hash"}
+  - {from: p_val, to: p_oos, label: "validation recorded"}
+  - {from: p_val, to: s_trials, label: "run of record and up to 2 defect re-runs charged as trials"}
+  - {from: p_oos, to: p_report, label: "holdout ledger"}
+  - {from: s_trials, to: p_report, label: "N_eff (clustered) and N_raw for DSR"}
+  - {from: p_report, to: r_results, label: "report + claims"}
+  - {from: r_results, to: g_publish, label: "verdicts"}
+  - {from: g_publish, to: p_report, label: "no: re-measure"}
+  - {from: g_publish, to: p_export, label: "yes"}
+  - {from: p_export, to: u_app, label: "JSON"}
+  - {from: g_publish, to: a_log, label: "record what was wrong"}

@@ -1,0 +1,17 @@
+{
+  "name": "vol-strategy-backtester-screenshots",
+  "private": true,
+  "version": "0.0.0",
+  "description": "Pinned toolchain for tools/screenshots/capture.mjs: screenshots of the built app for the README and design board",
+  "type": "module",
+  "engines": {
+    "node": ">=22 <23"
+  },
+  "scripts": {
+    "capture": "npm --prefix ../../app run build && node capture.mjs"
+  },
+  "dependencies": {
+    "@jsquash/oxipng": "2.3.0",
+    "puppeteer": "25.16.0"
+  }
+}

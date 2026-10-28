@@ -1,0 +1,547 @@
+%% Generated from specs/data-model.erd.yaml - edit the YAML, not this file.
+%% vol-strategy-backtester data model
+erDiagram
+  raw_optionsdx_eod {
+    BIGINT QUOTE_UNIXTIME "raw [QUOTE_UNIXTIME], 16:00 America/New_York on every row"
+    VARCHAR QUOTE_READTIME "raw [QUOTE_READTIME], 'YYYY-MM-DD 16:00'"
+    VARCHAR QUOTE_DATE PK "raw [QUOTE_DATE], natural key part, key unique on all 9,468,584 rows"
+    DOUBLE QUOTE_TIME_HOURS "raw [QUOTE_TIME_HOURS], 16.0 on every row"
+    DOUBLE UNDERLYING_LAST "raw [UNDERLYING_LAST], one value per date"
+    VARCHAR EXPIRE_DATE PK "raw [EXPIRE_DATE]"
+    BIGINT EXPIRE_UNIX "raw [EXPIRE_UNIX], 16:00 ET"
+    DOUBLE DTE "raw [DTE], fractional on DST crossings, not used (ADR-0008)"
+    DOUBLE C_DELTA "raw [C_DELTA], nullable"
+    DOUBLE C_GAMMA "raw [C_GAMMA], nullable"
+    DOUBLE C_VEGA "raw [C_VEGA], nullable, per vol point"
+    DOUBLE C_THETA "raw [C_THETA], nullable, convention does not reconcile"
+    DOUBLE C_RHO "raw [C_RHO], nullable"
+    DOUBLE C_IV "raw [C_IV], nullable, decimal"
+    DOUBLE C_VOLUME "raw [C_VOLUME], nullable, null on 37.6% of rows, under-counted before 2021"
+    DOUBLE C_LAST "raw [C_LAST], nullable"
+    VARCHAR C_SIZE "raw [C_SIZE], 'bid_size x ask_size'"
+    DOUBLE C_BID "raw [C_BID], nullable"
+    DOUBLE C_ASK "raw [C_ASK], nullable"
+    DOUBLE STRIKE PK "raw [STRIKE]"
+    DOUBLE P_BID "raw [P_BID], nullable"
+    DOUBLE P_ASK "raw [P_ASK], nullable"
+    VARCHAR P_SIZE "raw [P_SIZE]"
+    DOUBLE P_LAST "raw [P_LAST], nullable"
+    DOUBLE P_DELTA "raw [P_DELTA], nullable"
+    DOUBLE P_GAMMA "raw [P_GAMMA], nullable"
+    DOUBLE P_VEGA "raw [P_VEGA], nullable"
+    DOUBLE P_THETA "raw [P_THETA], nullable"
+    DOUBLE P_RHO "raw [P_RHO], nullable"
+    DOUBLE P_IV "raw [P_IV], nullable"
+    DOUBLE P_VOLUME "raw [P_VOLUME], nullable"
+    DOUBLE STRIKE_DISTANCE "raw [STRIKE_DISTANCE]"
+    DOUBLE STRIKE_DISTANCE_PCT "raw [STRIKE_DISTANCE_PCT]"
+  }
+  raw_dolthub_option_chain {
+    DATE date PK "leading key: always filter on it first"
+    VARCHAR_64 act_symbol PK "'SPY'"
+    DATE expiration PK
+    DECIMAL_7_2 strike PK
+    VARCHAR_64 call_put PK "'Call' or 'Put'"
+    DECIMAL_7_2 bid "nullable"
+    DECIMAL_7_2 ask "nullable"
+    DECIMAL_5_4 vol "nullable, IV, decimal"
+    DECIMAL_5_4 delta "nullable"
+    DECIMAL_5_4 gamma "nullable"
+    DECIMAL_5_4 theta "nullable"
+    DECIMAL_5_4 vega "nullable"
+    DECIMAL_5_4 rho "nullable"
+  }
+  trading_calendar {
+    DATE session_date PK
+    DATE prev_session "nullable"
+    DATE next_session "nullable"
+    BOOLEAN has_optionsdx_snapshot
+    BOOLEAN has_dolthub_snapshot
+    BOOLEAN is_early_close
+  }
+  underlying_bars {
+    VARCHAR symbol PK
+    DATE session_date PK,FK "ref trading_calendar.session_date"
+    DOUBLE open
+    DOUBLE high
+    DOUBLE low
+    DOUBLE close "unadjusted official close, settlement and hedge price"
+    DOUBLE adj_close "total-return series, benchmarks only"
+    BIGINT volume
+    VARCHAR source
+    TIMESTAMP fetched_at
+  }
+  rates {
+    VARCHAR series PK "'DGS3MO'"
+    DATE obs_date PK
+    DOUBLE value_pct "nullable, null where FRED shows '.'"
+    DOUBLE r_cc "(365/91) ln(1 + y/100 * 91/365)"
+    BOOLEAN is_carried_forward
+  }
+  dividends {
+    VARCHAR symbol PK
+    DATE ex_date PK
+    DATE record_date "nullable"
+    DATE pay_date "nullable"
+    DOUBLE amount "USD per share, booked on ex_date"
+    DOUBLE forecast_amount "last amount paid before ex_date, used for early-exercise decisions"
+    VARCHAR source
+  }
+  vix_daily {
+    DATE obs_date PK
+    DOUBLE vix_open
+    DOUBLE vix_high
+    DOUBLE vix_low
+    DOUBLE vix_close
+    DOUBLE vix3m_close "nullable"
+    VARCHAR source
+  }
+  option_quotes {
+    VARCHAR source PK "'optionsdx' or 'dolthub'"
+    DATE quote_date PK,FK "ref trading_calendar.session_date"
+    VARCHAR osi_symbol PK "e.g. 'SPY   240315C00450000'"
+    DATE raw_quote_date "differs only when RELABELLED"
+    DATE expiry
+    DOUBLE strike
+    VARCHAR option_right "'C' or 'P'"
+    DOUBLE bid "nullable"
+    DOUBLE ask "nullable"
+    DOUBLE mid "nullable"
+    DOUBLE last "nullable, OptionsDX only"
+    INTEGER bid_size "nullable, parsed from [C_SIZE]/[P_SIZE]"
+    INTEGER ask_size "nullable"
+    BIGINT volume "nullable"
+    DOUBLE underlying_last "nullable, OptionsDX only"
+    INTEGER dte_days "expiry - quote_date in ET calendar days"
+    DOUBLE vendor_iv "nullable"
+    DOUBLE vendor_delta "nullable"
+    DOUBLE vendor_gamma "nullable"
+    DOUBLE vendor_vega "nullable"
+    DOUBLE vendor_theta "nullable"
+    DOUBLE vendor_rho "nullable"
+    INTEGER quality_flags "bitmask: BID_NULL, ASK_NULL, ZERO_BID, CROSSED, LOCKED, WIDE, STALE, NON_SESSION_DATE, RELABELLED, VOLUME_UNRELIABLE, UNDERLYING_MISMATCH, VENDOR_IV_NULL, EXPIRY_DAY"
+  }
+  expiry_forwards {
+    VARCHAR source PK
+    DATE quote_date PK
+    DATE expiry PK
+    DOUBLE tau_years "calendar days / 365"
+    DOUBLE r_cc
+    DOUBLE discount_factor
+    DOUBLE forward "after de-Americanisation (ADR-0008 3a)"
+    DOUBLE forward_raw "nullable, parity forward from raw mids, before de-Americanisation"
+    DOUBLE k_star "strike with min |C_mid - P_mid|"
+    INTEGER n_pairs_used
+    INTEGER n_deamericanised "near-K* quotes corrected for the early-exercise premium"
+    DOUBLE fk_slope_per_strike "nullable, slope of raw F_K against K, about -0.036 on 2023-06-15"
+    DOUBLE forward_mad_rel
+    VARCHAR method "'parity_median5_deam' or 'dividend_fallback'"
+    INTEGER flags
+  }
+  quote_iv {
+    VARCHAR source PK,FK "ref option_quotes.source"
+    DATE quote_date PK,FK "ref option_quotes.quote_date"
+    VARCHAR osi_symbol PK,FK "ref option_quotes.osi_symbol"
+    DATE expiry FK "ref expiry_forwards.expiry"
+    DOUBLE log_moneyness "ln(K/F)"
+    BOOLEAN is_otm
+    DOUBLE iv "nullable, Black-76 IV of the de-Americanised mid"
+    DOUBLE eep "nullable, early-exercise premium removed from the mid (CRR), null outside |k| <= 0.15"
+    INTEGER iv_flags "IV_FAIL, PARITY_OUTLIER, FORWARD_FALLBACK"
+    VARCHAR solver "nullable, 'newton' or 'bisection'"
+    INTEGER iterations "nullable"
+  }
+  smile_fits {
+    VARCHAR source PK,FK "ref expiry_forwards.source"
+    DATE quote_date PK,FK "ref expiry_forwards.quote_date"
+    DATE expiry PK,FK "ref expiry_forwards.expiry"
+    DOUBLE_list k_nodes
+    DOUBLE_list total_var_nodes
+    INTEGER n_points
+    DOUBLE atm_iv
+    INTEGER fit_flags
+  }
+  runs {
+    VARCHAR run_id PK
+    TIMESTAMP created_at "metadata only, never read by the engine"
+    VARCHAR source_commit
+    VARCHAR config_hash
+    JSON config_json
+    VARCHAR data_fingerprint
+    VARCHAR data_source "'optionsdx' or 'dolthub'"
+    VARCHAR execution_mode "'quote' or 'surface'"
+    VARCHAR fill_timing "'next_close' or 'same_close'"
+    VARCHAR cap_mode "'hard_only' (rule of record, every split) or 'volume' (validation diagnostic from 2021-01-04)"
+    VARCHAR chain_mask "'none', 'dolthub' or 'dolthub_daily' (ADR-0009 surface-gap runs)"
+    VARCHAR split "'development', 'validation' or 'holdout'"
+    VARCHAR run_purpose "'trial' or 'diagnostic', diagnostics are not counted for the DSR"
+    VARCHAR trial_group
+    VARCHAR rerun_of "nullable, run_id of the validation run of record this re-run repeats, at most 2 per config_hash"
+    VARCHAR rerun_reason "nullable, defect and commit that justify the re-run"
+    DATE sample_start
+    DATE sample_end
+    VARCHAR status "'ok', 'ruin' or 'failed'"
+  }
+  signals {
+    VARCHAR run_id PK,FK "ref runs.run_id"
+    DATE session_date PK
+    VARCHAR signal_name PK
+    DOUBLE iv30 "nullable"
+    DOUBLE rv_forecast "nullable"
+    VARCHAR rv_model "'har' or 'garch' or 'gjr'"
+    DATE model_fit_date "nullable, last scheduled refit on or before session_date, the fit used only data up to it"
+    DOUBLE vrp_spread "nullable, iv30 - rv_forecast"
+    DOUBLE zscore "nullable"
+    VARCHAR vix_bucket "previous-session VIX bucket"
+    VARCHAR vol_regime "'shock', 'post_shock' or 'calm'"
+  }
+  positions {
+    VARCHAR run_id PK,FK "ref runs.run_id"
+    BIGINT position_id PK
+    VARCHAR strategy_id
+    VARCHAR structure
+    DATE opened_date
+    DATE closed_date "nullable"
+    VARCHAR status "'open' or 'closed'"
+    DOUBLE entry_signal "nullable"
+    VARCHAR exit_reason "nullable, 'profit_target', 'stop', 'dte', 'signal', 'risk', 'margin', 'expiry'"
+  }
+  orders {
+    VARCHAR run_id PK,FK "ref runs.run_id"
+    BIGINT order_id PK
+    BIGINT position_id FK "nullable, ref positions.position_id, null for share liquidation"
+    DATE created_date
+    DATE target_fill_date "next session with a snapshot"
+    VARCHAR intent "'open', 'close', 'reduce_risk', 'margin_liquidation', 'share_liquidation'"
+    BOOLEAN reduce_only
+    INTEGER packages_requested
+    INTEGER packages_after_risk
+    VARCHAR risk_action "'none', 'scaled' or 'rejected'"
+    VARCHAR status "'pending', 'filled', 'partial', 'cancelled', 'rejected'"
+    VARCHAR cancel_reason "nullable, 'NO_QUOTE', 'ZERO_BID', 'ILLIQUID', 'CAP', 'LOT_REMOVED'"
+  }
+  order_legs {
+    VARCHAR run_id PK,FK "ref orders.run_id"
+    BIGINT order_id PK,FK "ref orders.order_id"
+    SMALLINT leg_no PK
+    VARCHAR instrument "'option' or 'share'"
+    VARCHAR osi_symbol "nullable"
+    INTEGER ratio "signed contracts (or shares) per package"
+    BIGINT cap_volume "nullable, contract volume V_t in the snapshot of the order's created_date, the only volume the cap may use"
+    DATE cap_volume_date "nullable, information date of cap_volume (= created_date)"
+  }
+  fills {
+    VARCHAR run_id PK,FK "ref runs.run_id"
+    BIGINT fill_id PK
+    BIGINT order_id FK "ref orders.order_id"
+    SMALLINT leg_no
+    DATE fill_date
+    VARCHAR osi_symbol "nullable"
+    INTEGER qty "signed contracts or shares"
+    INTEGER price_cents "fill price computed in integer cents (ADR-0002)"
+    DOUBLE price "price_cents / 100"
+    DOUBLE bid "nullable"
+    DOUBLE ask "nullable"
+    DOUBLE mid "nullable"
+    DOUBLE half_spread "nullable"
+    DOUBLE k_half_spread
+    DOUBLE fees
+    VARCHAR fill_source "'quote' or 'surface'"
+    INTEGER cap_contracts "nullable"
+    VARCHAR cap_type "'volume', 'hard' or 'none'"
+    BIGINT cap_volume "nullable, copied from order_legs.cap_volume"
+    DATE cap_volume_date "nullable, information date of the volume behind cap_contracts, always before fill_date"
+    BOOLEAN volume_reliable
+  }
+  lots {
+    VARCHAR run_id PK,FK "ref runs.run_id"
+    BIGINT lot_id PK "assigned in creation order (determinism)"
+    BIGINT position_id FK "ref positions.position_id"
+    VARCHAR osi_symbol
+    DATE expiry
+    DOUBLE strike
+    VARCHAR option_right
+    INTEGER qty_open "signed contracts"
+    DOUBLE avg_open_price
+    DATE opened_date
+    DATE closed_date "nullable"
+  }
+  position_marks {
+    VARCHAR run_id PK,FK "ref runs.run_id"
+    DATE session_date PK
+    BIGINT lot_id PK,FK "ref lots.lot_id"
+    DOUBLE mark_price
+    DOUBLE mark_iv "nullable"
+    VARCHAR mark_source "'INTRINSIC', 'QUOTE_MID', 'ZERO_BID_MID', 'SURFACE_MODEL', 'STALE_SURFACE'"
+    INTEGER quality_flags
+    DOUBLE value_mid_usd
+    DOUBLE value_liq_usd
+    DOUBLE delta_shares
+    DOUBLE gamma_1pct_usd
+    DOUBLE vega_1vol_usd
+    DOUBLE theta_1d_usd
+    DOUBLE pnl_residual_usd
+    INTEGER mark_flags "IV_FAIL, ATTRIBUTION_BREAK, MARK_JUMP, SURFACE_EXTRAP_STRIKE, SURFACE_CROSS_EXPIRY, SURFACE_EXTRAP_TENOR"
+  }
+  hedges {
+    VARCHAR run_id PK,FK "ref runs.run_id"
+    DATE session_date PK,FK "ref underlying_bars.session_date"
+    VARCHAR trigger "'schedule', 'band' or 'none'"
+    VARCHAR timing "'same_close' or 'next_open'"
+    DOUBLE delta_before_shares
+    INTEGER shares_traded
+    DOUBLE price
+    DOUBLE commission
+    DOUBLE slippage
+    INTEGER shares_after
+    DOUBLE delta_after_shares
+  }
+  expiry_events {
+    VARCHAR run_id PK,FK "ref runs.run_id"
+    BIGINT event_id PK
+    DATE session_date "date the decision was made"
+    DATE effective_date "date shares are booked"
+    BIGINT lot_id FK "ref lots.lot_id"
+    VARCHAR event_type "'expired_worthless', 'exercised', 'assigned', 'early_exercised', 'early_assigned'"
+    INTEGER contracts
+    INTEGER shares_delivered "signed"
+    DOUBLE strike
+    DOUBLE settlement_price "nullable"
+    DATE dividend_ex_date FK "nullable, ref dividends.ex_date"
+    VARCHAR decision_method "nullable, 'call_closed_form' or 'crr' for early events"
+    DOUBLE decision_iv "nullable, surface IV used for the early-exercise decision"
+    DOUBLE threshold_value "nullable, calls: P_E + K(1-e^-r tau), compared with D, puts: CRR continuation minus intrinsic, exercise if <= 0.005"
+    BOOLEAN pin_flag
+  }
+  risk_events {
+    VARCHAR run_id PK,FK "ref runs.run_id"
+    BIGINT event_id PK
+    DATE session_date
+    VARCHAR kind "'pretrade_scale', 'pretrade_reject', 'eod_breach', 'margin_cap', 'margin_call', 'ruin'"
+    VARCHAR greek "nullable, 'gamma', 'vega', 'theta', 'stress_core', 'stress_worst', 'margin' or null"
+    DOUBLE value
+    DOUBLE limit_value
+    BIGINT order_id FK "nullable, ref orders.order_id"
+    VARCHAR action
+  }
+  greeks_snapshots {
+    VARCHAR run_id PK,FK "ref runs.run_id"
+    DATE session_date PK
+    DOUBLE delta_shares
+    DOUBLE delta_usd
+    DOUBLE gamma_1pct_usd
+    DOUBLE vega_1vol_usd
+    DOUBLE vega_30d_weighted_usd "reported, not budgeted"
+    DOUBLE theta_1d_usd
+    DOUBLE budget_gamma_1pct_usd
+    DOUBLE budget_vega_1vol_usd
+    DOUBLE budget_theta_1d_usd
+    DOUBLE stress_core_pnl_usd "full revaluation at (-10%, +20 vol)"
+    DOUBLE stress_worst_pnl_usd "worst of the 63 ADR-0010 grid cells"
+    VARCHAR stress_worst_cell "e.g. '-20%,+40'"
+    DOUBLE budget_stress_core_usd "15% of NAV_mid"
+    DOUBLE budget_stress_worst_usd "35% of NAV_mid"
+    INTEGER breach_flags
+  }
+  daily_pnl {
+    VARCHAR run_id PK,FK "ref runs.run_id"
+    DATE session_date PK,FK "ref trading_calendar.session_date"
+    DOUBLE nav_mid
+    DOUBLE nav_liq
+    DOUBLE cash
+    INTEGER shares
+    DOUBLE share_value
+    DOUBLE option_value_mid
+    DOUBLE pnl_total
+    DOUBLE pnl_delta
+    DOUBLE pnl_gamma
+    DOUBLE pnl_vega
+    DOUBLE pnl_theta
+    DOUBLE pnl_fees
+    DOUBLE pnl_interest
+    DOUBLE pnl_dividends
+    DOUBLE pnl_residual
+    DOUBLE daily_return
+    DOUBLE rf_return
+    DOUBLE margin_req_gross_usd "Cboe/FINRA rule as written, incl. 100% of short option value"
+    DOUBLE short_option_mv_usd
+    DOUBLE margin_req_net_usd "gross minus short option value, compared with nav_mid (ADR-0007)"
+    DOUBLE excess_liquidity_usd "nav_mid - margin_req_net_usd"
+    DOUBLE share_nav_model_marked
+    VARCHAR mark_quality "'OK' or 'DEGRADED'"
+  }
+  json_manifest {
+    string schema_version "MAJOR.MINOR.PATCH"
+    string generated_at "UTC ISO-8601 with Z"
+    string source_commit "sha, sha-dirty or uncommitted"
+    array_json_manifest_dataset datasets
+  }
+  json_manifest_dataset {
+    string name PK
+    string path
+    string schema_version
+    string description
+  }
+  json_illustrative_surface {
+    string schema_version
+    string generated_at
+    string source_commit
+    boolean illustrative "always true"
+    string label
+    array_number moneyness "log-moneyness, increasing"
+    array_number dte "days, increasing"
+    array_array_number iv "iv[i_dte][j_moneyness], decimal"
+    object params
+  }
+  json_run {
+    string run_id PK,FK "ref runs.run_id"
+    string config_hash
+    string data_fingerprint
+    string data_source
+    string execution_mode
+    string fill_timing
+    string cap_mode
+    string chain_mask
+    string sample_start
+    string sample_end
+  }
+  json_surface_frames {
+    string schema_version
+    string generated_at
+    string source_commit
+    json_run run FK "ref json_run.run_id, run_id names the pricing build, execution fields are null"
+    boolean illustrative "false"
+    object units
+    array_number grid_moneyness
+    array_number grid_dte
+    array_object frames "{date, spot, atm_iv_30d, iv[dte][k], quoted_share}"
+  }
+  json_blotter {
+    string schema_version
+    string generated_at
+    string source_commit
+    json_run run FK "ref json_run.run_id"
+    object units
+    array_object fills "{fill_id, date, osi_symbol, qty, price, mid, half_spread, fees, fill_source, intent}"
+  }
+  json_positions_timeline {
+    string schema_version
+    string generated_at
+    string source_commit
+    json_run run FK "ref json_run.run_id"
+    object units
+    array_object positions "{position_id, structure, opened, closed, legs[], exit_reason}"
+    array_string dates
+    array_number open_count
+  }
+  json_greeks_timeline {
+    string schema_version
+    string generated_at
+    string source_commit
+    json_run run FK "ref json_run.run_id"
+    object units
+    array_string dates
+    array_number delta_usd
+    array_number gamma_1pct_usd
+    array_number vega_1vol_usd
+    array_number theta_1d_usd
+    object budgets
+  }
+  json_pnl_attribution {
+    string schema_version
+    string generated_at
+    string source_commit
+    json_run run FK "ref json_run.run_id"
+    object units
+    array_string dates
+    array_number nav_mid
+    array_number nav_liq
+    array_number pnl_delta
+    array_number pnl_gamma
+    array_number pnl_vega
+    array_number pnl_theta
+    array_number pnl_fees
+    array_number pnl_interest
+    array_number pnl_residual
+  }
+  json_stress_grid {
+    string schema_version
+    string generated_at
+    string source_commit
+    json_run run FK "ref json_run.run_id"
+    object units
+    string as_of
+    array_number spot_shocks_pct
+    array_number vol_shocks_pts
+    array_array_number pnl_usd "pnl_usd[i_vol][j_spot]"
+  }
+  json_metrics {
+    string schema_version
+    string generated_at
+    string source_commit
+    json_run run FK "ref json_run.run_id"
+    object units
+    object overall "cagr, sharpe, sortino, calmar, max_dd_mid, max_dd_liq, skew, kurtosis, avg and peak margin use"
+    array_object by_regime
+    array_object by_stress_window "includes Aug-2024 with status NO_DATA"
+    number n_trials "N_raw: trials plus re-runs plus logged design choices (ADR-0010)"
+    number n_trials_eff "N_eff, clustered at rho* = 0.5; reported, never used alone (ADR-0010)"
+    number psr
+    number dsr "headline: min(dsr_raw, dsr_eff)"
+    number dsr_raw
+    number dsr_eff
+  }
+  raw_optionsdx_eod ||--o{ option_quotes : "reshaped: one wide row to call and put rows"
+  raw_dolthub_option_chain ||--|| option_quotes : "cleaned"
+  trading_calendar ||--o{ option_quotes : "session of"
+  trading_calendar ||--o{ underlying_bars : "session of"
+  trading_calendar ||--o{ daily_pnl : "session of"
+  option_quotes ||--|| quote_iv : "implied vol of"
+  expiry_forwards ||--o{ quote_iv : "forward used by"
+  expiry_forwards ||--|| smile_fits : "smile for"
+  rates ||--o{ expiry_forwards : "discounting"
+  runs ||--o{ signals : "produces"
+  runs ||--o{ positions : "produces"
+  runs ||--o{ orders : "produces"
+  runs ||--o{ fills : "produces"
+  runs ||--o{ hedges : "produces"
+  runs ||--o{ expiry_events : "produces"
+  runs ||--o{ risk_events : "produces"
+  runs ||--o{ greeks_snapshots : "produces"
+  runs ||--o{ daily_pnl : "produces"
+  positions ||--o{ lots : "holds"
+  positions ||--o{ orders : "opened and closed by"
+  orders ||--o{ order_legs : "has legs"
+  orders ||--o{ fills : "executed as"
+  orders ||--o{ risk_events : "scaled or rejected by"
+  lots ||--o{ position_marks : "marked daily"
+  lots ||--o{ expiry_events : "settled by"
+  option_quotes ||--o{ position_marks : "quote mark source"
+  smile_fits ||--o{ position_marks : "model mark source"
+  dividends ||--o{ expiry_events : "early-exercise test"
+  underlying_bars ||--o{ hedges : "hedge price"
+  vix_daily ||--o{ signals : "regime label"
+  json_manifest ||--o{ json_manifest_dataset : "lists"
+  json_manifest_dataset ||--|| json_illustrative_surface : "describes"
+  json_manifest_dataset ||--|| json_surface_frames : "describes"
+  json_manifest_dataset ||--|| json_blotter : "describes"
+  json_manifest_dataset ||--|| json_positions_timeline : "describes"
+  json_manifest_dataset ||--|| json_greeks_timeline : "describes"
+  json_manifest_dataset ||--|| json_pnl_attribution : "describes"
+  json_manifest_dataset ||--|| json_stress_grid : "describes"
+  json_manifest_dataset ||--|| json_metrics : "describes"
+  runs ||--|| json_run : "serialised as"
+  json_run ||--o{ json_surface_frames : "provenance"
+  json_run ||--o{ json_blotter : "provenance"
+  json_run ||--o{ json_positions_timeline : "provenance"
+  json_run ||--o{ json_greeks_timeline : "provenance"
+  json_run ||--o{ json_pnl_attribution : "provenance"
+  json_run ||--o{ json_stress_grid : "provenance"
+  json_run ||--o{ json_metrics : "provenance"
+  smile_fits }o--o{ json_surface_frames : "exported"
+  fills }o--o{ json_blotter : "exported"
+  positions }o--o{ json_positions_timeline : "exported"
+  greeks_snapshots }o--o{ json_greeks_timeline : "exported"
+  daily_pnl }o--o{ json_pnl_attribution : "exported"
+  position_marks }o--o{ json_stress_grid : "revalued into"
+  daily_pnl }o--o{ json_metrics : "summarised into"
