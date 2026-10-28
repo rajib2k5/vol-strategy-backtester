@@ -1,0 +1,31 @@
+# Python environment and caches
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.ipynb_checkpoints/
+
+# Raw vendor data lives outside the repo (see src/volbt/config.py) and is never committed.
+# "/data/" is anchored to the repo root so it cannot hide app/src/data/ or app/public/data/.
+/data/
+/runs/
+*.parquet
+*.duckdb
+
+# Secrets
+.env
+.env.*
+
+# Node / front-end build output
+node_modules/
+dist/
+coverage/
+# (already matched by node_modules/ above; spelled out because the install is created by
+# tools/diagrams/render_mermaid.sh and must never be committed)
+tools/diagrams/node_modules/
+
+# Tooling output
+graphify-out/
+
+# OS
+.DS_Store
