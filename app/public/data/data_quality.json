@@ -1,7 +1,7 @@
 {
   "schema_version": "0.2.0",
-  "generated_at": "2026-10-29T16:24:01Z",
-  "source_commit": "046fd8fee1ba7fc17f25bd86df3fb2946392b276-dirty",
+  "generated_at": "2026-10-29T17:07:29Z",
+  "source_commit": "5782703ff9fa893313b2d6801b8e4c18027966a3",
   "label": "Data-quality aggregates of the built option-chain store: counts and quantiles, no quotes",
   "flag_names": [
     "BID_NULL",
