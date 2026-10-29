@@ -26,6 +26,34 @@ function box(t: ReturnType<typeof texts>[number]) {
 const overlaps = (a: ReturnType<typeof box>, b: ReturnType<typeof box>) =>
   Math.min(a.right, b.right) - Math.max(a.left, b.left) > 0 && Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top) > 0
 
+describe('LineChart theme', () => {
+  it('draws its grid and its labels in the theme colours, with the dark values as the fallback', () => {
+    const { container } = render(<LineChart yLabel="share" series={[{ name: 'a', values: [1, 2, 3] }]} />)
+    const grid = [...container.querySelectorAll('line')]
+    expect(grid).toHaveLength(3)
+    for (const line of grid) expect(line.getAttribute('stroke')).toBe('var(--line, #2c3547)')
+    const labels = [...container.querySelectorAll('text')]
+    expect(labels.length).toBeGreaterThan(3) // three ticks and the y label
+    for (const text of labels) expect(text.getAttribute('fill')).toBe('var(--muted, #929db0)')
+  })
+
+  it('uses the colour a series asks for, on its line and its legend entry', () => {
+    const { container } = render(
+      <LineChart
+        series={[
+          { name: 'a', values: [1, 2], color: 'var(--accent)' },
+          { name: 'b', values: [2, 1] },
+        ]}
+      />,
+    )
+    const [first, second] = [...container.querySelectorAll('polyline')]
+    expect(first.getAttribute('stroke')).toBe('var(--accent)')
+    expect(second.getAttribute('stroke')).toBe('#4fb8a8') // the default palette's second colour
+    const legend = [...container.querySelectorAll('text')].find((t) => t.textContent === '── a')!
+    expect(legend.getAttribute('fill')).toBe('var(--accent)')
+  })
+})
+
 describe('LineChart layout', () => {
   it('keeps the y-axis label clear of the top tick value', () => {
     const { container } = render(<LineChart yLabel="$m outstanding per quarter" series={[{ name: 'a', values: [1, 5, 908.4] }]} />)

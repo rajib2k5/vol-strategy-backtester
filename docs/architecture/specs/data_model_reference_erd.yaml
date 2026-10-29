@@ -1,0 +1,305 @@
+# Every stored table, plus the Python -> app JSON contract entities.
+# Types are DuckDB/Parquet types for tables; JSON types (string, number, boolean, array<...>, object) for json_* entities.
+# Column names and enums match ADR-0002..0010. Diagram-kit schema (see ../README.md).
+# Revised after the M0 review: order-date volume cap, integer-cent prices, net margin, stress budget, de-Americanised forwards, causal signals, trial accounting.
+# Refreshed after M1 (2026-10-29) against what src/volbt/data builds (data/store/, DESCRIBE of every table). BUILT entities carry the
+# built table's columns and types exactly; the three entities labelled "(planned, M2)" are not built: volbt.pricing is empty. M1 builds no
+# trading_calendar table: a session is a date with a row in spy_bars (ADR-0009 section 1), and calendar_actions records what happened to
+# every vendor date. spy_bars replaces the earlier underlying_bars, vix replaces vix_daily (VIX3M is its own table, vix3m).
+# The kit's erd schema has no entity description or column note field, so the interim notes are kept as comments.
+# Types: array<T> is written T[]; DECIMAL(p,s) is DECIMAL_p_s (a comma is not allowed in a type); [BRACKETED] vendor
+# column names lose their brackets. Relations are drawn from the referencing (child) column to the referenced column;
+# relations the interim schema drew between tables with no foreign key use a representative column (marked below).
+# One of three data-model specs (vendor and reference tables, per-run ledger, Python -> app JSON contract). The single
+# 35-entity diagram was too dense to read, so it is split. An entity marked (partial) repeats, from another spec, only the
+# columns that a relation in this diagram joins; its full column list is in the spec that owns it.
+kind: erd
+title: "vol-strategy-backtester data model: vendor and reference tables"
+subtitle: "Built in M1: 2 vendor sources and 14 stored tables. Planned, not built: expiry_forwards, quote_iv, smile_fits (M2)."
+entities:
+  # Kaggle OptionsDX parquet exactly as delivered, one wide row per (date, expiry, strike). Column names contain literal square brackets. Measured 2026-10-28.
+  - id: raw_optionsdx_eod
+    columns:
+      - {name: QUOTE_UNIXTIME, type: BIGINT}  # raw name [QUOTE_UNIXTIME]; 16:00 America/New_York on every row
+      - {name: QUOTE_READTIME, type: VARCHAR}  # raw name [QUOTE_READTIME]; 'YYYY-MM-DD 16:00'
+      - {name: QUOTE_DATE, type: VARCHAR, pk: true}  # raw name [QUOTE_DATE]; natural key part; key unique on all 9,468,584 rows
+      - {name: QUOTE_TIME_HOURS, type: DOUBLE}  # raw name [QUOTE_TIME_HOURS]; 16.0 on every row
+      - {name: UNDERLYING_LAST, type: DOUBLE}  # raw name [UNDERLYING_LAST]; one value per date
+      - {name: EXPIRE_DATE, type: VARCHAR, pk: true}  # raw name [EXPIRE_DATE]
+      - {name: EXPIRE_UNIX, type: BIGINT}  # raw name [EXPIRE_UNIX]; 16:00 ET
+      - {name: DTE, type: DOUBLE}  # raw name [DTE]; fractional on DST crossings; not used (ADR-0008)
+      - {name: C_DELTA, type: DOUBLE, nullable: true}  # raw name [C_DELTA]
+      - {name: C_GAMMA, type: DOUBLE, nullable: true}  # raw name [C_GAMMA]
+      - {name: C_VEGA, type: DOUBLE, nullable: true}  # raw name [C_VEGA]; per vol point
+      - {name: C_THETA, type: DOUBLE, nullable: true}  # raw name [C_THETA]; convention does not reconcile
+      - {name: C_RHO, type: DOUBLE, nullable: true}  # raw name [C_RHO]
+      - {name: C_IV, type: DOUBLE, nullable: true}  # raw name [C_IV]; decimal
+      - {name: C_VOLUME, type: DOUBLE, nullable: true}  # raw name [C_VOLUME]; null on 37.6% of rows; under-counted before 2021
+      - {name: C_LAST, type: DOUBLE, nullable: true}  # raw name [C_LAST]
+      - {name: C_SIZE, type: VARCHAR}  # raw name [C_SIZE]; 'bid_size x ask_size'
+      - {name: C_BID, type: DOUBLE, nullable: true}  # raw name [C_BID]
+      - {name: C_ASK, type: DOUBLE, nullable: true}  # raw name [C_ASK]
+      - {name: STRIKE, type: DOUBLE, pk: true}  # raw name [STRIKE]
+      - {name: P_BID, type: DOUBLE, nullable: true}  # raw name [P_BID]
+      - {name: P_ASK, type: DOUBLE, nullable: true}  # raw name [P_ASK]
+      - {name: P_SIZE, type: VARCHAR}  # raw name [P_SIZE]
+      - {name: P_LAST, type: DOUBLE, nullable: true}  # raw name [P_LAST]
+      - {name: P_DELTA, type: DOUBLE, nullable: true}  # raw name [P_DELTA]
+      - {name: P_GAMMA, type: DOUBLE, nullable: true}  # raw name [P_GAMMA]
+      - {name: P_VEGA, type: DOUBLE, nullable: true}  # raw name [P_VEGA]
+      - {name: P_THETA, type: DOUBLE, nullable: true}  # raw name [P_THETA]
+      - {name: P_RHO, type: DOUBLE, nullable: true}  # raw name [P_RHO]
+      - {name: P_IV, type: DOUBLE, nullable: true}  # raw name [P_IV]
+      - {name: P_VOLUME, type: DOUBLE, nullable: true}  # raw name [P_VOLUME]
+      - {name: STRIKE_DISTANCE, type: DOUBLE}  # raw name [STRIKE_DISTANCE]
+      - {name: STRIKE_DISTANCE_PCT, type: DOUBLE}  # raw name [STRIKE_DISTANCE_PCT]
+  # DoltHub post-no-preference/options table option_chain, queried through a private mirror in $VOL_DATA_DIR (never the shared clone). No volume, sizes, last or underlying price; snapshot time unknown.
+  - id: raw_dolthub_option_chain
+    columns:
+      - {name: date, type: DATE, pk: true}  # leading key: always filter on it first
+      - {name: act_symbol, type: "VARCHAR(64)", pk: true}  # 'SPY'
+      - {name: expiration, type: DATE, pk: true}
+      - {name: strike, type: DECIMAL_7_2, pk: true}  # type DECIMAL(7,2)
+      - {name: call_put, type: "VARCHAR(64)", pk: true}  # 'Call' or 'Put'
+      - {name: bid, type: DECIMAL_7_2, nullable: true}  # type DECIMAL(7,2)
+      - {name: ask, type: DECIMAL_7_2, nullable: true}  # type DECIMAL(7,2)
+      - {name: vol, type: DECIMAL_5_4, nullable: true}  # type DECIMAL(5,4); IV, decimal
+      - {name: delta, type: DECIMAL_5_4, nullable: true}  # type DECIMAL(5,4)
+      - {name: gamma, type: DECIMAL_5_4, nullable: true}  # type DECIMAL(5,4)
+      - {name: theta, type: DECIMAL_5_4, nullable: true}  # type DECIMAL(5,4)
+      - {name: vega, type: DECIMAL_5_4, nullable: true}  # type DECIMAL(5,4)
+      - {name: rho, type: DECIMAL_5_4, nullable: true}  # type DECIMAL(5,4)
+  # BUILT (M1). SPY daily OHLC from yfinance with auto_adjust=False. A session is a date with a row here (ADR-0009): the calendar comes from these bars, never from chain dates.
+  - id: spy_bars
+    columns:
+      - {name: date, type: DATE, pk: true}
+      - {name: open, type: DOUBLE}
+      - {name: high, type: DOUBLE}
+      - {name: low, type: DOUBLE}
+      - {name: close, type: DOUBLE}  # unadjusted official close, rounded to cents; the settlement and hedge price
+      - {name: adj_close, type: DOUBLE}  # total-return series, benchmarks only
+      - {name: volume, type: BIGINT}
+  # BUILT (M1). FRED DGS3MO, percent, investment basis, converted to a continuous rate (ADR-0007). Days FRED leaves empty are dropped, not carried forward.
+  - id: rates
+    columns:
+      - {name: date, type: DATE, pk: true}
+      - {name: dgs3mo_pct, type: DOUBLE}
+      - {name: r_cc, type: DOUBLE}  # (365/91) ln(1 + y/100 * 91/365)
+  # BUILT (M1). SPY cash dividends from yfinance, booked on the ex-date. The State Street cross-check and forecast_amount are not built.
+  - id: dividends
+    columns:
+      - {name: ex_date, type: DATE, pk: true}
+      - {name: amount, type: DOUBLE}  # USD per share
+  # BUILT (M1). Cboe VIX daily history.
+  - id: vix
+    columns:
+      - {name: date, type: DATE, pk: true}
+      - {name: open, type: DOUBLE}
+      - {name: high, type: DOUBLE}
+      - {name: low, type: DOUBLE}
+      - {name: close, type: DOUBLE}
+  # BUILT (M1). Cboe VIX3M daily history (available: 4,304 rows).
+  - id: vix3m
+    columns:
+      - {name: date, type: DATE, pk: true}
+      - {name: open, type: DOUBLE}
+      - {name: high, type: DOUBLE}
+      - {name: low, type: DOUBLE}
+      - {name: close, type: DOUBLE}
+  # BUILT (M1). What the calendar did with every (source, vendor date): action is 'session' (kept) or 'drop' (the 'relabel' action was removed in round 2 of the M1 review).
+  - id: calendar_actions
+    columns:
+      - {name: source, type: VARCHAR, pk: true}  # 'optionsdx' or 'dolthub'
+      - {name: vendor_date, type: DATE, pk: true}
+      - {name: underlying_last, type: DOUBLE, nullable: true}  # OptionsDX only; null for DoltHub
+      - {name: rows, type: BIGINT}  # long rows the vendor date held
+      - {name: action, type: VARCHAR}
+      - {name: quote_date, type: DATE, nullable: true, fk: spy_bars.date}  # the session the rows are filed under; null when dropped
+      - {name: flags, type: INTEGER}  # NON_SESSION_DATE on a dropped date; RELABELLED is reserved and never set
+      - {name: prev_session, type: DATE, nullable: true}  # set on non-session dates only: a diagnostic
+      - {name: prev_close, type: DOUBLE, nullable: true}
+  # BUILT (M1). Cleaned long-format quotes, one row per source, session and contract; flagged, not dropped (ADR-0009). Hive-partitioned
+  # parquet: source and year are the folder names source=<s>/year=<y> and read back as VARCHAR columns. No mid and no dte_days are stored.
+  - id: option_quotes
+    columns:
+      - {name: quote_date, type: DATE, pk: true, fk: spy_bars.date}
+      - {name: osi_symbol, type: VARCHAR, pk: true}  # e.g. 'SPY   240315C00450000'
+      - {name: expiry, type: DATE}
+      - {name: strike, type: DOUBLE}
+      - {name: call_put, type: VARCHAR}  # 'C' or 'P'
+      - {name: bid, type: DOUBLE, nullable: true}
+      - {name: ask, type: DOUBLE, nullable: true}
+      - {name: last, type: DOUBLE, nullable: true}  # OptionsDX only
+      - {name: volume, type: DOUBLE, nullable: true}  # DOUBLE as the vendor ships it; unreliable before 2021-01-04 and for DoltHub
+      - {name: bid_size, type: BIGINT, nullable: true}  # parsed from [C_SIZE]/[P_SIZE]; OptionsDX only
+      - {name: ask_size, type: BIGINT, nullable: true}
+      - {name: vendor_iv, type: DOUBLE, nullable: true}
+      - {name: vendor_delta, type: DOUBLE, nullable: true}
+      - {name: vendor_gamma, type: DOUBLE, nullable: true}
+      - {name: vendor_vega, type: DOUBLE, nullable: true}
+      - {name: vendor_theta, type: DOUBLE, nullable: true}
+      - {name: vendor_rho, type: DOUBLE, nullable: true}
+      - {name: underlying_last, type: DOUBLE, nullable: true}  # OptionsDX only
+      - {name: spy_close, type: DOUBLE}  # the SPY close of quote_date
+      - {name: vendor_quote_date, type: DATE}  # the date the vendor wrote; equal to quote_date on every row since the relabel rule was removed
+      - {name: quality_flags, type: INTEGER}  # bitmask: BID_NULL, ASK_NULL, ZERO_BID, CROSSED, LOCKED, WIDE, STALE, NON_SESSION_DATE, RELABELLED, VOLUME_UNRELIABLE, UNDERLYING_MISMATCH, VENDOR_IV_INVALID, EXPIRY_DAY
+      - {name: source, type: VARCHAR, pk: true}  # partition folder: 'optionsdx' or 'dolthub'
+      - {name: year, type: VARCHAR}  # partition folder
+  # BUILT (M1). DoltHub's sampling mask: the (expiry, strike) pairs DoltHub lists on a date. mask is 'dolthub' or 'dolthub_daily' (Tue/Thu carried forward).
+  - id: chain_mask
+    columns:
+      - {name: mask, type: VARCHAR, pk: true}
+      - {name: quote_date, type: DATE, pk: true, fk: spy_bars.date}
+      - {name: expiry, type: DATE, pk: true}
+      - {name: strike_milli, type: BIGINT, pk: true}  # strike x 1000, an exact integer key
+      - {name: listed_on, type: DATE}  # the DoltHub date the pair was last listed
+  # BUILT (M1). The quality report, one row per (source, year): quotes, then the number of quotes carrying each of the 13 flags.
+  - id: quality_flag_counts
+    columns:
+      - {name: source, type: VARCHAR, pk: true}
+      - {name: year, type: INTEGER, pk: true}
+      - {name: rows, type: BIGINT}
+      - {name: BID_NULL, type: BIGINT}
+      - {name: ASK_NULL, type: BIGINT}
+      - {name: ZERO_BID, type: BIGINT}
+      - {name: CROSSED, type: BIGINT}
+      - {name: LOCKED, type: BIGINT}
+      - {name: WIDE, type: BIGINT}
+      - {name: STALE, type: BIGINT}
+      - {name: NON_SESSION_DATE, type: BIGINT}
+      - {name: RELABELLED, type: BIGINT}  # always 0: the bit is reserved and never set
+      - {name: VOLUME_UNRELIABLE, type: BIGINT}
+      - {name: UNDERLYING_MISMATCH, type: BIGINT}
+      - {name: VENDOR_IV_INVALID, type: BIGINT}  # vendor IV null or <= 0
+      - {name: EXPIRY_DAY, type: BIGINT}
+  # BUILT (M1). Quality report: vendor dates and quotes per (source, calendar action).
+  - id: quality_calendar
+    columns:
+      - {name: source, type: VARCHAR, pk: true}
+      - {name: action, type: VARCHAR, pk: true}
+      - {name: dates, type: BIGINT}
+      - {name: rows, type: BIGINT}
+  # BUILT (M1). Quality report: per OptionsDX quote date, UNDERLYING_LAST against the SPY close.
+  - id: quality_underlying
+    columns:
+      - {name: quote_date, type: DATE, pk: true, fk: spy_bars.date}
+      - {name: underlying_last, type: DOUBLE}
+      - {name: spy_close, type: DOUBLE}
+      - {name: diff_cents, type: BIGINT}
+      - {name: diff_bp, type: DOUBLE}
+  # BUILT (M1). Quality report: quotes per (source, quote date); the gate's minimum-rows rule reads it.
+  - id: quality_rows_per_date
+    columns:
+      - {name: source, type: VARCHAR, pk: true}
+      - {name: quote_date, type: DATE, pk: true, fk: spy_bars.date}
+      - {name: rows, type: BIGINT}
+  # BUILT (M1, round 2). Quality report: per dropped vendor date, its underlying against the previous session's close. A diagnostic only.
+  - id: quality_non_session_dates
+    columns:
+      - {name: source, type: VARCHAR, pk: true}
+      - {name: vendor_date, type: DATE, pk: true}
+      - {name: rows, type: BIGINT}
+      - {name: underlying_last, type: DOUBLE, nullable: true}  # OptionsDX only
+      - {name: prev_session, type: DATE, nullable: true, fk: spy_bars.date}
+      - {name: prev_close, type: DOUBLE, nullable: true}
+      - {name: underlying_minus_prev_close_cents, type: BIGINT, nullable: true}  # null without an underlying
+      - {name: prev_session_has_snapshot, type: BOOLEAN}
+  # BUILT (M1). One row per date both vendors list, 2020-01-06 to 2023-12-29: 30-day ATM vendor IV and the parity-implied SPY price of each vendor.
+  - id: cross_vendor_overlap
+    columns:
+      - {name: quote_date, type: DATE, pk: true, fk: spy_bars.date}
+      - {name: spy_close, type: DOUBLE}
+      - {name: spy_open, type: DOUBLE}
+      - {name: common_points, type: BIGINT}  # (expiry, strike, side) points both vendors list
+      - {name: iv30_dolthub, type: DOUBLE, nullable: true}
+      - {name: iv30_optionsdx, type: DOUBLE, nullable: true}
+      - {name: spot_dolthub, type: DOUBLE}
+      - {name: spot_optionsdx, type: DOUBLE}
+      - {name: parity_expiry, type: DATE}
+      - {name: iv30_diff_pts, type: DOUBLE, nullable: true}  # DoltHub minus OptionsDX, vol points
+      - {name: spot_dolthub_vs_close_bp, type: DOUBLE}
+      - {name: spot_dolthub_vs_open_bp, type: DOUBLE}
+      - {name: spot_optionsdx_vs_close_bp, type: DOUBLE}
+      - {name: spot_optionsdx_vs_open_bp, type: DOUBLE}
+  # BUILT (M1). The labelled hypothesis test, not overlap: DoltHub rows dated on a non-session (a 2019 weekend, a holiday) against the sessions before and after.
+  - id: cross_vendor_previous_session
+    columns:
+      - {name: vendor_date, type: DATE, pk: true}
+      - {name: weekday, type: VARCHAR}
+      - {name: prev_session, type: DATE, fk: spy_bars.date}
+      - {name: next_session, type: DATE}
+      - {name: close_prev, type: DOUBLE}
+      - {name: close_next, type: DOUBLE}
+      - {name: common_points, type: BIGINT}
+      - {name: iv30_dolthub, type: DOUBLE, nullable: true}
+      - {name: spot_dolthub, type: DOUBLE, nullable: true}
+      - {name: iv30_optionsdx_prev, type: DOUBLE, nullable: true}
+      - {name: spot_optionsdx_prev, type: DOUBLE, nullable: true}
+      - {name: iv30_optionsdx_next, type: DOUBLE, nullable: true}
+      - {name: spot_vs_close_prev_bp, type: DOUBLE, nullable: true}
+      - {name: iv30_diff_prev_pts, type: DOUBLE, nullable: true}
+      - {name: spot_vs_close_next_bp, type: DOUBLE, nullable: true}
+      - {name: iv30_diff_next_pts, type: DOUBLE, nullable: true}
+  # PLANNED (M2), NOT BUILT. Put-call-parity forward per source, session and expiry (ADR-0008). volbt.pricing is an empty package.
+  - id: expiry_forwards
+    label: "expiry_forwards (planned, M2)"
+    columns:
+      - {name: source, type: VARCHAR, pk: true}
+      - {name: quote_date, type: DATE, pk: true}
+      - {name: expiry, type: DATE, pk: true}
+      - {name: tau_years, type: DOUBLE}  # calendar days / 365
+      - {name: r_cc, type: DOUBLE}
+      - {name: discount_factor, type: DOUBLE}
+      - {name: forward, type: DOUBLE}  # after de-Americanisation (ADR-0008 3a)
+      - {name: forward_raw, type: DOUBLE, nullable: true}  # parity forward from raw mids, before de-Americanisation
+      - {name: k_star, type: DOUBLE}  # strike with min |C_mid - P_mid|
+      - {name: n_pairs_used, type: INTEGER}
+      - {name: n_deamericanised, type: INTEGER}  # near-K* quotes corrected for the early-exercise premium
+      - {name: fk_slope_per_strike, type: DOUBLE, nullable: true}  # slope of raw F_K against K; about -0.036 on 2023-06-15
+      - {name: forward_mad_rel, type: DOUBLE}
+      - {name: method, type: VARCHAR}  # 'parity_median5_deam' or 'dividend_fallback'
+      - {name: flags, type: INTEGER}
+  # PLANNED (M2), NOT BUILT. Recomputed implied vol per quote, Black-76 on the parity forward.
+  - id: quote_iv
+    label: "quote_iv (planned, M2)"
+    columns:
+      - {name: source, type: VARCHAR, pk: true, fk: option_quotes.source}
+      - {name: quote_date, type: DATE, pk: true, fk: option_quotes.quote_date}
+      - {name: osi_symbol, type: VARCHAR, pk: true, fk: option_quotes.osi_symbol}
+      - {name: expiry, type: DATE, fk: expiry_forwards.expiry}
+      - {name: log_moneyness, type: DOUBLE}  # ln(K/F)
+      - {name: is_otm, type: BOOLEAN}
+      - {name: iv, type: DOUBLE, nullable: true}  # Black-76 IV of the de-Americanised mid
+      - {name: eep, type: DOUBLE, nullable: true}  # early-exercise premium removed from the mid (CRR); null outside |k| <= 0.15
+      - {name: iv_flags, type: INTEGER}  # IV_FAIL, PARITY_OUTLIER, FORWARD_FALLBACK: reserved bits in flags.py, never set in M1
+      - {name: solver, type: VARCHAR, nullable: true}  # 'newton' or 'bisection'
+      - {name: iterations, type: INTEGER, nullable: true}
+  # PLANNED (M2), NOT BUILT. Per-expiry smile nodes in total variance over log-moneyness, used for model marks (ADR-0004).
+  - id: smile_fits
+    label: "smile_fits (planned, M2)"
+    columns:
+      - {name: source, type: VARCHAR, pk: true, fk: expiry_forwards.source}
+      - {name: quote_date, type: DATE, pk: true, fk: expiry_forwards.quote_date}
+      - {name: expiry, type: DATE, pk: true, fk: expiry_forwards.expiry}
+      - {name: k_nodes, type: "DOUBLE[]"}
+      - {name: total_var_nodes, type: "DOUBLE[]"}
+      - {name: n_points, type: INTEGER}
+      - {name: atm_iv, type: DOUBLE}
+      - {name: fit_flags, type: INTEGER}
+relations:
+  - {from: option_quotes.vendor_quote_date, to: raw_optionsdx_eod.QUOTE_DATE, cardinality: "0..*", label: "reshaped: one wide row to call and put rows"}  # no foreign key: representative column
+  - {from: option_quotes.expiry, to: raw_dolthub_option_chain.expiration, cardinality: "1..1", label: "cleaned"}  # no foreign key: representative column
+  - {from: option_quotes.quote_date, to: spy_bars.date, cardinality: "0..*", label: "session of"}
+  - {from: calendar_actions.quote_date, to: spy_bars.date, cardinality: "0..*", label: "filed under"}
+  - {from: chain_mask.quote_date, to: spy_bars.date, cardinality: "0..*", label: "listed on"}
+  - {from: quality_underlying.quote_date, to: spy_bars.date, cardinality: "1..1", label: "compared with the close of"}
+  - {from: quality_rows_per_date.quote_date, to: spy_bars.date, cardinality: "0..*", label: "counted on"}
+  - {from: quality_non_session_dates.prev_session, to: spy_bars.date, cardinality: "0..*", label: "compared with the close of"}
+  - {from: cross_vendor_overlap.quote_date, to: spy_bars.date, cardinality: "1..1", label: "compared on"}
+  - {from: cross_vendor_previous_session.prev_session, to: spy_bars.date, cardinality: "0..*", label: "tested against"}
+  - {from: quality_flag_counts.source, to: option_quotes.source, cardinality: "0..*", label: "counts the flags of"}  # no foreign key: representative column
+  - {from: quality_calendar.source, to: calendar_actions.source, cardinality: "0..*", label: "counts the actions of"}  # no foreign key: representative column
+  - {from: quote_iv.osi_symbol, to: option_quotes.osi_symbol, cardinality: "1..1", label: "implied vol of"}  # composite key: the other key columns get unlabelled relations from their fk
+  - {from: quote_iv.expiry, to: expiry_forwards.expiry, cardinality: "0..*", label: "forward used by"}
+  - {from: smile_fits.expiry, to: expiry_forwards.expiry, cardinality: "1..1", label: "smile for"}  # composite key: the other key columns get unlabelled relations from their fk
+  - {from: expiry_forwards.r_cc, to: rates.r_cc, cardinality: "0..*", label: "discounting"}  # no foreign key: representative column

@@ -1,0 +1,556 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="2659" height="3212" viewBox="0 0 2659 3212">
+  <title>vol-strategy-backtester: components</title>
+  <rect x="0" y="0" width="2659" height="3212" fill="#F8FAFC"/>
+  <text x="32" y="52" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="20" font-weight="700" fill="#0F172A">vol-strategy-backtester: components</text>
+  <g id="lane_sources">
+    <rect x="32" y="80" width="1541" height="374" rx="14" fill="#F1F5F9" stroke="#E2E8F0" stroke-width="1"/>
+    <text x="48" y="100" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="11" font-weight="700" letter-spacing="0.8" fill="#64748B">VENDOR SOURCES (OUTSIDE THE REPO)</text>
+  </g>
+  <g id="lane_store">
+    <rect x="1601" y="314" width="1026" height="726" rx="14" fill="#EFF6FF" stroke="#DBEAFE" stroke-width="1"/>
+    <text x="1617" y="334" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="11" font-weight="700" letter-spacing="0.8" fill="#64748B">CHAIN STORE (M1)</text>
+  </g>
+  <g id="lane_core">
+    <rect x="32" y="900" width="1541" height="836" rx="14" fill="#F5F3FF" stroke="#E9E5FD" stroke-width="1"/>
+    <text x="48" y="920" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="11" font-weight="700" letter-spacing="0.8" fill="#64748B">PRICING AND SIGNALS (M2, M4)</text>
+  </g>
+  <g id="lane_sim">
+    <rect x="1601" y="1448" width="1026" height="920" rx="14" fill="#ECFDF5" stroke="#D1FAE5" stroke-width="1"/>
+    <text x="1617" y="1468" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="11" font-weight="700" letter-spacing="0.8" fill="#64748B">SIMULATION (M3 TO M5)</text>
+  </g>
+  <g id="lane_results">
+    <rect x="32" y="2446" width="1541" height="460" rx="14" fill="#FFF7ED" stroke="#FFEDD5" stroke-width="1"/>
+    <text x="48" y="2466" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="11" font-weight="700" letter-spacing="0.8" fill="#64748B">ANALYTICS AND EXPORT (M6)</text>
+  </g>
+  <g id="lane_app">
+    <rect x="32" y="2984" width="1541" height="140" rx="14" fill="#FDF2F8" stroke="#FCE7F3" stroke-width="1"/>
+    <text x="48" y="3004" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="11" font-weight="700" letter-spacing="0.8" fill="#64748B">APP (VISUALISES ONLY)</text>
+  </g>
+  <g id="edge_0">
+    <path d="M781 200L781 220Q781 228 789 228L2060 228Q2068 228 2068 236L2068 356" fill="none" stroke="#64748B" stroke-width="1.6" stroke-linejoin="round"/>
+    <polygon points="2068,364 2063.5,355 2072.5,355" fill="#64748B"/>
+  </g>
+  <g id="edge_1">
+    <path d="M1241 200L1241 208Q1241 216 1249 216L2152 216Q2160 216 2160 224L2160 356" fill="none" stroke="#64748B" stroke-width="1.6" stroke-linejoin="round"/>
+    <polygon points="2160,364 2155.5,355 2164.5,355" fill="#64748B"/>
+  </g>
+  <g id="edge_2">
+    <path d="M2092 434L2092 486Q2092 494 2100 494L2100 494Q2108 494 2108 502L2108 572" fill="none" stroke="#64748B" stroke-width="1.6" stroke-linejoin="round"/>
+    <polygon points="2108,580 2103.5,571 2112.5,571" fill="#64748B"/>
+  </g>
+  <g id="edge_3">
+    <path d="M651 434L651 486Q651 494 659 494L1902 494Q1910 494 1910 502L1910 572" fill="none" stroke="#64748B" stroke-width="1.6" stroke-linejoin="round"/>
+    <polygon points="1910,580 1905.5,571 1914.5,571" fill="#64748B"/>
+  </g>
+  <g id="edge_4">
+    <path d="M1032 434L1032 474Q1032 482 1040 482L1946 482Q1954 482 1954 490L1954 572" fill="none" stroke="#64748B" stroke-width="1.6" stroke-linejoin="round"/>
+    <polygon points="1954,580 1949.5,571 1958.5,571" fill="#64748B"/>
+  </g>
+  <g id="edge_5">
+    <path d="M1371 434L1371 462Q1371 470 1379 470L1990 470Q1998 470 1998 478L1998 572" fill="none" stroke="#64748B" stroke-width="1.6" stroke-linejoin="round"/>
+    <polygon points="1998,580 1993.5,571 2002.5,571" fill="#64748B"/>
+  </g>
+  <g id="edge_6">
+    <path d="M2136 434L2136 486Q2136 494 2144 494L2211 494Q2219 494 2219 502L2219 658Q2219 666 2211 666L2168 666Q2160 666 2160 674L2160 744" fill="none" stroke="#64748B" stroke-width="1.6" stroke-linejoin="round"/>
+    <polygon points="2160,752 2155.5,743 2164.5,743" fill="#64748B"/>
+  </g>
+  <g id="edge_7">
+    <path d="M2009 650L2009 658Q2009 666 2017 666L2060 666Q2068 666 2068 674L2068 744" fill="none" stroke="#64748B" stroke-width="1.6" stroke-linejoin="round"/>
+    <polygon points="2068,752 2063.5,743 2072.5,743" fill="#64748B"/>
+  </g>
+  <g id="edge_8">
+    <path d="M2114 822L2114 942" fill="none" stroke="#64748B" stroke-width="1.6" stroke-linejoin="round"/>
+    <polygon points="2114,950 2109.5,941 2118.5,941" fill="#64748B"/>
+  </g>
+  <g id="edge_9">
+    <path d="M2092 1020L2092 1048Q2092 1056 2084 1056L452 1056Q444 1056 444 1064L444 1134" fill="none" stroke="#64748B" stroke-width="1.6" stroke-linejoin="round"/>
+    <polygon points="444,1142 439.5,1133 448.5,1133" fill="#64748B"/>
+  </g>
+  <g id="edge_10">
+    <path d="M395 1020L395 1048Q395 1056 387 1056L354 1056Q346 1056 346 1064L346 1134" fill="none" stroke="#64748B" stroke-width="1.6" stroke-linejoin="round"/>
+    <polygon points="346,1142 341.5,1133 350.5,1133" fill="#64748B"/>
+  </g>
+  <g id="edge_11">
+    <path d="M395 1212L395 1282" fill="none" stroke="#64748B" stroke-width="1.6" stroke-linejoin="round"/>
+    <polygon points="395,1290 390.5,1281 399.5,1281" fill="#64748B"/>
+  </g>
+  <g id="edge_12">
+    <path d="M2136 1020L2136 1048Q2136 1056 2128 1056L2122 1056Q2114 1056 2114 1064L2114 1354Q2114 1362 2122 1362L2135 1362Q2143 1362 2143 1370L2143 1490" fill="none" stroke="#64748B" stroke-width="1.6" stroke-linejoin="round"/>
+    <polygon points="2143,1498 2138.5,1489 2147.5,1489" fill="#64748B"/>
+  </g>
+  <g id="edge_13">
+    <path d="M417 1346L417 1354Q417 1362 425 1362L2077 1362Q2085 1362 2085 1370L2085 1490" fill="none" stroke="#64748B" stroke-width="1.6" stroke-linejoin="round"/>
+    <polygon points="2085,1498 2080.5,1489 2089.5,1489" fill="#64748B"/>
+  </g>
+  <g id="edge_14">
+    <path d="M2070 1568L2070 1576Q2070 1584 2062 1584L1257 1584Q1249 1584 1249 1592L1249 1638" fill="none" stroke="#64748B" stroke-width="1.6" stroke-linejoin="round"/>
+    <polygon points="1249,1646 1244.5,1637 1253.5,1637" fill="#64748B"/>
+  </g>
+  <g id="edge_15">
+    <path d="M1249 1716L1249 1744Q1249 1752 1257 1752L1943 1752Q1951 1752 1951 1760L1951 1830" fill="none" stroke="#64748B" stroke-width="1.6" stroke-linejoin="round"/>
+    <polygon points="1951,1838 1946.5,1829 1955.5,1829" fill="#64748B"/>
+  </g>
+  <g id="edge_16">
+    <path d="M2114 1568L2114 1744Q2114 1752 2106 1752L2021 1752Q2013 1752 2013 1760L2013 1830" fill="none" stroke="#64748B" stroke-width="1.6" stroke-linejoin="round"/>
+    <polygon points="2013,1838 2008.5,1829 2017.5,1829" fill="#64748B"/>
+  </g>
+  <g id="edge_17">
+    <path d="M1982 1894L1982 1964" fill="none" stroke="#64748B" stroke-width="1.6" stroke-linejoin="round"/>
+    <polygon points="1982,1972 1977.5,1963 1986.5,1963" fill="#64748B"/>
+  </g>
+  <g id="edge_18">
+    <path d="M1982 2042L1982 2050Q1982 2058 1990 2058L2063 2058Q2071 2058 2071 2066L2071 2136" fill="none" stroke="#64748B" stroke-width="1.6" stroke-linejoin="round"/>
+    <polygon points="2071,2144 2066.5,2135 2075.5,2135" fill="#64748B"/>
+  </g>
+  <g id="edge_19">
+    <path d="M2158 1568L2158 1576Q2158 1584 2166 1584L2238 1584Q2246 1584 2246 1592L2246 2050Q2246 2058 2238 2058L2165 2058Q2157 2058 2157 2066L2157 2136" fill="none" stroke="#64748B" stroke-width="1.6" stroke-linejoin="round"/>
+    <polygon points="2157,2144 2152.5,2135 2161.5,2135" fill="#64748B"/>
+  </g>
+  <g id="edge_20">
+    <path d="M2114 2214L2114 2284" fill="none" stroke="#64748B" stroke-width="1.6" stroke-linejoin="round"/>
+    <polygon points="2114,2292 2109.5,2283 2118.5,2283" fill="#64748B"/>
+  </g>
+  <g id="edge_21">
+    <path d="M2114 2348L2114 2376Q2114 2384 2106 2384L659 2384Q651 2384 651 2392L651 2488" fill="none" stroke="#64748B" stroke-width="1.6" stroke-linejoin="round"/>
+    <polygon points="651,2496 646.5,2487 655.5,2487" fill="#64748B"/>
+  </g>
+  <g id="edge_22">
+    <path d="M651 2566L651 2574Q651 2582 643 2582L560 2582Q552 2582 552 2590L552 2660" fill="none" stroke="#64748B" stroke-width="1.6" stroke-linejoin="round"/>
+    <polygon points="552,2668 547.5,2659 556.5,2659" fill="#64748B"/>
+  </g>
+  <g id="edge_23">
+    <path d="M373 1346L373 1354Q373 1362 381 1362L387 1362Q395 1362 395 1370L395 2574Q395 2582 403 2582L486 2582Q494 2582 494 2590L494 2660" fill="none" stroke="#64748B" stroke-width="1.6" stroke-linejoin="round"/>
+    <polygon points="494,2668 489.5,2659 498.5,2659" fill="#64748B"/>
+  </g>
+  <g id="edge_24">
+    <path d="M523 2738L523 2808" fill="none" stroke="#64748B" stroke-width="1.6" stroke-linejoin="round"/>
+    <polygon points="523,2816 518.5,2807 527.5,2807" fill="#64748B"/>
+  </g>
+  <g id="edge_25">
+    <path d="M523 2886L523 3026" fill="none" stroke="#64748B" stroke-width="1.6" stroke-linejoin="round"/>
+    <polygon points="523,3034 518.5,3025 527.5,3025" fill="#64748B"/>
+  </g>
+  <g id="node_src_optionsdx">
+    <rect x="587" y="131" width="388" height="70" rx="10" fill="#0F172A" fill-opacity="0.05"/>
+    <rect x="586" y="132" width="390" height="71" rx="11" fill="#0F172A" fill-opacity="0.04"/>
+    <rect x="585" y="134" width="392" height="72" rx="12" fill="#0F172A" fill-opacity="0.03"/>
+    <rect x="587" y="130" width="388" height="70" rx="10" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1"/>
+    <rect x="601" y="150" width="30" height="30" rx="8" fill="#E0F2FE"/>
+    <g transform="translate(608 157)" fill="none" stroke="#0284C7" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M4 1.5h5.5L13 5v9.5H4z"/>
+      <path d="M9.5 1.5V5H13"/>
+      <path d="M6.5 8.5h4M6.5 11.5h4"/>
+    </g>
+    <text x="643" y="150" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="9.5" font-weight="700" letter-spacing="0.8" fill="#0369A1">SOURCE</text>
+    <text x="643" y="168" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="14" font-weight="600" fill="#0F172A">Kaggle OptionsDX SPY EOD 2010-2023</text>
+    <text x="643" y="184" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="12" font-weight="400" fill="#64748B">14 parquet files, 9,468,584 rows, 16:00 ET snapshots</text>
+  </g>
+  <g id="node_src_dolthub">
+    <rect x="1015" y="131" width="452" height="70" rx="10" fill="#0F172A" fill-opacity="0.05"/>
+    <rect x="1014" y="132" width="454" height="71" rx="11" fill="#0F172A" fill-opacity="0.04"/>
+    <rect x="1013" y="134" width="456" height="72" rx="12" fill="#0F172A" fill-opacity="0.03"/>
+    <rect x="1015" y="130" width="452" height="70" rx="10" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1"/>
+    <rect x="1029" y="150" width="30" height="30" rx="8" fill="#E0F2FE"/>
+    <g transform="translate(1036 157)" fill="none" stroke="#0284C7" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M4 1.5h5.5L13 5v9.5H4z"/>
+      <path d="M9.5 1.5V5H13"/>
+      <path d="M6.5 8.5h4M6.5 11.5h4"/>
+    </g>
+    <text x="1071" y="150" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="9.5" font-weight="700" letter-spacing="0.8" fill="#0369A1">SOURCE</text>
+    <text x="1071" y="168" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="14" font-weight="600" fill="#0F172A">DoltHub option_chain SPY 2019-2026</text>
+    <text x="1071" y="184" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="12" font-weight="400" fill="#64748B">Shared dolt clone, never queried; no volume, sizes or underlying</text>
+  </g>
+  <g id="node_src_yf">
+    <rect x="492" y="365" width="318" height="70" rx="10" fill="#0F172A" fill-opacity="0.05"/>
+    <rect x="491" y="366" width="320" height="71" rx="11" fill="#0F172A" fill-opacity="0.04"/>
+    <rect x="490" y="368" width="322" height="72" rx="12" fill="#0F172A" fill-opacity="0.03"/>
+    <rect x="492" y="364" width="318" height="70" rx="10" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1"/>
+    <rect x="506" y="384" width="30" height="30" rx="8" fill="#F1F5F9"/>
+    <g transform="translate(513 391)" fill="none" stroke="#475569" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="8" cy="8" r="6"/>
+      <ellipse cx="8" cy="8" rx="2.6" ry="6"/>
+      <path d="M2 8h12"/>
+    </g>
+    <text x="548" y="384" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="9.5" font-weight="700" letter-spacing="0.8" fill="#475569">EXTERNAL</text>
+    <text x="548" y="402" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="14" font-weight="600" fill="#0F172A">yfinance SPY bars and dividends</text>
+    <text x="548" y="418" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="12" font-weight="400" fill="#64748B">Unadjusted close, auto_adjust=False</text>
+  </g>
+  <g id="node_src_fred">
+    <rect x="850" y="365" width="364" height="70" rx="10" fill="#0F172A" fill-opacity="0.05"/>
+    <rect x="849" y="366" width="366" height="71" rx="11" fill="#0F172A" fill-opacity="0.04"/>
+    <rect x="848" y="368" width="368" height="72" rx="12" fill="#0F172A" fill-opacity="0.03"/>
+    <rect x="850" y="364" width="364" height="70" rx="10" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1"/>
+    <rect x="864" y="384" width="30" height="30" rx="8" fill="#F1F5F9"/>
+    <g transform="translate(871 391)" fill="none" stroke="#475569" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="8" cy="8" r="6"/>
+      <ellipse cx="8" cy="8" rx="2.6" ry="6"/>
+      <path d="M2 8h12"/>
+    </g>
+    <text x="906" y="384" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="9.5" font-weight="700" letter-spacing="0.8" fill="#475569">EXTERNAL</text>
+    <text x="906" y="402" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="14" font-weight="600" fill="#0F172A">FRED DGS3MO</text>
+    <text x="906" y="418" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="12" font-weight="400" fill="#64748B">3-month constant-maturity yield, investment basis</text>
+  </g>
+  <g id="node_src_cboe">
+    <rect x="1254" y="365" width="234" height="70" rx="10" fill="#0F172A" fill-opacity="0.05"/>
+    <rect x="1253" y="366" width="236" height="71" rx="11" fill="#0F172A" fill-opacity="0.04"/>
+    <rect x="1252" y="368" width="238" height="72" rx="12" fill="#0F172A" fill-opacity="0.03"/>
+    <rect x="1254" y="364" width="234" height="70" rx="10" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1"/>
+    <rect x="1268" y="384" width="30" height="30" rx="8" fill="#F1F5F9"/>
+    <g transform="translate(1275 391)" fill="none" stroke="#475569" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="8" cy="8" r="6"/>
+      <ellipse cx="8" cy="8" rx="2.6" ry="6"/>
+      <path d="M2 8h12"/>
+    </g>
+    <text x="1310" y="391.75" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="9.5" font-weight="700" letter-spacing="0.8" fill="#475569">EXTERNAL</text>
+    <text x="1310" y="409.75" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="14" font-weight="600" fill="#0F172A">Cboe VIX history CSV</text>
+  </g>
+  <g id="node_st_vendor">
+    <rect x="1723" y="365" width="782" height="70" rx="10" fill="#0F172A" fill-opacity="0.05"/>
+    <rect x="1722" y="366" width="784" height="71" rx="11" fill="#0F172A" fill-opacity="0.04"/>
+    <rect x="1721" y="368" width="786" height="72" rx="12" fill="#0F172A" fill-opacity="0.03"/>
+    <rect x="1723" y="364" width="782" height="70" rx="10" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1"/>
+    <rect x="1737" y="384" width="30" height="30" rx="8" fill="#FEF3C7"/>
+    <g transform="translate(1744 391)" fill="none" stroke="#D97706" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+      <ellipse cx="8" cy="4" rx="5" ry="2"/>
+      <path d="M3 4v8c0 1.1 2.24 2 5 2s5-.9 5-2V4"/>
+      <path d="M3 8c0 1.1 2.24 2 5 2s5-.9 5-2"/>
+    </g>
+    <text x="1779" y="384" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="9.5" font-weight="700" letter-spacing="0.8" fill="#B45309">STORE</text>
+    <text x="1779" y="402" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="14" font-weight="600" fill="#0F172A">Vendor sources in $VOL_DATA_DIR</text>
+    <text x="1779" y="418" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="12" font-weight="400" fill="#64748B">Read only, never modified. DoltHub: private mirror at $VOL_DATA_DIR/vol-strategy-backtester/cache/dolt_mirror/options</text>
+  </g>
+  <g id="node_st_raw">
+    <rect x="1855" y="581" width="308" height="70" rx="10" fill="#0F172A" fill-opacity="0.05"/>
+    <rect x="1854" y="582" width="310" height="71" rx="11" fill="#0F172A" fill-opacity="0.04"/>
+    <rect x="1853" y="584" width="312" height="72" rx="12" fill="#0F172A" fill-opacity="0.03"/>
+    <rect x="1855" y="580" width="308" height="70" rx="10" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1"/>
+    <rect x="1869" y="600" width="30" height="30" rx="8" fill="#FEF3C7"/>
+    <g transform="translate(1876 607)" fill="none" stroke="#D97706" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+      <ellipse cx="8" cy="4" rx="5" ry="2"/>
+      <path d="M3 4v8c0 1.1 2.24 2 5 2s5-.9 5-2V4"/>
+      <path d="M3 8c0 1.1 2.24 2 5 2s5-.9 5-2"/>
+    </g>
+    <text x="1911" y="600" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="9.5" font-weight="700" letter-spacing="0.8" fill="#B45309">STORE</text>
+    <text x="1911" y="618" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="14" font-weight="600" fill="#0F172A">Downloads in repo data/raw/</text>
+    <text x="1911" y="634" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="12" font-weight="400" fill="#64748B">work_dir(), git-ignored, never committed</text>
+  </g>
+  <g id="node_p_data">
+    <rect x="1901" y="753" width="426" height="70" rx="10" fill="#0F172A" fill-opacity="0.05"/>
+    <rect x="1900" y="754" width="428" height="71" rx="11" fill="#0F172A" fill-opacity="0.04"/>
+    <rect x="1899" y="756" width="430" height="72" rx="12" fill="#0F172A" fill-opacity="0.03"/>
+    <rect x="1901" y="752" width="426" height="70" rx="10" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1"/>
+    <rect x="1915" y="772" width="30" height="30" rx="8" fill="#E0E7FF"/>
+    <g transform="translate(1922 779)" fill="none" stroke="#4F46E5" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M2.5 5h11M2.5 11h11"/>
+      <circle cx="6" cy="5" r="1.8" fill="#FFFFFF"/>
+      <circle cx="10.5" cy="11" r="1.8" fill="#FFFFFF"/>
+    </g>
+    <text x="1957" y="772" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="9.5" font-weight="700" letter-spacing="0.8" fill="#4338CA">PROCESS</text>
+    <text x="1957" y="790" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="14" font-weight="600" fill="#0F172A">volbt.data: load, calendar, quality flags</text>
+    <text x="1957" y="806" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="12" font-weight="400" fill="#64748B">Schema pin; long format; OSI symbols; flag rather than drop</text>
+  </g>
+  <g id="node_st_clean">
+    <rect x="1621" y="951" width="986" height="70" rx="10" fill="#0F172A" fill-opacity="0.05"/>
+    <rect x="1620" y="952" width="988" height="71" rx="11" fill="#0F172A" fill-opacity="0.04"/>
+    <rect x="1619" y="954" width="990" height="72" rx="12" fill="#0F172A" fill-opacity="0.03"/>
+    <rect x="1621" y="950" width="986" height="70" rx="10" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1"/>
+    <rect x="1635" y="970" width="30" height="30" rx="8" fill="#FEF3C7"/>
+    <g transform="translate(1642 977)" fill="none" stroke="#D97706" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+      <ellipse cx="8" cy="4" rx="5" ry="2"/>
+      <path d="M3 4v8c0 1.1 2.24 2 5 2s5-.9 5-2V4"/>
+      <path d="M3 8c0 1.1 2.24 2 5 2s5-.9 5-2"/>
+    </g>
+    <text x="1677" y="970" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="9.5" font-weight="700" letter-spacing="0.8" fill="#B45309">STORE</text>
+    <text x="1677" y="988" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="14" font-weight="600" fill="#0F172A">Clean parquet + DuckDB</text>
+    <text x="1677" y="1004" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="12" font-weight="400" fill="#64748B">Built in M1, in repo data/store/: option_quotes, calendar_actions, spy_bars, rates, dividends, vix, vix3m, chain_mask and the quality and cross-vendor tables</text>
+  </g>
+  <g id="node_p_pricing">
+    <rect x="138" y="951" width="514" height="70" rx="10" fill="#0F172A" fill-opacity="0.05"/>
+    <rect x="137" y="952" width="516" height="71" rx="11" fill="#0F172A" fill-opacity="0.04"/>
+    <rect x="136" y="954" width="518" height="72" rx="12" fill="#0F172A" fill-opacity="0.03"/>
+    <rect x="138" y="950" width="514" height="70" rx="10" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1"/>
+    <rect x="152" y="970" width="30" height="30" rx="8" fill="#E0E7FF"/>
+    <g transform="translate(159 977)" fill="none" stroke="#4F46E5" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M2.5 5h11M2.5 11h11"/>
+      <circle cx="6" cy="5" r="1.8" fill="#FFFFFF"/>
+      <circle cx="10.5" cy="11" r="1.8" fill="#FFFFFF"/>
+    </g>
+    <text x="194" y="970" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="9.5" font-weight="700" letter-spacing="0.8" fill="#4338CA">PROCESS</text>
+    <text x="194" y="988" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="14" font-weight="600" fill="#0F172A">volbt.pricing: Black-76, IV, parity forward, CRR lattice, smile</text>
+    <text x="194" y="1004" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="12" font-weight="400" fill="#64748B">Pure functions, no I/O; imports no volbt module (ADR-0001, ADR-0008)</text>
+  </g>
+  <g id="node_p_build">
+    <rect x="52" y="1143" width="686" height="70" rx="10" fill="#0F172A" fill-opacity="0.05"/>
+    <rect x="51" y="1144" width="688" height="71" rx="11" fill="#0F172A" fill-opacity="0.04"/>
+    <rect x="50" y="1146" width="690" height="72" rx="12" fill="#0F172A" fill-opacity="0.03"/>
+    <rect x="52" y="1142" width="686" height="70" rx="10" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1"/>
+    <rect x="66" y="1162" width="30" height="30" rx="8" fill="#E0E7FF"/>
+    <g transform="translate(73 1169)" fill="none" stroke="#4F46E5" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M2.5 5h11M2.5 11h11"/>
+      <circle cx="6" cy="5" r="1.8" fill="#FFFFFF"/>
+      <circle cx="10.5" cy="11" r="1.8" fill="#FFFFFF"/>
+    </g>
+    <text x="108" y="1162" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="9.5" font-weight="700" letter-spacing="0.8" fill="#4338CA">PROCESS</text>
+    <text x="108" y="1180" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="14" font-weight="600" fill="#0F172A">volbt.build: pricing build</text>
+    <text x="108" y="1196" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="12" font-weight="400" fill="#64748B">Reads and writes through volbt.data, calls volbt.pricing; de-Americanises quotes (ADR-0001, ADR-0008)</text>
+  </g>
+  <g id="node_st_derived">
+    <rect x="165" y="1291" width="460" height="56" rx="10" fill="#0F172A" fill-opacity="0.05"/>
+    <rect x="164" y="1292" width="462" height="57" rx="11" fill="#0F172A" fill-opacity="0.04"/>
+    <rect x="163" y="1294" width="464" height="58" rx="12" fill="#0F172A" fill-opacity="0.03"/>
+    <rect x="165" y="1290" width="460" height="56" rx="10" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1"/>
+    <rect x="179" y="1303" width="30" height="30" rx="8" fill="#FEF3C7"/>
+    <g transform="translate(186 1310)" fill="none" stroke="#D97706" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+      <ellipse cx="8" cy="4" rx="5" ry="2"/>
+      <path d="M3 4v8c0 1.1 2.24 2 5 2s5-.9 5-2V4"/>
+      <path d="M3 8c0 1.1 2.24 2 5 2s5-.9 5-2"/>
+    </g>
+    <text x="221" y="1310.75" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="9.5" font-weight="700" letter-spacing="0.8" fill="#B45309">STORE</text>
+    <text x="221" y="1328.75" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="14" font-weight="600" fill="#0F172A">Derived tables: quote_iv, expiry_forwards, smile_fits</text>
+  </g>
+  <g id="node_p_signals">
+    <rect x="945" y="1647" width="608" height="70" rx="10" fill="#0F172A" fill-opacity="0.05"/>
+    <rect x="944" y="1648" width="610" height="71" rx="11" fill="#0F172A" fill-opacity="0.04"/>
+    <rect x="943" y="1650" width="612" height="72" rx="12" fill="#0F172A" fill-opacity="0.03"/>
+    <rect x="945" y="1646" width="608" height="70" rx="10" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1"/>
+    <rect x="959" y="1666" width="30" height="30" rx="8" fill="#E0E7FF"/>
+    <g transform="translate(966 1673)" fill="none" stroke="#4F46E5" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M2.5 5h11M2.5 11h11"/>
+      <circle cx="6" cy="5" r="1.8" fill="#FFFFFF"/>
+      <circle cx="10.5" cy="11" r="1.8" fill="#FFFFFF"/>
+    </g>
+    <text x="1001" y="1666" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="9.5" font-weight="700" letter-spacing="0.8" fill="#4338CA">PROCESS</text>
+    <text x="1001" y="1684" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="14" font-weight="600" fill="#0F172A">volbt.signals: RV, HAR/GARCH, IV30, VRP spread</text>
+    <text x="1001" y="1700" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="12" font-weight="400" fill="#64748B">Causal: called each session with the MarketView; monthly refits on data up to t (ADR-0001)</text>
+  </g>
+  <g id="node_p_view">
+    <rect x="1782" y="1499" width="664" height="70" rx="10" fill="#0F172A" fill-opacity="0.05"/>
+    <rect x="1781" y="1500" width="666" height="71" rx="11" fill="#0F172A" fill-opacity="0.04"/>
+    <rect x="1780" y="1502" width="668" height="72" rx="12" fill="#0F172A" fill-opacity="0.03"/>
+    <rect x="1782" y="1498" width="664" height="70" rx="10" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1"/>
+    <rect x="1796" y="1518" width="30" height="30" rx="8" fill="#E0E7FF"/>
+    <g transform="translate(1803 1525)" fill="none" stroke="#4F46E5" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M2.5 5h11M2.5 11h11"/>
+      <circle cx="6" cy="5" r="1.8" fill="#FFFFFF"/>
+      <circle cx="10.5" cy="11" r="1.8" fill="#FFFFFF"/>
+    </g>
+    <text x="1838" y="1518" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="9.5" font-weight="700" letter-spacing="0.8" fill="#4338CA">PROCESS</text>
+    <text x="1838" y="1536" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="14" font-weight="600" fill="#0F172A">MarketView as_of t</text>
+    <text x="1838" y="1552" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="12" font-weight="400" fill="#64748B">Protocol in volbt.view, implemented in volbt.data; LookAheadError after t, SplitError past the split end</text>
+  </g>
+  <g id="node_p_strat">
+    <rect x="1770" y="1839" width="424" height="56" rx="10" fill="#0F172A" fill-opacity="0.05"/>
+    <rect x="1769" y="1840" width="426" height="57" rx="11" fill="#0F172A" fill-opacity="0.04"/>
+    <rect x="1768" y="1842" width="428" height="58" rx="12" fill="#0F172A" fill-opacity="0.03"/>
+    <rect x="1770" y="1838" width="424" height="56" rx="10" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1"/>
+    <rect x="1784" y="1851" width="30" height="30" rx="8" fill="#E0E7FF"/>
+    <g transform="translate(1791 1858)" fill="none" stroke="#4F46E5" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M2.5 5h11M2.5 11h11"/>
+      <circle cx="6" cy="5" r="1.8" fill="#FFFFFF"/>
+      <circle cx="10.5" cy="11" r="1.8" fill="#FFFFFF"/>
+    </g>
+    <text x="1826" y="1858.75" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="9.5" font-weight="700" letter-spacing="0.8" fill="#4338CA">PROCESS</text>
+    <text x="1826" y="1876.75" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="14" font-weight="600" fill="#0F172A">volbt.strategies: structures, entry and exit rules</text>
+  </g>
+  <g id="node_p_risk">
+    <rect x="1730" y="1973" width="504" height="70" rx="10" fill="#0F172A" fill-opacity="0.05"/>
+    <rect x="1729" y="1974" width="506" height="71" rx="11" fill="#0F172A" fill-opacity="0.04"/>
+    <rect x="1728" y="1976" width="508" height="72" rx="12" fill="#0F172A" fill-opacity="0.03"/>
+    <rect x="1730" y="1972" width="504" height="70" rx="10" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1"/>
+    <rect x="1744" y="1992" width="30" height="30" rx="8" fill="#E0E7FF"/>
+    <g transform="translate(1751 1999)" fill="none" stroke="#4F46E5" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M2.5 5h11M2.5 11h11"/>
+      <circle cx="6" cy="5" r="1.8" fill="#FFFFFF"/>
+      <circle cx="10.5" cy="11" r="1.8" fill="#FFFFFF"/>
+    </g>
+    <text x="1786" y="1992" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="9.5" font-weight="700" letter-spacing="0.8" fill="#4338CA">PROCESS</text>
+    <text x="1786" y="2010" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="14" font-weight="600" fill="#0F172A">volbt.risk: greek and stress budgets, sizing, margin</text>
+    <text x="1786" y="2026" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="12" font-weight="400" fill="#64748B">ADR-0006 (greeks, stress grid cells), ADR-0007 (net margin requirement)</text>
+  </g>
+  <g id="node_p_engine">
+    <rect x="1892" y="2145" width="444" height="70" rx="10" fill="#0F172A" fill-opacity="0.05"/>
+    <rect x="1891" y="2146" width="446" height="71" rx="11" fill="#0F172A" fill-opacity="0.04"/>
+    <rect x="1890" y="2148" width="448" height="72" rx="12" fill="#0F172A" fill-opacity="0.03"/>
+    <rect x="1892" y="2144" width="444" height="70" rx="10" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1"/>
+    <rect x="1906" y="2164" width="30" height="30" rx="8" fill="#E0E7FF"/>
+    <g transform="translate(1913 2171)" fill="none" stroke="#4F46E5" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M2.5 5h11M2.5 11h11"/>
+      <circle cx="6" cy="5" r="1.8" fill="#FFFFFF"/>
+      <circle cx="10.5" cy="11" r="1.8" fill="#FFFFFF"/>
+    </g>
+    <text x="1948" y="2164" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="9.5" font-weight="700" letter-spacing="0.8" fill="#4338CA">PROCESS</text>
+    <text x="1948" y="2182" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="14" font-weight="600" fill="#0F172A">volbt.engine: daily loop, fills, marks, expiry, hedge</text>
+    <text x="1948" y="2198" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="12" font-weight="400" fill="#64748B">ADR-0002 to ADR-0005</text>
+  </g>
+  <g id="node_st_ledger">
+    <rect x="1938" y="2293" width="352" height="56" rx="10" fill="#0F172A" fill-opacity="0.05"/>
+    <rect x="1937" y="2294" width="354" height="57" rx="11" fill="#0F172A" fill-opacity="0.04"/>
+    <rect x="1936" y="2296" width="356" height="58" rx="12" fill="#0F172A" fill-opacity="0.03"/>
+    <rect x="1938" y="2292" width="352" height="56" rx="10" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1"/>
+    <rect x="1952" y="2305" width="30" height="30" rx="8" fill="#FEF3C7"/>
+    <g transform="translate(1959 2312)" fill="none" stroke="#D97706" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+      <ellipse cx="8" cy="4" rx="5" ry="2"/>
+      <path d="M3 4v8c0 1.1 2.24 2 5 2s5-.9 5-2V4"/>
+      <path d="M3 8c0 1.1 2.24 2 5 2s5-.9 5-2"/>
+    </g>
+    <text x="1994" y="2312.75" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="9.5" font-weight="700" letter-spacing="0.8" fill="#B45309">STORE</text>
+    <text x="1994" y="2330.75" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="14" font-weight="600" fill="#0F172A">Run ledger parquet under runs/run_id</text>
+  </g>
+  <g id="node_p_analytics">
+    <rect x="408" y="2497" width="486" height="70" rx="10" fill="#0F172A" fill-opacity="0.05"/>
+    <rect x="407" y="2498" width="488" height="71" rx="11" fill="#0F172A" fill-opacity="0.04"/>
+    <rect x="406" y="2500" width="490" height="72" rx="12" fill="#0F172A" fill-opacity="0.03"/>
+    <rect x="408" y="2496" width="486" height="70" rx="10" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1"/>
+    <rect x="422" y="2516" width="30" height="30" rx="8" fill="#E0E7FF"/>
+    <g transform="translate(429 2523)" fill="none" stroke="#4F46E5" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M2.5 5h11M2.5 11h11"/>
+      <circle cx="6" cy="5" r="1.8" fill="#FFFFFF"/>
+      <circle cx="10.5" cy="11" r="1.8" fill="#FFFFFF"/>
+    </g>
+    <text x="464" y="2516" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="9.5" font-weight="700" letter-spacing="0.8" fill="#4338CA">PROCESS</text>
+    <text x="464" y="2534" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="14" font-weight="600" fill="#0F172A">volbt.analytics: metrics, attribution, regimes, stress grid</text>
+    <text x="464" y="2550" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="12" font-weight="400" fill="#64748B">Reads ledger tables only (ADR-0010)</text>
+  </g>
+  <g id="node_p_export">
+    <rect x="339" y="2669" width="368" height="70" rx="10" fill="#0F172A" fill-opacity="0.05"/>
+    <rect x="338" y="2670" width="370" height="71" rx="11" fill="#0F172A" fill-opacity="0.04"/>
+    <rect x="337" y="2672" width="372" height="72" rx="12" fill="#0F172A" fill-opacity="0.03"/>
+    <rect x="339" y="2668" width="368" height="70" rx="10" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1"/>
+    <rect x="353" y="2688" width="30" height="30" rx="8" fill="#E0E7FF"/>
+    <g transform="translate(360 2695)" fill="none" stroke="#4F46E5" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M2.5 5h11M2.5 11h11"/>
+      <circle cx="6" cy="5" r="1.8" fill="#FFFFFF"/>
+      <circle cx="10.5" cy="11" r="1.8" fill="#FFFFFF"/>
+    </g>
+    <text x="395" y="2688" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="9.5" font-weight="700" letter-spacing="0.8" fill="#4338CA">PROCESS</text>
+    <text x="395" y="2706" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="14" font-weight="600" fill="#0F172A">volbt.export + tools/export_app_data.py</text>
+    <text x="395" y="2722" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="12" font-weight="400" fill="#64748B">JSON Schema validation before write</text>
+  </g>
+  <g id="node_a_json">
+    <rect x="315" y="2817" width="416" height="70" rx="10" fill="#0F172A" fill-opacity="0.05"/>
+    <rect x="314" y="2818" width="418" height="71" rx="11" fill="#0F172A" fill-opacity="0.04"/>
+    <rect x="313" y="2820" width="420" height="72" rx="12" fill="#0F172A" fill-opacity="0.03"/>
+    <rect x="315" y="2816" width="416" height="70" rx="10" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1"/>
+    <rect x="329" y="2836" width="30" height="30" rx="8" fill="#D1FAE5"/>
+    <g transform="translate(336 2843)" fill="none" stroke="#059669" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M8 10.5V2"/>
+      <path d="M5 5l3-3 3 3"/>
+      <path d="M2.5 10v3.5h11V10"/>
+    </g>
+    <text x="371" y="2836" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="9.5" font-weight="700" letter-spacing="0.8" fill="#047857">OUTPUT</text>
+    <text x="371" y="2854" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="14" font-weight="600" fill="#0F172A">app/public/data JSON: manifest + datasets</text>
+    <text x="371" y="2870" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="12" font-weight="400" fill="#64748B">Envelope: schema_version, generated_at, source_commit</text>
+  </g>
+  <g id="node_ui_app">
+    <rect x="324" y="3035" width="398" height="70" rx="10" fill="#0F172A" fill-opacity="0.05"/>
+    <rect x="323" y="3036" width="400" height="71" rx="11" fill="#0F172A" fill-opacity="0.04"/>
+    <rect x="322" y="3038" width="402" height="72" rx="12" fill="#0F172A" fill-opacity="0.03"/>
+    <rect x="324" y="3034" width="398" height="70" rx="10" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1"/>
+    <rect x="338" y="3054" width="30" height="30" rx="8" fill="#FCE7F3"/>
+    <g transform="translate(345 3061)" fill="none" stroke="#DB2777" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+      <rect x="1.5" y="2.5" width="13" height="11" rx="2"/>
+      <path d="M1.5 6h13"/>
+      <circle cx="4" cy="4.25" r="0.5"/>
+    </g>
+    <text x="380" y="3054" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="9.5" font-weight="700" letter-spacing="0.8" fill="#BE185D">UI</text>
+    <text x="380" y="3072" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="14" font-weight="600" fill="#0F172A">Vite + React 19 + three.js viewer</text>
+    <text x="380" y="3088" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="12" font-weight="400" fill="#64748B">Parses, validates and renders; never computes a result</text>
+  </g>
+  <rect x="2022.5" y="238" width="91" height="20" rx="10" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1"/>
+  <text x="2068" y="252.14" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="11.5" font-weight="500" text-anchor="middle" fill="#475569">read in place</text>
+  <rect x="2074" y="262" width="172" height="20" rx="10" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1"/>
+  <text x="2160" y="276.14" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="11.5" font-weight="500" text-anchor="middle" fill="#475569">private mirror, not the clone</text>
+  <rect x="2003" y="528" width="210" height="20" rx="10" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1"/>
+  <text x="2108" y="542.14" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="11.5" font-weight="500" text-anchor="middle" fill="#475569">DoltHub SPY rows, exported once</text>
+  <rect x="1887" y="504" width="46" height="20" rx="10" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1"/>
+  <text x="1910" y="518.14" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="11.5" font-weight="500" text-anchor="middle" fill="#475569">fetch</text>
+  <rect x="1931" y="528" width="46" height="20" rx="10" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1"/>
+  <text x="1954" y="542.14" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="11.5" font-weight="500" text-anchor="middle" fill="#475569">fetch</text>
+  <rect x="1975" y="504" width="46" height="20" rx="10" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1"/>
+  <text x="1998" y="518.14" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="11.5" font-weight="500" text-anchor="middle" fill="#475569">fetch</text>
+  <rect x="2097" y="700" width="126" height="20" rx="10" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1"/>
+  <text x="2160" y="714.14" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="11.5" font-weight="500" text-anchor="middle" fill="#475569">OptionsDX parquet</text>
+  <rect x="1983" y="676" width="170" height="20" rx="10" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1"/>
+  <text x="2068" y="690.14" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="11.5" font-weight="500" text-anchor="middle" fill="#475569">downloads, DoltHub export</text>
+  <rect x="2001.5" y="848" width="225" height="20" rx="10" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1"/>
+  <text x="2114" y="862.14" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="11.5" font-weight="500" text-anchor="middle" fill="#475569">flagged long quotes + reference data</text>
+  <rect x="353" y="1090" width="182" height="20" rx="10" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1"/>
+  <text x="444" y="1104.14" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="11.5" font-weight="500" text-anchor="middle" fill="#475569">mids, SPY close, r, dividends</text>
+  <rect x="297" y="1066" width="98" height="20" rx="10" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1"/>
+  <text x="346" y="1080.14" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="11.5" font-weight="500" text-anchor="middle" fill="#475569">pure functions</text>
+  <rect x="330.5" y="1238" width="129" height="20" rx="10" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1"/>
+  <text x="395" y="1252.14" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="11.5" font-weight="500" text-anchor="middle" fill="#475569">IV, forwards, smiles</text>
+  <rect x="2091.5" y="1396" width="103" height="20" rx="10" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1"/>
+  <text x="2143" y="1410.14" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="11.5" font-weight="500" text-anchor="middle" fill="#475569">chain slice for t</text>
+  <rect x="2042.5" y="1372" width="85" height="20" rx="10" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1"/>
+  <text x="2085" y="1386.14" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="11.5" font-weight="500" text-anchor="middle" fill="#475569">surface for t</text>
+  <rect x="1190.5" y="1594" width="117" height="20" rx="10" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1"/>
+  <text x="1249" y="1608.14" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="11.5" font-weight="500" text-anchor="middle" fill="#475569">data dated up to t</text>
+  <rect x="1894.5" y="1762" width="113" height="20" rx="10" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1"/>
+  <text x="1951" y="1776.14" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="11.5" font-weight="500" text-anchor="middle" fill="#475569">signal values at t</text>
+  <rect x="1970.5" y="1786" width="85" height="20" rx="10" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1"/>
+  <text x="2013" y="1800.14" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="11.5" font-weight="500" text-anchor="middle" fill="#475569">as_of t view</text>
+  <rect x="1937.5" y="1920" width="89" height="20" rx="10" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1"/>
+  <text x="1982" y="1934.14" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="11.5" font-weight="500" text-anchor="middle" fill="#475569">order intents</text>
+  <rect x="1992" y="2068" width="158" height="20" rx="10" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1"/>
+  <text x="2071" y="2082.14" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="11.5" font-weight="500" text-anchor="middle" fill="#475569">scaled or rejected orders</text>
+  <rect x="2077.5" y="2092" width="159" height="20" rx="10" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1"/>
+  <text x="2157" y="2106.14" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="11.5" font-weight="500" text-anchor="middle" fill="#475569">quotes for fills and marks</text>
+  <rect x="2041.5" y="2240" width="145" height="20" rx="10" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1"/>
+  <text x="2114" y="2254.14" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="11.5" font-weight="500" text-anchor="middle" fill="#475569">orders, fills, marks, pnl</text>
+  <rect x="605.5" y="2394" width="91" height="20" rx="10" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1"/>
+  <text x="651" y="2408.14" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="11.5" font-weight="500" text-anchor="middle" fill="#475569">ledger tables</text>
+  <rect x="503" y="2616" width="98" height="20" rx="10" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1"/>
+  <text x="552" y="2630.14" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="11.5" font-weight="500" text-anchor="middle" fill="#475569">results frames</text>
+  <rect x="443" y="2592" width="102" height="20" rx="10" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1"/>
+  <text x="494" y="2606.14" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="11.5" font-weight="500" text-anchor="middle" fill="#475569">surface frames</text>
+  <rect x="467.5" y="2764" width="111" height="20" rx="10" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1"/>
+  <text x="523" y="2778.14" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="11.5" font-weight="500" text-anchor="middle" fill="#475569">versioned JSON</text>
+  <rect x="477" y="2932" width="92" height="20" rx="10" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1"/>
+  <text x="523" y="2946.14" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="11.5" font-weight="500" text-anchor="middle" fill="#475569">fetch + parse</text>
+  <g id="legend">
+    <rect x="32" y="3156" width="20" height="20" rx="6" fill="#E0F2FE"/>
+    <g transform="translate(34 3158)" fill="none" stroke="#0284C7" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M4 1.5h5.5L13 5v9.5H4z"/>
+      <path d="M9.5 1.5V5H13"/>
+      <path d="M6.5 8.5h4M6.5 11.5h4"/>
+    </g>
+    <text x="60" y="3170" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="11.5" font-weight="400" fill="#64748B">Source</text>
+    <rect x="120.08" y="3156" width="20" height="20" rx="6" fill="#FEF3C7"/>
+    <g transform="translate(122.08 3158)" fill="none" stroke="#D97706" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+      <ellipse cx="8" cy="4" rx="5" ry="2"/>
+      <path d="M3 4v8c0 1.1 2.24 2 5 2s5-.9 5-2V4"/>
+      <path d="M3 8c0 1.1 2.24 2 5 2s5-.9 5-2"/>
+    </g>
+    <text x="148.08" y="3170" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="11.5" font-weight="400" fill="#64748B">Store</text>
+    <rect x="198.32" y="3156" width="20" height="20" rx="6" fill="#E0E7FF"/>
+    <g transform="translate(200.32 3158)" fill="none" stroke="#4F46E5" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M2.5 5h11M2.5 11h11"/>
+      <circle cx="6" cy="5" r="1.8" fill="#FFFFFF"/>
+      <circle cx="10.5" cy="11" r="1.8" fill="#FFFFFF"/>
+    </g>
+    <text x="226.32" y="3170" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="11.5" font-weight="400" fill="#64748B">Process</text>
+    <rect x="292.01" y="3156" width="20" height="20" rx="6" fill="#D1FAE5"/>
+    <g transform="translate(294.01 3158)" fill="none" stroke="#059669" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M8 10.5V2"/>
+      <path d="M5 5l3-3 3 3"/>
+      <path d="M2.5 10v3.5h11V10"/>
+    </g>
+    <text x="320.01" y="3170" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="11.5" font-weight="400" fill="#64748B">Output</text>
+    <rect x="377.99" y="3156" width="20" height="20" rx="6" fill="#F1F5F9"/>
+    <g transform="translate(379.99 3158)" fill="none" stroke="#475569" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="8" cy="8" r="6"/>
+      <ellipse cx="8" cy="8" rx="2.6" ry="6"/>
+      <path d="M2 8h12"/>
+    </g>
+    <text x="405.99" y="3170" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="11.5" font-weight="400" fill="#64748B">External</text>
+    <rect x="472.39" y="3156" width="20" height="20" rx="6" fill="#FCE7F3"/>
+    <g transform="translate(474.39 3158)" fill="none" stroke="#DB2777" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+      <rect x="1.5" y="2.5" width="13" height="11" rx="2"/>
+      <path d="M1.5 6h13"/>
+      <circle cx="4" cy="4.25" r="0.5"/>
+    </g>
+    <text x="500.39" y="3170" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="11.5" font-weight="400" fill="#64748B">UI</text>
+  </g>
+</svg>

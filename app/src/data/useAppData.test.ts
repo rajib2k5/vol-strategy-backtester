@@ -1,11 +1,16 @@
 import { describe, expect, it, vi } from 'vitest'
 import { act, renderHook, waitFor } from '@testing-library/react'
 import { useAppData } from './useAppData'
-import { parseIllustrativeSurface, parseManifest } from '../lib/contract'
+import { parseDataQuality, parseIllustrativeSurface, parseManifest } from '../lib/contract'
 import manifestFixture from '../test/fixtures/manifest.json'
 import surfaceFixture from '../test/fixtures/illustrative_surface.json'
+import dataQualityFixture from '../test/fixtures/data_quality.json'
 
-const DATA = { manifest: parseManifest(manifestFixture), surface: parseIllustrativeSurface(surfaceFixture) }
+const DATA = {
+  manifest: parseManifest(manifestFixture),
+  surface: parseIllustrativeSurface(surfaceFixture),
+  dataQuality: parseDataQuality(dataQualityFixture),
+}
 
 describe('useAppData', () => {
   it('starts as loading, then becomes ready with the loaded data', async () => {

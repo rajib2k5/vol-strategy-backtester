@@ -77,10 +77,8 @@ It reports:
   by day. The free 2024 data has no SPY snapshots from 2024-07-30 to 2024-08-09, so Aug-2024 is
   reported as `NO_DATA`, alongside the shock-grid cells closest to what happened then.
 
-> "[Draft quote for the author to rewrite in their own words.] Papers told me the volatility risk
-> premium exists, but not how much of it a real account keeps after the spread, the margin call and
-> the crash."
-> — Rajib Bahar, author
+> **Design statement.** Papers show that the volatility risk premium exists. This project measures how
+> much of it a real account keeps after the spread, the margin call and the crash.
 
 **How it works.** Option chains come from a local Parquet/DuckDB store built from the OptionsDX SPY
 end-of-day dataset (via Kaggle, 2010–2023). Every quote is quality-flagged before any strategy sees
@@ -266,7 +264,7 @@ behind it.
 | 0009 | Data sources, trading calendar, quality flags, surface mode |
 | 0010 | Sample splits, trial counting, regimes, stress windows and grid |
 
-## Open questions for the author (to settle at the milestone-0 checkpoint)
+## Open questions for the author (defaults taken 2026-10-29; the owner can override)
 
 1. Is the primary audience you (an interview-ready explanation) or other learners cloning the repo?
    This changes how much the README teaches versus reports.
@@ -275,3 +273,11 @@ behind it.
 3. Do you want the author quote kept in first person, or replaced with a plain design statement?
 4. Is "positive excess return over T-bills after costs, with DSR reported" the right bar for
    "pays", or do you want a stricter one (e.g. DSR above 0.95)?
+
+Defaults taken on 2026-10-29, recorded in `LEARNING_LOG.md` ("Defaults taken"):
+1. The author is the primary audience. The README reports, and the docs teach.
+2. The short straddle is the headline baseline. The signal-gated strangle is the challenger beside it.
+3. The quote is replaced with a plain design statement.
+4. Two tiers: "pays" is a positive after-cost excess return over T-bills; "pays beyond luck" also
+   needs a headline DSR of at least 0.95.
+

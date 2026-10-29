@@ -1,0 +1,269 @@
+---
+title: "vol-strategy-backtester data model: vendor and reference tables"
+---
+erDiagram
+    raw_optionsdx_eod {
+        BIGINT QUOTE_UNIXTIME
+        VARCHAR QUOTE_READTIME
+        VARCHAR QUOTE_DATE PK
+        DOUBLE QUOTE_TIME_HOURS
+        DOUBLE UNDERLYING_LAST
+        VARCHAR EXPIRE_DATE PK
+        BIGINT EXPIRE_UNIX
+        DOUBLE DTE
+        DOUBLE C_DELTA "nullable"
+        DOUBLE C_GAMMA "nullable"
+        DOUBLE C_VEGA "nullable"
+        DOUBLE C_THETA "nullable"
+        DOUBLE C_RHO "nullable"
+        DOUBLE C_IV "nullable"
+        DOUBLE C_VOLUME "nullable"
+        DOUBLE C_LAST "nullable"
+        VARCHAR C_SIZE
+        DOUBLE C_BID "nullable"
+        DOUBLE C_ASK "nullable"
+        DOUBLE STRIKE PK
+        DOUBLE P_BID "nullable"
+        DOUBLE P_ASK "nullable"
+        VARCHAR P_SIZE
+        DOUBLE P_LAST "nullable"
+        DOUBLE P_DELTA "nullable"
+        DOUBLE P_GAMMA "nullable"
+        DOUBLE P_VEGA "nullable"
+        DOUBLE P_THETA "nullable"
+        DOUBLE P_RHO "nullable"
+        DOUBLE P_IV "nullable"
+        DOUBLE P_VOLUME "nullable"
+        DOUBLE STRIKE_DISTANCE
+        DOUBLE STRIKE_DISTANCE_PCT
+    }
+    raw_dolthub_option_chain {
+        DATE date PK
+        VARCHAR(64) act_symbol PK
+        DATE expiration PK
+        DECIMAL_7_2 strike PK
+        VARCHAR(64) call_put PK
+        DECIMAL_7_2 bid "nullable"
+        DECIMAL_7_2 ask "nullable"
+        DECIMAL_5_4 vol "nullable"
+        DECIMAL_5_4 delta "nullable"
+        DECIMAL_5_4 gamma "nullable"
+        DECIMAL_5_4 theta "nullable"
+        DECIMAL_5_4 vega "nullable"
+        DECIMAL_5_4 rho "nullable"
+    }
+    spy_bars {
+        DATE date PK
+        DOUBLE open
+        DOUBLE high
+        DOUBLE low
+        DOUBLE close
+        DOUBLE adj_close
+        BIGINT volume
+    }
+    rates {
+        DATE date PK
+        DOUBLE dgs3mo_pct
+        DOUBLE r_cc
+    }
+    dividends {
+        DATE ex_date PK
+        DOUBLE amount
+    }
+    vix {
+        DATE date PK
+        DOUBLE open
+        DOUBLE high
+        DOUBLE low
+        DOUBLE close
+    }
+    vix3m {
+        DATE date PK
+        DOUBLE open
+        DOUBLE high
+        DOUBLE low
+        DOUBLE close
+    }
+    calendar_actions {
+        VARCHAR source PK
+        DATE vendor_date PK
+        DOUBLE underlying_last "nullable"
+        BIGINT rows
+        VARCHAR action
+        DATE quote_date FK "nullable"
+        INTEGER flags
+        DATE prev_session "nullable"
+        DOUBLE prev_close "nullable"
+    }
+    option_quotes {
+        DATE quote_date PK, FK
+        VARCHAR osi_symbol PK
+        DATE expiry
+        DOUBLE strike
+        VARCHAR call_put
+        DOUBLE bid "nullable"
+        DOUBLE ask "nullable"
+        DOUBLE last "nullable"
+        DOUBLE volume "nullable"
+        BIGINT bid_size "nullable"
+        BIGINT ask_size "nullable"
+        DOUBLE vendor_iv "nullable"
+        DOUBLE vendor_delta "nullable"
+        DOUBLE vendor_gamma "nullable"
+        DOUBLE vendor_vega "nullable"
+        DOUBLE vendor_theta "nullable"
+        DOUBLE vendor_rho "nullable"
+        DOUBLE underlying_last "nullable"
+        DOUBLE spy_close
+        DATE vendor_quote_date
+        INTEGER quality_flags
+        VARCHAR source PK
+        VARCHAR year
+    }
+    chain_mask {
+        VARCHAR mask PK
+        DATE quote_date PK, FK
+        DATE expiry PK
+        BIGINT strike_milli PK
+        DATE listed_on
+    }
+    quality_flag_counts {
+        VARCHAR source PK
+        INTEGER year PK
+        BIGINT rows
+        BIGINT BID_NULL
+        BIGINT ASK_NULL
+        BIGINT ZERO_BID
+        BIGINT CROSSED
+        BIGINT LOCKED
+        BIGINT WIDE
+        BIGINT STALE
+        BIGINT NON_SESSION_DATE
+        BIGINT RELABELLED
+        BIGINT VOLUME_UNRELIABLE
+        BIGINT UNDERLYING_MISMATCH
+        BIGINT VENDOR_IV_INVALID
+        BIGINT EXPIRY_DAY
+    }
+    quality_calendar {
+        VARCHAR source PK
+        VARCHAR action PK
+        BIGINT dates
+        BIGINT rows
+    }
+    quality_underlying {
+        DATE quote_date PK, FK
+        DOUBLE underlying_last
+        DOUBLE spy_close
+        BIGINT diff_cents
+        DOUBLE diff_bp
+    }
+    quality_rows_per_date {
+        VARCHAR source PK
+        DATE quote_date PK, FK
+        BIGINT rows
+    }
+    quality_non_session_dates {
+        VARCHAR source PK
+        DATE vendor_date PK
+        BIGINT rows
+        DOUBLE underlying_last "nullable"
+        DATE prev_session FK "nullable"
+        DOUBLE prev_close "nullable"
+        BIGINT underlying_minus_prev_close_cents "nullable"
+        BOOLEAN prev_session_has_snapshot
+    }
+    cross_vendor_overlap {
+        DATE quote_date PK, FK
+        DOUBLE spy_close
+        DOUBLE spy_open
+        BIGINT common_points
+        DOUBLE iv30_dolthub "nullable"
+        DOUBLE iv30_optionsdx "nullable"
+        DOUBLE spot_dolthub
+        DOUBLE spot_optionsdx
+        DATE parity_expiry
+        DOUBLE iv30_diff_pts "nullable"
+        DOUBLE spot_dolthub_vs_close_bp
+        DOUBLE spot_dolthub_vs_open_bp
+        DOUBLE spot_optionsdx_vs_close_bp
+        DOUBLE spot_optionsdx_vs_open_bp
+    }
+    cross_vendor_previous_session {
+        DATE vendor_date PK
+        VARCHAR weekday
+        DATE prev_session FK
+        DATE next_session
+        DOUBLE close_prev
+        DOUBLE close_next
+        BIGINT common_points
+        DOUBLE iv30_dolthub "nullable"
+        DOUBLE spot_dolthub "nullable"
+        DOUBLE iv30_optionsdx_prev "nullable"
+        DOUBLE spot_optionsdx_prev "nullable"
+        DOUBLE iv30_optionsdx_next "nullable"
+        DOUBLE spot_vs_close_prev_bp "nullable"
+        DOUBLE iv30_diff_prev_pts "nullable"
+        DOUBLE spot_vs_close_next_bp "nullable"
+        DOUBLE iv30_diff_next_pts "nullable"
+    }
+    expiry_forwards["expiry#95;forwards (planned, M2)"] {
+        VARCHAR source PK
+        DATE quote_date PK
+        DATE expiry PK
+        DOUBLE tau_years
+        DOUBLE r_cc
+        DOUBLE discount_factor
+        DOUBLE forward
+        DOUBLE forward_raw "nullable"
+        DOUBLE k_star
+        INTEGER n_pairs_used
+        INTEGER n_deamericanised
+        DOUBLE fk_slope_per_strike "nullable"
+        DOUBLE forward_mad_rel
+        VARCHAR method
+        INTEGER flags
+    }
+    quote_iv["quote#95;iv (planned, M2)"] {
+        VARCHAR source PK, FK
+        DATE quote_date PK, FK
+        VARCHAR osi_symbol PK, FK
+        DATE expiry FK
+        DOUBLE log_moneyness
+        BOOLEAN is_otm
+        DOUBLE iv "nullable"
+        DOUBLE eep "nullable"
+        INTEGER iv_flags
+        VARCHAR solver "nullable"
+        INTEGER iterations "nullable"
+    }
+    smile_fits["smile#95;fits (planned, M2)"] {
+        VARCHAR source PK, FK
+        DATE quote_date PK, FK
+        DATE expiry PK, FK
+        DOUBLE[] k_nodes
+        DOUBLE[] total_var_nodes
+        INTEGER n_points
+        DOUBLE atm_iv
+        INTEGER fit_flags
+    }
+    raw_optionsdx_eod ||--o{ option_quotes : "reshaped#58; one wide row to call and put rows"
+    raw_dolthub_option_chain ||--|| option_quotes : "cleaned"
+    spy_bars ||--o{ option_quotes : "session of"
+    spy_bars |o--o{ calendar_actions : "filed under"
+    spy_bars ||--o{ chain_mask : "listed on"
+    spy_bars ||--|| quality_underlying : "compared with the close of"
+    spy_bars ||--o{ quality_rows_per_date : "counted on"
+    spy_bars |o--o{ quality_non_session_dates : "compared with the close of"
+    spy_bars ||--|| cross_vendor_overlap : "compared on"
+    spy_bars ||--o{ cross_vendor_previous_session : "tested against"
+    option_quotes ||--o{ quality_flag_counts : "counts the flags of"
+    calendar_actions ||--o{ quality_calendar : "counts the actions of"
+    option_quotes ||--|| quote_iv : "implied vol of"
+    expiry_forwards ||--o{ quote_iv : "forward used by"
+    expiry_forwards ||--|| smile_fits : "smile for"
+    rates ||--o{ expiry_forwards : "discounting"
+    option_quotes ||--o{ quote_iv : ""
+    option_quotes ||--o{ quote_iv : ""
+    expiry_forwards ||--o{ smile_fits : ""
+    expiry_forwards ||--o{ smile_fits : ""

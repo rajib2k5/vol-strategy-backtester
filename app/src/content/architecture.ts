@@ -111,8 +111,8 @@ export interface DayStep extends SeqStep {
 }
 
 /**
- * One trading session t, top to bottom, in the order of ADR-0001 (docs/architecture/
- * engine-daily-loop.sequence.mmd). Fills of yesterday's orders come before marking, so every new
+ * One trading session t, top to bottom, in the order of ADR-0001 (docs/architecture/out/
+ * engine_daily_loop_sequence.mmd). Fills of yesterday's orders come before marking, so every new
  * lot is marked on the day it is filled; today's orders fill tomorrow.
  */
 export const STEPS: DayStep[] = [
@@ -155,7 +155,7 @@ export const STEPS: DayStep[] = [
 ]
 
 /**
- * The research process from hypothesis to publication (docs/architecture/process.mmd, split
+ * The research process from hypothesis to publication (docs/architecture/out/process.mmd, split
  * dates from ADR-0010). Decision nodes are the gates and reviews; a failed gate or a refuted
  * review loops back, and nothing else branches.
  */

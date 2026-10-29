@@ -19,6 +19,21 @@ Knock-on changes from other ADRs: the JSON `run` block gains `cap_mode` (ADR-000
 
 Round 2 (`docs/validation/00-round2-ledger.md`, claim 13): the table is acyclic and keeps `strategies` and `signals` away from `data`, but the text above and elsewhere said `volbt.view`, `volbt.build` and the AST import test exist. In M0 only `config`, `contract` and `illustrative` exist; the rest is specified here and implemented and enforced from M1. Design gaps closed: the AST rule also bans `sys.modules`, string `getattr` and private-attribute access in `strategies` and `signals`, and the view keeps no public store reference (test 1, test 2); test 6 perturbs FRED rates and dividends too; the engine's allow-list includes `config`. `metrics` field names change with ADR-0010: `n_trials` is N_raw and N_eff is `n_trials_eff`.
 
+## Revised after M1 review (2026-10-29)
+
+The M1 adversarial review (`docs/validation/01-ledger.md`, R1 and R3) refuted two claims about the look-ahead guard. Each was re-run before the fix.
+
+1. **The view leaked the future.** `spy_bars()` served `adj_close`, whose level on day *t* is scaled by every dividend paid after *t* (at 2015-01-02, adj/close = 0.8239668 against 0.8239670 for the product of the 47 later dividend factors). And `check_not_after` trusted the argument's own `>`: a `date` subclass whose `__gt__` returns False got the next day's chain. **Changed:** the view serves no adjusted close and serves dividends only up to `as_of`; the guard accepts only an exact `datetime.date` (no subclass, no `datetime`, no `Timestamp`) and rebuilds it before the query; the view's private reader runs only fixed queries bounded by its own `as_of`.
+2. **The import test missed 13 back doors**, including `exec`, `eval`, `self._read` in a plain function, `inspect`, `gc`, `pickle` and `builtins.__import__`. **Changed:** the rule in test 1 below. What it still cannot see is listed there too.
+
+### Round 2 (2026-10-29)
+
+The review of those fixes (`docs/validation/01-ledger.md`, round 2) refuted both again. Each was re-run before the fix.
+
+1. **The bound depended on names a strategy can rebind.** `volbt.view` is the one `volbt` module a strategy may import, and the store's guard called `volbt.view.check_split`, which looked up `exact_date` and `SPLITS` in `volbt.view` at call time. `volbt.view.exact_date = <a day later>`, done at a strategy's import, gave a view built for Tuesday an `as_of` of Wednesday, with Wednesday's bars, dividends and VIX; `SPLITS` was a plain dict. **Changed:** the store checks every date with its own code (`plain_date`, `check_split`, `check_not_after` in `volbt.data.store`) and its own copy of the split table, and calls nothing in `volbt.view`; a test requires the two tables to be equal. `volbt.view.SPLITS` is a read-only mapping of tuples. Tests rebind `volbt.view`'s names after the store is imported and, in a fresh interpreter, before it is, and require the same bounds.
+2. **The ban list kept leaking.** 20 of the reviewer's 23 new cases were missed: `os.sys.modules`, `from os import sys`, `typing.sys.modules`, `S = sys; S.modules`, `type(__loader__)(...).load_module()`, `typing.get_type_hints` on a string annotation, `timeit`, `subprocess`, `ctypes`, writes to `volbt.view`'s names, and the control cases this ADR had listed as open. **Changed:** in `strategies` and `signals` the import rule is an allow-list (test 1), with bans on attribute names, file readers, writes through an imported name and quoted annotations; and in every module a computed `getattr` name is refused. All 23 cases are tests.
+3. **The threat model was not stated.** It is now, in test 1: the AST rule is a tripwire, not a sandbox.
+
 ## Context
 
 We backtest SPY option strategies on end-of-day (EOD) chain snapshots. There is one snapshot a day, and no intraday data.
@@ -33,14 +48,14 @@ The P&L is **path-dependent**. Each position's state decides what happens next:
 - whether the margin requirement now exceeds NAV (net asset value).
 
 The data volumes are small enough for one machine. Measured on 2026-10-28 from the local copy of Kaggle `dudesurfin/spy-options-eod-volatility-surface-2010-2023`:
-- 14 yearly parquet files, 596,256,111 bytes (569 MiB). The brief's "~509 MB" is wrong.
+- 14 yearly parquet files, about 569 MiB. The brief's "~509 MB" is wrong.
 - 9,468,584 rows over 3,508 snapshot dates, from 2010-01-04 to 2023-12-29.
 - Rows per date grew from about 1,052 (2010) to 5,070 (2021).
 - Nine full-scan DuckDB aggregate queries over all 14 files ran in 0.21–0.24 s wall-clock, including `uv run` start-up, warm cache (re-measured by the verifier on 2026-10-28; the first draft's 1.3 s came from a script that was not kept).
 
 ## Decision
 
-1. **The engine is event-driven with a daily step.** It loops over exchange sessions. Each session runs a fixed sequence of steps, in this order (see `docs/architecture/engine-daily-loop.sequence.mmd`):
+1. **The engine is event-driven with a daily step.** It loops over exchange sessions. Each session runs a fixed sequence of steps, in this order (see `docs/architecture/out/engine_daily_loop_sequence.mmd`):
    1. **Load the snapshot for session *t*:** the cleaned chain, forwards and smiles, the SPY close, the rate and that day's dividends.
    2. **Start-of-day events:** first the early assignments decided at *t−1*, then dividends with ex-date *t*, then cash interest from *t−1* to *t*.
       - Any pending order with a leg on a lot that these events removed is then cancelled with `cancel_reason = LOT_REMOVED`. A real trader learns of an assignment before the market opens; the order would otherwise fill against a contract no longer held.
@@ -69,7 +84,7 @@ The data volumes are small enough for one machine. Measured on 2026-10-28 from t
      - `volbt.data` writes the cleaned tables.
      - `volbt.build` writes the derived ones. It reads `option_quotes` and reference data through `data`, calls the pure functions in `pricing`, and writes through `data`.
      - `pricing` itself does no I/O.
-   - **Each run writes its own ledger tables** to parquet under `runs/<run_id>/`. The table list is in `docs/architecture/data-model.erd.yaml`.
+   - **Each run writes its own ledger tables** to parquet under `runs/<run_id>/`. The table list is in `docs/architecture/specs/data_model_ledger_erd.yaml`.
    - DuckDB is a library, not a server. It reads parquet directly and runs SQL with predicate pushdown.
 
 4. **Module boundaries inside `volbt`.** Each module may import **exactly** the `volbt` modules in its "May import" column, and no others. The column is an allow-list, not "anything above it". The graph is acyclic.
@@ -173,9 +188,28 @@ The data volumes are small enough for one machine. Measured on 2026-10-28 from t
    - a module imports a `volbt` module that is not in that module's "May import" set;
    - a module breaks its third-party limit: `pricing` imports anything but numpy, scipy or stdlib, or `config`, `contract` or `view` import any third-party package;
    - a file under `src/volbt/` belongs to no row of the table;
-   - `importlib` or `__import__` is used anywhere in `volbt`;
-   - `sys.modules` is referenced, `getattr`, `setattr`, `vars` or `globals` is called with a string name, or a private attribute (a name starting with `_`) is read on an imported object, anywhere in `strategies` or `signals`. Each is a way round the import allow-list;
+   - anywhere in `volbt`: `importlib` is imported, `__import__` appears as a name, an attribute or a string (`builtins.__import__`, `getattr(b, "__import__")`), or `sys.modules` is referenced (under any alias of `sys`);
+   - anywhere in `volbt`, also: `getattr`, `setattr` or `delattr` with an attribute name that is not a string literal (`getattr(b, "__imp" + "ort__")` builds the name the string test looks for);
+   - in `strategies` or `signals`, an **allow-list** (round 2):
+     - **imports:** only the row's `volbt` modules, `__future__`, the stdlib modules `math`, `statistics`, `dataclasses`, `enum`, `collections`, `itertools`, `functools`, `datetime` and `abc`, and `numpy`. `typing` only as `from typing import <name>` for a fixed safe set (no `get_type_hints`, no `ForwardRef`; `import typing` reaches `typing.sys`). No star import. No `pandas`: this ADR does not need it there, since the view hands over DataFrames whose methods need no import, and pandas brings `read_parquet` with it. No `scipy` either: if M4's GARCH fit needs `scipy.optimize` in `signals`, adding it is an ADR change;
+     - **names:** `getattr`, `setattr`, `delattr`, `vars`, `globals`, `locals`, `exec`, `eval`, `compile`, `__builtins__`, `__loader__` or `__spec__` is named at all, called or not;
+     - **attribute names**, on any object, a method's own first parameter included: `sys`, `modules`, `__loader__`, `__spec__`, `__builtins__`, `__globals__`, `__dict__`, `__class__`, `__subclasses__`, `f_back`, `f_globals`, `f_locals`, `load_module`; the modules that allowed modules carry as attributes (`dataclasses.inspect`, `dataclasses.types`, `enum.bltns`, which is `builtins`); and the banned names above as attributes (`enum.bltns.exec`);
+     - **file reads:** `open`, `read_parquet`, `read_csv` or `connect`, as a name or an attribute, and numpy's readers (`load`, `loadtxt`, `genfromtxt`, `fromfile`, `fromregex`, `memmap`, `read_array`, `open_memmap`, `ctypeslib`) on an imported name or imported by name;
+     - **writes through an imported name:** an assignment, augmented assignment or `del` of an attribute or item of a name an import bound, or of a name assigned one (`m = vv`): `vv.exact_date = ...`, `vv.SPLITS[...] = ...`, `datetime.date = ...`;
+     - **a quoted annotation:** `typing.get_type_hints` and `functools.singledispatch` evaluate it as code the checker never sees (`from __future__ import annotations` keeps every annotation an expression it reads);
+     - **private attributes:** a name starting with `_` is read, except on a method's first parameter inside that method, and only if the method never rebinds that name, has no decorator but `property`, `classmethod`, `abstractmethod`, `cached_property` or a property's setter/getter/deleter (`sm = staticmethod; @sm` gets no exemption), and the name is not a dunder (`self.__closure__` is reflection, not state). A class pattern (`case object(_read=r)`) counts as a read;
+     - **a method reached through its class:** a method that uses the exemption, named through a class of the module or an alias of one (`S.peek(view)`, `M.r(view)`, `T.p.fget(view)` for a subclass's property): called that way its first parameter can be any object, the view included. A classmethod is exempt from this one, since it binds its class whatever the route;
    - the table itself has a cycle (checked with `graphlib`).
+
+   **The threat model.** The AST rule catches accidental and casual misuse in our own strategy and signal code: an import of the store, a file read, a reflection helper, a monkeypatch. It is **not a sandbox**: deliberate subversion of Python cannot be stopped by reading the source, because any object can reach almost any other through attribute chains the checker does not list. Strategies are our own code, reviewed with each milestone, so the rule's job is to make a leak loud, not impossible. The behavioural guard is the perturb-the-future test (test 6): change only the data after *t*₀ and require every decision up to *t*₀ to stay bit-identical. Signals and strategies get it in M4. The run-time guard holds whatever the AST rule misses for reads through the view: the view's private reader runs only fixed queries bounded by its own `as_of`, the store's checks call nothing a strategy can rebind, and the split table cannot be changed in place.
+
+   **Known residual paths** (each checked on 2026-10-29; none is caught by the rule):
+   - a method reached through an expression, not a class name: `type(obj).peek(view)`, or a class taken from a list or returned by a function;
+   - a module reached through a call or a container and then written: `[vv][0].exact_date = ...`, a function returning the module. Writes to `volbt.view` move no bound any more (round 2, point 1), so this matters only for other modules;
+   - attributes of allowed modules that the lists do not name: numpy's lazily loaded submodules (`np.f2py`, `np.testing`) and anything they carry; `dataclasses.copy` or `dataclasses.re`;
+   - rebinding a standard-library name before `volbt.data.store` is first imported (`datetime.date = ...` in a strategy imported earlier): written that way it is a write through an imported name, which the rule bans, but through a route above it is not caught, and the store would take the rebound name;
+   - rebinding `volbt.view.LookAheadError` or `SplitError` before the store is first imported: the store raises the rebound class. Nothing is read, but an engine that catches `LookAheadError` would see another exception;
+   - reflection at run time, if the rule is bypassed: the Store object sits in the view reader's closure and in every store function's `__globals__`; `sys.modules`, `__loader__` and `typing.get_type_hints` reach it from anywhere in the process (the reviewer's `runtime_bypass.py` shows each).
 
    **Required mutants.** Each of these, on its own, must make the test fail:
    - `import volbt.data` in `strategies` (the `MarketView` bypass);
@@ -189,6 +223,8 @@ The data volumes are small enough for one machine. Measured on 2026-10-28 from t
    - On a fixture with sessions 2023-03-14 and 2023-03-15, a strategy holding a `MarketView(as_of=2023-03-14)` that requests the 2023-03-15 chain raises `LookAheadError`.
    - For a run tagged `development`, creating a view with `as_of = 2020-01-02` raises `SplitError`.
    - The concrete `MarketView` keeps no public reference to the store: a walk over its public attributes reaches no object from `volbt.data`.
+   - Added after the M1 review: changing only data dated after `as_of` (bars, dividends, rates, VIX, quotes, and the adjusted close of every date) changes nothing the view serves. A date passed to the view must be a plain `datetime.date`; a subclass, a `datetime` or a `Timestamp` raises `TypeError`.
+   - Added in round 2: rebinding `volbt.view.exact_date` (to add a day), `check_split`, `check_not_after` or `SPLITS`, after the store is imported or, in a fresh interpreter, before, moves no bound: the view keeps the engine's `as_of`, serves nothing later, and a development view at 2023 still raises `SplitError`. `SPLITS[name] = ...` raises `TypeError`, in `volbt.view` and in the store.
 3. **Determinism.** Run the M3 fixture backtest twice. The SHA-256 of every ledger parquet and of every JSON file, with `generated_at` removed, must be identical.
    - Then change one seed: the bootstrap output must change and the ledger must not.
 4. **Contract.** Each exported file validates against its JSON Schema in `volbt.export`.

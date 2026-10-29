@@ -10,11 +10,14 @@
  */
 import {
   ContractError,
+  DATA_QUALITY_DATASET,
   SURFACE_DATASET,
   assertDatasetMatchesEntry,
   findDataset,
+  parseDataQuality,
   parseIllustrativeSurface,
   parseManifest,
+  type DataQuality,
   type IllustrativeSurface,
   type Manifest,
 } from '../lib/contract'
@@ -25,6 +28,7 @@ export const EXPORT_COMMAND = 'uv run python tools/export_app_data.py'
 export interface AppData {
   manifest: Manifest
   surface: IllustrativeSurface
+  dataQuality: DataQuality
 }
 
 /** `fetch` = the request itself failed or returned junk; `contract` = valid JSON that breaks the contract. */
@@ -67,19 +71,31 @@ function asContractFailure<T>(parse: () => T, file: string): T {
   }
 }
 
+/** Fetches one dataset the manifest lists and checks it against its manifest entry. */
+async function loadDataset<T extends { schema_version: string }>(
+  manifest: Manifest,
+  name: string,
+  parse: (raw: unknown) => T,
+  fetchFn: FetchLike,
+): Promise<T> {
+  const entry = findDataset(manifest, name)
+  if (!entry) {
+    throw new DataLoadError('contract', `manifest.json does not list the "${name}" dataset this app needs`)
+  }
+  const raw = await getJson(`${DATA_DIR}/${entry.path}`, fetchFn)
+  const dataset = asContractFailure(() => parse(raw), entry.path)
+  // The manifest's claim about this file must match what the file says about itself.
+  asContractFailure(() => assertDatasetMatchesEntry(entry, dataset), 'manifest.json')
+  return dataset
+}
+
 export async function loadAppData(fetchFn: FetchLike = (url) => fetch(url)): Promise<AppData> {
   const manifestRaw = await getJson(`${DATA_DIR}/manifest.json`, fetchFn)
   const manifest = asContractFailure(() => parseManifest(manifestRaw), 'manifest.json')
-
-  const entry = findDataset(manifest, SURFACE_DATASET)
-  if (!entry) {
-    throw new DataLoadError('contract', `manifest.json does not list the "${SURFACE_DATASET}" dataset this app needs`)
-  }
-  const surfaceRaw = await getJson(`${DATA_DIR}/${entry.path}`, fetchFn)
-  const surface = asContractFailure(() => parseIllustrativeSurface(surfaceRaw), entry.path)
-  // The manifest's claim about this file must match what the file says about itself.
-  asContractFailure(() => assertDatasetMatchesEntry(entry, surface), 'manifest.json')
-  return { manifest, surface }
+  // One after the other, so the order of requests (and of the first failure) is always the same.
+  const surface = await loadDataset(manifest, SURFACE_DATASET, parseIllustrativeSurface, fetchFn)
+  const dataQuality = await loadDataset(manifest, DATA_QUALITY_DATASET, parseDataQuality, fetchFn)
+  return { manifest, surface, dataQuality }
 }
 
 /** Plain-language explanation for the UI, always ending with how to regenerate the files. */

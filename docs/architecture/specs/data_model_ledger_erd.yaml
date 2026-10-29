@@ -1,0 +1,304 @@
+# Every stored table, plus the Python -> app JSON contract entities.
+# Types are DuckDB/Parquet types for tables; JSON types (string, number, boolean, array<...>, object) for json_* entities.
+# Column names and enums match ADR-0002..0010. Diagram-kit schema (see ../README.md).
+# Revised after the M0 review: order-date volume cap, integer-cent prices, net margin, stress budget, de-Americanised forwards, causal signals, trial accounting.
+# The kit's erd schema has no entity description or column note field, so the interim notes are kept as comments.
+# Types: array<T> is written T[]; DECIMAL(p,s) is DECIMAL_p_s (a comma is not allowed in a type); [BRACKETED] vendor
+# column names lose their brackets. Relations are drawn from the referencing (child) column to the referenced column;
+# relations the interim schema drew between tables with no foreign key use a representative column (marked below).
+# One of three data-model specs (vendor and reference tables, per-run ledger, Python -> app JSON contract). The single
+# 35-entity diagram was too dense to read, so it is split. An entity marked (partial) repeats, from another spec, only the
+# columns that a relation in this diagram joins; its full column list is in the spec that owns it.
+# Nothing here is built (2026-10-29): every entity label carries "(planned, Mn)", as in the reference spec. The milestone is when the daily
+# engine writes the table: M3 for the engine (ADR-0001), M4 for signals (00-foundations), M5 for greeks_snapshots (ADR-0001 dataset table:
+# greeks_timeline). The ADR's dataset table lists JSON datasets only, so the other tables take the engine's milestone. A partial copy of an
+# unbuilt table is marked too; partial copies of built tables are not.
+# After M1 (2026-10-29) the partial copies follow the built reference tables: spy_bars (was underlying_bars), vix (was vix_daily); there is no
+# trading_calendar table (a session is a spy_bars row); option_quotes stores no mid, so the quote mark source is drawn on bid.
+kind: erd
+title: "vol-strategy-backtester data model: per-run ledger"
+subtitle: "Planned, not built: all 13 tables. Written by the daily engine from M3, except signals (M4) and greeks_snapshots (M5)."
+entities:
+  # One row per backtest run; also the trial log for DSR (ADR-0010).
+  - id: runs
+    label: "runs (planned, M3)"
+    columns:
+      - {name: run_id, type: VARCHAR, pk: true}
+      - {name: created_at, type: TIMESTAMP}  # metadata only; never read by the engine
+      - {name: source_commit, type: VARCHAR}
+      - {name: config_hash, type: VARCHAR}
+      - {name: config_json, type: JSON}
+      - {name: data_fingerprint, type: VARCHAR}
+      - {name: data_source, type: VARCHAR}  # 'optionsdx' or 'dolthub'
+      - {name: execution_mode, type: VARCHAR}  # 'quote' or 'surface'
+      - {name: fill_timing, type: VARCHAR}  # 'next_close' or 'same_close'
+      - {name: cap_mode, type: VARCHAR}  # 'hard_only' (rule of record, every split) or 'volume' (validation diagnostic from 2021-01-04)
+      - {name: chain_mask, type: VARCHAR}  # 'none', 'dolthub' or 'dolthub_daily' (ADR-0009 surface-gap runs)
+      - {name: split, type: VARCHAR}  # 'development', 'validation' or 'holdout'
+      - {name: run_purpose, type: VARCHAR}  # 'trial' or 'diagnostic'; diagnostics are not counted for the DSR
+      - {name: trial_group, type: VARCHAR}
+      - {name: rerun_of, type: VARCHAR, nullable: true}  # run_id of the validation run of record this re-run repeats; at most 2 per config_hash
+      - {name: rerun_reason, type: VARCHAR, nullable: true}  # defect and commit that justify the re-run
+      - {name: sample_start, type: DATE}
+      - {name: sample_end, type: DATE}
+      - {name: status, type: VARCHAR}  # 'ok', 'ruin' or 'failed'
+  # Signal values per session, computed in the daily loop from MarketView(as_of = session); never from a full-sample fit (ADR-0001).
+  - id: signals
+    label: "signals (planned, M4)"
+    columns:
+      - {name: run_id, type: VARCHAR, pk: true, fk: runs.run_id}
+      - {name: session_date, type: DATE, pk: true}
+      - {name: signal_name, type: VARCHAR, pk: true}
+      - {name: iv30, type: DOUBLE, nullable: true}
+      - {name: rv_forecast, type: DOUBLE, nullable: true}
+      - {name: rv_model, type: VARCHAR}  # 'har' or 'garch' or 'gjr'
+      - {name: model_fit_date, type: DATE, nullable: true}  # last scheduled refit on or before session_date; the fit used only data up to it
+      - {name: vrp_spread, type: DOUBLE, nullable: true}  # iv30 - rv_forecast
+      - {name: zscore, type: DOUBLE, nullable: true}
+      - {name: vix_bucket, type: VARCHAR}  # previous-session VIX bucket
+      - {name: vol_regime, type: VARCHAR}  # 'shock', 'post_shock' or 'calm'
+  # A strategy position: one structure (straddle, strangle, calendar, vol-arb) made of lots.
+  - id: positions
+    label: "positions (planned, M3)"
+    columns:
+      - {name: run_id, type: VARCHAR, pk: true, fk: runs.run_id}
+      - {name: position_id, type: BIGINT, pk: true}
+      - {name: strategy_id, type: VARCHAR}
+      - {name: structure, type: VARCHAR}
+      - {name: opened_date, type: DATE}
+      - {name: closed_date, type: DATE, nullable: true}
+      - {name: status, type: VARCHAR}  # 'open' or 'closed'
+      - {name: entry_signal, type: DOUBLE, nullable: true}
+      - {name: exit_reason, type: VARCHAR, nullable: true}  # 'profit_target', 'stop', 'dte', 'signal', 'risk', 'margin', 'expiry'
+  # Orders created after snapshot t; filled against snapshot t+1 (ADR-0002).
+  - id: orders
+    label: "orders (planned, M3)"
+    columns:
+      - {name: run_id, type: VARCHAR, pk: true, fk: runs.run_id}
+      - {name: order_id, type: BIGINT, pk: true}
+      - {name: position_id, type: BIGINT, fk: positions.position_id, nullable: true}  # null for share liquidation
+      - {name: created_date, type: DATE}
+      - {name: target_fill_date, type: DATE}  # next session with a snapshot
+      - {name: intent, type: VARCHAR}  # 'open', 'close', 'reduce_risk', 'margin_liquidation', 'share_liquidation'
+      - {name: reduce_only, type: BOOLEAN}
+      - {name: packages_requested, type: INTEGER}
+      - {name: packages_after_risk, type: INTEGER}
+      - {name: risk_action, type: VARCHAR}  # 'none', 'scaled' or 'rejected'
+      - {name: status, type: VARCHAR}  # 'pending', 'filled', 'partial', 'cancelled', 'rejected'
+      - {name: cancel_reason, type: VARCHAR, nullable: true}  # 'NO_QUOTE', 'ZERO_BID', 'ILLIQUID', 'CAP', 'LOT_REMOVED'
+  # Legs of a package order with signed ratios.
+  - id: order_legs
+    label: "order_legs (planned, M3)"
+    columns:
+      - {name: run_id, type: VARCHAR, pk: true, fk: orders.run_id}
+      - {name: order_id, type: BIGINT, pk: true, fk: orders.order_id}
+      - {name: leg_no, type: SMALLINT, pk: true}
+      - {name: instrument, type: VARCHAR}  # 'option' or 'share'
+      - {name: osi_symbol, type: VARCHAR, nullable: true}
+      - {name: ratio, type: INTEGER}  # signed contracts (or shares) per package
+      - {name: cap_volume, type: BIGINT, nullable: true}  # contract volume V_t in the snapshot of the order's created_date; the only volume the cap may use
+      - {name: cap_volume_date, type: DATE, nullable: true}  # information date of cap_volume (= created_date)
+  # Executions, one per leg per fill day, with the full price decomposition.
+  - id: fills
+    label: "fills (planned, M3)"
+    columns:
+      - {name: run_id, type: VARCHAR, pk: true, fk: runs.run_id}
+      - {name: fill_id, type: BIGINT, pk: true}
+      - {name: order_id, type: BIGINT, fk: orders.order_id}
+      - {name: leg_no, type: SMALLINT}
+      - {name: fill_date, type: DATE}
+      - {name: osi_symbol, type: VARCHAR, nullable: true}
+      - {name: qty, type: INTEGER}  # signed contracts or shares
+      - {name: price_cents, type: INTEGER}  # fill price computed in integer cents (ADR-0002)
+      - {name: price, type: DOUBLE}  # price_cents / 100
+      - {name: bid, type: DOUBLE, nullable: true}
+      - {name: ask, type: DOUBLE, nullable: true}
+      - {name: mid, type: DOUBLE, nullable: true}
+      - {name: half_spread, type: DOUBLE, nullable: true}
+      - {name: k_half_spread, type: DOUBLE}
+      - {name: fees, type: DOUBLE}
+      - {name: fill_source, type: VARCHAR}  # 'quote' or 'surface'
+      - {name: cap_contracts, type: INTEGER, nullable: true}
+      - {name: cap_type, type: VARCHAR}  # 'volume', 'hard' or 'none'
+      - {name: cap_volume, type: BIGINT, nullable: true}  # copied from order_legs.cap_volume
+      - {name: cap_volume_date, type: DATE, nullable: true}  # information date of the volume behind cap_contracts; always before fill_date
+      - {name: volume_reliable, type: BOOLEAN}
+  # Contract holdings inside a position (one per leg); quantities change only via fills and expiry events.
+  - id: lots
+    label: "lots (planned, M3)"
+    columns:
+      - {name: run_id, type: VARCHAR, pk: true, fk: runs.run_id}
+      - {name: lot_id, type: BIGINT, pk: true}  # assigned in creation order (determinism)
+      - {name: position_id, type: BIGINT, fk: positions.position_id}
+      - {name: osi_symbol, type: VARCHAR}
+      - {name: expiry, type: DATE}
+      - {name: strike, type: DOUBLE}
+      - {name: option_right, type: VARCHAR}
+      - {name: qty_open, type: INTEGER}  # signed contracts
+      - {name: avg_open_price, type: DOUBLE}
+      - {name: opened_date, type: DATE}
+      - {name: closed_date, type: DATE, nullable: true}
+  # Daily mark and greeks per lot (ADR-0004, ADR-0006 units).
+  - id: position_marks
+    label: "position_marks (planned, M3)"
+    columns:
+      - {name: run_id, type: VARCHAR, pk: true, fk: runs.run_id}
+      - {name: session_date, type: DATE, pk: true}
+      - {name: lot_id, type: BIGINT, pk: true, fk: lots.lot_id}
+      - {name: mark_price, type: DOUBLE}
+      - {name: mark_iv, type: DOUBLE, nullable: true}
+      - {name: mark_source, type: VARCHAR}  # 'INTRINSIC', 'QUOTE_MID', 'ZERO_BID_MID', 'SURFACE_MODEL', 'STALE_SURFACE'
+      - {name: quality_flags, type: INTEGER}
+      - {name: value_mid_usd, type: DOUBLE}
+      - {name: value_liq_usd, type: DOUBLE}
+      - {name: delta_shares, type: DOUBLE}
+      - {name: gamma_1pct_usd, type: DOUBLE}
+      - {name: vega_1vol_usd, type: DOUBLE}
+      - {name: theta_1d_usd, type: DOUBLE}
+      - {name: pnl_residual_usd, type: DOUBLE}
+      - {name: mark_flags, type: INTEGER}  # IV_FAIL, ATTRIBUTION_BREAK, MARK_JUMP, SURFACE_EXTRAP_STRIKE, SURFACE_CROSS_EXPIRY, SURFACE_EXTRAP_TENOR
+  # SPY share hedge per session (ADR-0005).
+  - id: hedges
+    label: "hedges (planned, M3)"
+    columns:
+      - {name: run_id, type: VARCHAR, pk: true, fk: runs.run_id}
+      - {name: session_date, type: DATE, pk: true, fk: spy_bars.date}
+      - {name: trigger, type: VARCHAR}  # 'schedule', 'band' or 'none'
+      - {name: timing, type: VARCHAR}  # 'same_close' or 'next_open'
+      - {name: delta_before_shares, type: DOUBLE}
+      - {name: shares_traded, type: INTEGER}
+      - {name: price, type: DOUBLE}
+      - {name: commission, type: DOUBLE}
+      - {name: slippage, type: DOUBLE}
+      - {name: shares_after, type: INTEGER}
+      - {name: delta_after_shares, type: DOUBLE}
+  # Expiry, exercise and assignment events (ADR-0003).
+  - id: expiry_events
+    label: "expiry_events (planned, M3)"
+    columns:
+      - {name: run_id, type: VARCHAR, pk: true, fk: runs.run_id}
+      - {name: event_id, type: BIGINT, pk: true}
+      - {name: session_date, type: DATE}  # date the decision was made
+      - {name: effective_date, type: DATE}  # date shares are booked
+      - {name: lot_id, type: BIGINT, fk: lots.lot_id}
+      - {name: event_type, type: VARCHAR}  # 'expired_worthless', 'exercised', 'assigned', 'early_exercised', 'early_assigned'
+      - {name: contracts, type: INTEGER}
+      - {name: shares_delivered, type: INTEGER}  # signed
+      - {name: strike, type: DOUBLE}
+      - {name: settlement_price, type: DOUBLE, nullable: true}
+      - {name: dividend_ex_date, type: DATE, fk: dividends.ex_date, nullable: true}
+      - {name: decision_method, type: VARCHAR, nullable: true}  # 'call_closed_form' or 'crr' for early events
+      - {name: decision_iv, type: DOUBLE, nullable: true}  # surface IV used for the early-exercise decision
+      - {name: threshold_value, type: DOUBLE, nullable: true}  # calls: P_E + K(1-e^-r tau), compared with D; puts: CRR continuation minus intrinsic, exercise if <= 0.005
+      - {name: pin_flag, type: BOOLEAN}
+  # Pre-trade scaling and rejections, end-of-day breaches, margin calls, ruin (ADR-0006, ADR-0007).
+  - id: risk_events
+    label: "risk_events (planned, M3)"
+    columns:
+      - {name: run_id, type: VARCHAR, pk: true, fk: runs.run_id}
+      - {name: event_id, type: BIGINT, pk: true}
+      - {name: session_date, type: DATE}
+      - {name: kind, type: VARCHAR}  # 'pretrade_scale', 'pretrade_reject', 'eod_breach', 'margin_cap', 'margin_call', 'ruin'
+      - {name: greek, type: VARCHAR, nullable: true}  # 'gamma', 'vega', 'theta', 'stress_core', 'stress_worst', 'margin' or null
+      - {name: value, type: DOUBLE}
+      - {name: limit_value, type: DOUBLE}
+      - {name: order_id, type: BIGINT, fk: orders.order_id, nullable: true}
+      - {name: action, type: VARCHAR}
+  # Portfolio greeks and budget use per session, after the hedge.
+  - id: greeks_snapshots
+    label: "greeks_snapshots (planned, M5)"
+    columns:
+      - {name: run_id, type: VARCHAR, pk: true, fk: runs.run_id}
+      - {name: session_date, type: DATE, pk: true}
+      - {name: delta_shares, type: DOUBLE}
+      - {name: delta_usd, type: DOUBLE}
+      - {name: gamma_1pct_usd, type: DOUBLE}
+      - {name: vega_1vol_usd, type: DOUBLE}
+      - {name: vega_30d_weighted_usd, type: DOUBLE}  # reported, not budgeted
+      - {name: theta_1d_usd, type: DOUBLE}
+      - {name: budget_gamma_1pct_usd, type: DOUBLE}
+      - {name: budget_vega_1vol_usd, type: DOUBLE}
+      - {name: budget_theta_1d_usd, type: DOUBLE}
+      - {name: stress_core_pnl_usd, type: DOUBLE}  # full revaluation at (-10%, +20 vol)
+      - {name: stress_worst_pnl_usd, type: DOUBLE}  # worst of the 63 ADR-0010 grid cells
+      - {name: stress_worst_cell, type: VARCHAR}  # e.g. '-20%,+40'
+      - {name: budget_stress_core_usd, type: DOUBLE}  # 15% of NAV_mid
+      - {name: budget_stress_worst_usd, type: DOUBLE}  # 35% of NAV_mid
+      - {name: breach_flags, type: INTEGER}
+  # NAV, attribution, margin and mark quality per session; the input to every metric.
+  - id: daily_pnl
+    label: "daily_pnl (planned, M3)"
+    columns:
+      - {name: run_id, type: VARCHAR, pk: true, fk: runs.run_id}
+      - {name: session_date, type: DATE, pk: true, fk: spy_bars.date}
+      - {name: nav_mid, type: DOUBLE}
+      - {name: nav_liq, type: DOUBLE}
+      - {name: cash, type: DOUBLE}
+      - {name: shares, type: INTEGER}
+      - {name: share_value, type: DOUBLE}
+      - {name: option_value_mid, type: DOUBLE}
+      - {name: pnl_total, type: DOUBLE}
+      - {name: pnl_delta, type: DOUBLE}
+      - {name: pnl_gamma, type: DOUBLE}
+      - {name: pnl_vega, type: DOUBLE}
+      - {name: pnl_theta, type: DOUBLE}
+      - {name: pnl_fees, type: DOUBLE}
+      - {name: pnl_interest, type: DOUBLE}
+      - {name: pnl_dividends, type: DOUBLE}
+      - {name: pnl_residual, type: DOUBLE}
+      - {name: daily_return, type: DOUBLE}
+      - {name: rf_return, type: DOUBLE}
+      - {name: margin_req_gross_usd, type: DOUBLE}  # Cboe/FINRA rule as written, incl. 100% of short option value
+      - {name: short_option_mv_usd, type: DOUBLE}
+      - {name: margin_req_net_usd, type: DOUBLE}  # gross minus short option value; compared with nav_mid (ADR-0007)
+      - {name: excess_liquidity_usd, type: DOUBLE}  # nav_mid - margin_req_net_usd
+      - {name: share_nav_model_marked, type: DOUBLE}
+      - {name: mark_quality, type: VARCHAR}  # 'OK' or 'DEGRADED'
+  # Partial copy of spy_bars, defined in the other data-model spec: only the columns joined from this diagram.
+  - id: spy_bars
+    label: "spy_bars (partial)"
+    columns:
+      - {name: date, type: DATE, pk: true}
+  # Partial copy of dividends, defined in the other data-model spec: only the columns joined from this diagram.
+  - id: dividends
+    label: "dividends (partial)"
+    columns:
+      - {name: ex_date, type: DATE, pk: true}
+  # Partial copy of vix, defined in the other data-model spec: only the columns joined from this diagram.
+  - id: vix
+    label: "vix (partial)"
+    columns:
+      - {name: close, type: DOUBLE}
+  # Partial copy of option_quotes, defined in the other data-model spec: only the columns joined from this diagram.
+  - id: option_quotes
+    label: "option_quotes (partial)"
+    columns:
+      - {name: bid, type: DOUBLE, nullable: true}
+  # Partial copy of smile_fits, defined in the other data-model spec: only the columns joined from this diagram.
+  - id: smile_fits
+    label: "smile_fits (partial, planned, M2)"
+    columns:
+      - {name: total_var_nodes, type: "DOUBLE[]"}
+relations:
+  - {from: daily_pnl.session_date, to: spy_bars.date, cardinality: "0..*", label: "session of"}
+  - {from: signals.run_id, to: runs.run_id, cardinality: "0..*", label: "produces"}
+  - {from: positions.run_id, to: runs.run_id, cardinality: "0..*", label: "produces"}
+  - {from: orders.run_id, to: runs.run_id, cardinality: "0..*", label: "produces"}
+  - {from: fills.run_id, to: runs.run_id, cardinality: "0..*", label: "produces"}
+  - {from: hedges.run_id, to: runs.run_id, cardinality: "0..*", label: "produces"}
+  - {from: expiry_events.run_id, to: runs.run_id, cardinality: "0..*", label: "produces"}
+  - {from: risk_events.run_id, to: runs.run_id, cardinality: "0..*", label: "produces"}
+  - {from: greeks_snapshots.run_id, to: runs.run_id, cardinality: "0..*", label: "produces"}
+  - {from: daily_pnl.run_id, to: runs.run_id, cardinality: "0..*", label: "produces"}
+  - {from: lots.position_id, to: positions.position_id, cardinality: "0..*", label: "holds"}
+  - {from: orders.position_id, to: positions.position_id, cardinality: "0..*", label: "opened and closed by"}
+  - {from: order_legs.order_id, to: orders.order_id, cardinality: "0..*", label: "has legs"}  # composite key: the other key columns get unlabelled relations from their fk
+  - {from: fills.order_id, to: orders.order_id, cardinality: "0..*", label: "executed as"}
+  - {from: risk_events.order_id, to: orders.order_id, cardinality: "0..*", label: "scaled or rejected by"}
+  - {from: position_marks.lot_id, to: lots.lot_id, cardinality: "0..*", label: "marked daily"}
+  - {from: expiry_events.lot_id, to: lots.lot_id, cardinality: "0..*", label: "settled by"}
+  - {from: position_marks.mark_price, to: option_quotes.bid, cardinality: "0..*", label: "quote mark source"}  # no foreign key: representative column; the mid is (bid + ask) / 2, computed at mark time
+  - {from: position_marks.mark_iv, to: smile_fits.total_var_nodes, cardinality: "0..*", label: "model mark source"}  # no foreign key: representative column
+  - {from: expiry_events.dividend_ex_date, to: dividends.ex_date, cardinality: "0..*", label: "early-exercise test"}
+  - {from: hedges.session_date, to: spy_bars.date, cardinality: "0..*", label: "hedge price"}
+  - {from: signals.vix_bucket, to: vix.close, cardinality: "0..*", label: "regime label"}  # no foreign key: representative column

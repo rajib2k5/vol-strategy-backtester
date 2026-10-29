@@ -81,7 +81,7 @@ The premium is a small gain on most days and an occasional very large loss. Mean
 | 2025 | +45 |
 
 - **2020 averaged negative even though VIX beat realised vol on 76.7% of its days.**
-- On 2020-02-21 VIX closed at 17.08; SPX then realised 88.0% over 21 trading days.
+- On 2020-02-21 VIX closed at about 17; SPX then realised 88.0% over 21 trading days.
 
 ### Term structure
 
@@ -254,7 +254,7 @@ The table is **[measured]** from Cboe daily files (VIX, VIX3M, SPX, PUT). Drawdo
 
 | Episode | VIX | SPX | PUT index |
 |---|---|---|---|
-| **Feb-2018** | 17.31 → 37.32 close, 5 Feb (+115.6%, largest one-day close-to-close rise since 1990) | −4.10% on 5 Feb; −10.16% from 26 Jan to 8 Feb | −3.86% on 5 Feb |
+| **Feb-2018** | about 17 → about 37 close, 5 Feb (+115.6%, largest one-day close-to-close rise since 1990) | −4.10% on 5 Feb; −10.16% from 26 Jan to 8 Feb | −3.86% on 5 Feb |
 | **Mar-2020** | 82.69 close on 16 Mar, the highest in the 1990–2026 file | −11.98% on 16 Mar; −33.92% from 19 Feb to 23 Mar | −28.93% drawdown |
 | **2022** | mean 25.6; highest close 36.45 (7 Mar); VIX/VIX3M above 1 on 15 of 252 days | −19.44% for the year; −25.43% max drawdown | −7.66% for the year |
 | **Aug-2024** | 23.39 close (2 Aug) → intraday high 65.73 → 38.57 close (5 Aug); 27.71 on 6 Aug | −3.00% on 5 Aug; −8.49% from 16 Jul to 5 Aug | −2.65% on 5 Aug; +2.85% from 16 Jul to 30 Aug |

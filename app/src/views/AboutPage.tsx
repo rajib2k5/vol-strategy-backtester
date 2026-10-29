@@ -1,5 +1,5 @@
 import type { AppDataState } from '../data/useAppData'
-import { EXPORT_COMMAND, describeLoadFailure, type AppData } from '../data/loadAppData'
+import type { AppData } from '../data/loadAppData'
 import { commitState } from '../lib/contract'
 import {
   DATA_SOURCES,
@@ -11,19 +11,8 @@ import {
   PITCH,
   STATUS,
 } from '../content/about'
+import { DataProblem } from './DataProblem'
 import { SurfaceHero } from './SurfaceHero'
-
-function DataProblem({ error }: { error: unknown }) {
-  return (
-    <div role="alert" className="data-problem">
-      <p>{describeLoadFailure(error)}</p>
-      <p>
-        The app only draws files that the Python side exports. From the repository root run <code>{EXPORT_COMMAND}</code> to
-        write them into <code>app/public/data/</code>, then reload this page.
-      </p>
-    </div>
-  )
-}
 
 function ContractInfo({ data }: { data: AppData }) {
   const { manifest } = data

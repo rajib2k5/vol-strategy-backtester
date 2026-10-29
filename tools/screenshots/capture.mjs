@@ -8,6 +8,7 @@
 //
 // Writes, from a 1440x900 viewport:
 //   about-dark.png, about-light.png   the About page including the 3D hero, full page, 1x
+//   data-quality-dark.png, data-quality-light.png   the Data quality page, full page, 1x
 //   architecture-light.png            the Architecture page, full page, 1x
 //   hero-3d.png                       the 3D surface and its axis labels cropped tight, dark theme, 2x
 //
@@ -176,6 +177,18 @@ async function openAbout(browser, baseUrl, theme, scale, problems) {
   return page;
 }
 
+/** Data quality page, full page, once its tables are in and the line charts have finished drawing in. */
+async function shootDataQuality(page) {
+  await page.click('a[href="#/data-quality"]');
+  await page.waitForSelector('section.data-quality table[aria-label="Quality-gate limits"]');
+  await page.waitForSelector('section.data-quality svg polyline');
+  await page.evaluate(() => document.fonts.ready);
+  await page.mouse.move(5, 5);
+  // The charts draw their lines in over 0.9 s, each line starting 0.18 s after the one before.
+  await sleep(2500);
+  return page.screenshot({ fullPage: true });
+}
+
 /** Architecture page, fully drawn: layers risen in, and no sequence step still pending. Retries if the loop restarts mid-capture. */
 async function shootArchitecture(page) {
   await page.click('a[href="#/architecture"]');
@@ -227,10 +240,12 @@ async function main() {
 
     const dark = await openAbout(browser, baseUrl, 'dark', 1, problems);
     await save('about-dark.png', await dark.screenshot({ fullPage: true }));
+    await save('data-quality-dark.png', await shootDataQuality(dark));
     await dark.browserContext().close();
 
     const light = await openAbout(browser, baseUrl, 'light', 1, problems);
     await save('about-light.png', await light.screenshot({ fullPage: true }));
+    await save('data-quality-light.png', await shootDataQuality(light));
     await save('architecture-light.png', await shootArchitecture(light));
     await light.browserContext().close();
 

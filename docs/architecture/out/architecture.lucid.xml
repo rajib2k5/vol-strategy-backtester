@@ -1,0 +1,290 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mxfile host="vol-diagram-kit" agent="vol-diagram-kit">
+  <diagram id="architecture" name="vol-strategy-backtester: components">
+    <mxGraphModel dx="0" dy="0" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="2659" pageHeight="3212" background="#F8FAFC" math="0" shadow="0">
+      <root>
+        <mxCell id="0"/>
+        <mxCell id="1" parent="0"/>
+        <mxCell id="title" value="vol-strategy-backtester: components" style="rounded=0;fillColor=none;strokeColor=none;html=0;align=left;verticalAlign=top;fontFamily=Helvetica;fontSize=20;fontStyle=1;fontColor=#0F172A;" vertex="1" parent="1">
+          <mxGeometry x="32" y="30" width="386.32" height="28" as="geometry"/>
+        </mxCell>
+        <mxCell id="lane_sources" value="Vendor sources (outside the repo)" style="rounded=0;whiteSpace=wrap;html=0;fillColor=#F1F5F9;strokeColor=#E2E8F0;fontColor=#64748B;fontSize=12;fontStyle=1;fontFamily=Helvetica;align=left;verticalAlign=top;spacingLeft=14;spacingTop=6;" vertex="1" parent="1">
+          <mxGeometry x="32" y="80" width="1541" height="374" as="geometry"/>
+        </mxCell>
+        <mxCell id="lane_store" value="Chain store (M1)" style="rounded=0;whiteSpace=wrap;html=0;fillColor=#EFF6FF;strokeColor=#DBEAFE;fontColor=#64748B;fontSize=12;fontStyle=1;fontFamily=Helvetica;align=left;verticalAlign=top;spacingLeft=14;spacingTop=6;" vertex="1" parent="1">
+          <mxGeometry x="1601" y="314" width="1026" height="726" as="geometry"/>
+        </mxCell>
+        <mxCell id="lane_core" value="Pricing and signals (M2, M4)" style="rounded=0;whiteSpace=wrap;html=0;fillColor=#F5F3FF;strokeColor=#E9E5FD;fontColor=#64748B;fontSize=12;fontStyle=1;fontFamily=Helvetica;align=left;verticalAlign=top;spacingLeft=14;spacingTop=6;" vertex="1" parent="1">
+          <mxGeometry x="32" y="900" width="1541" height="836" as="geometry"/>
+        </mxCell>
+        <mxCell id="lane_sim" value="Simulation (M3 to M5)" style="rounded=0;whiteSpace=wrap;html=0;fillColor=#ECFDF5;strokeColor=#D1FAE5;fontColor=#64748B;fontSize=12;fontStyle=1;fontFamily=Helvetica;align=left;verticalAlign=top;spacingLeft=14;spacingTop=6;" vertex="1" parent="1">
+          <mxGeometry x="1601" y="1448" width="1026" height="920" as="geometry"/>
+        </mxCell>
+        <mxCell id="lane_results" value="Analytics and export (M6)" style="rounded=0;whiteSpace=wrap;html=0;fillColor=#FFF7ED;strokeColor=#FFEDD5;fontColor=#64748B;fontSize=12;fontStyle=1;fontFamily=Helvetica;align=left;verticalAlign=top;spacingLeft=14;spacingTop=6;" vertex="1" parent="1">
+          <mxGeometry x="32" y="2446" width="1541" height="460" as="geometry"/>
+        </mxCell>
+        <mxCell id="lane_app" value="App (visualises only)" style="rounded=0;whiteSpace=wrap;html=0;fillColor=#FDF2F8;strokeColor=#FCE7F3;fontColor=#64748B;fontSize=12;fontStyle=1;fontFamily=Helvetica;align=left;verticalAlign=top;spacingLeft=14;spacingTop=6;" vertex="1" parent="1">
+          <mxGeometry x="32" y="2984" width="1541" height="140" as="geometry"/>
+        </mxCell>
+        <mxCell id="node_src_optionsdx" value="Kaggle OptionsDX SPY EOD 2010-2023&#10;14 parquet files, 9,468,584 rows, 16:00 ET snapshots" style="rounded=1;whiteSpace=wrap;html=0;fillColor=#E0F2FE;strokeColor=#0284C7;fontColor=#0F172A;fontSize=13;fontFamily=Helvetica;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="587" y="130" width="388" height="70" as="geometry"/>
+        </mxCell>
+        <mxCell id="node_src_dolthub" value="DoltHub option_chain SPY 2019-2026&#10;Shared dolt clone, never queried; no volume, sizes or underlying" style="rounded=1;whiteSpace=wrap;html=0;fillColor=#E0F2FE;strokeColor=#0284C7;fontColor=#0F172A;fontSize=13;fontFamily=Helvetica;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="1015" y="130" width="452" height="70" as="geometry"/>
+        </mxCell>
+        <mxCell id="node_src_yf" value="yfinance SPY bars and dividends&#10;Unadjusted close, auto_adjust=False" style="rounded=1;whiteSpace=wrap;html=0;fillColor=#F1F5F9;strokeColor=#475569;fontColor=#0F172A;fontSize=13;fontFamily=Helvetica;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="492" y="364" width="318" height="70" as="geometry"/>
+        </mxCell>
+        <mxCell id="node_src_fred" value="FRED DGS3MO&#10;3-month constant-maturity yield, investment basis" style="rounded=1;whiteSpace=wrap;html=0;fillColor=#F1F5F9;strokeColor=#475569;fontColor=#0F172A;fontSize=13;fontFamily=Helvetica;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="850" y="364" width="364" height="70" as="geometry"/>
+        </mxCell>
+        <mxCell id="node_src_cboe" value="Cboe VIX history CSV" style="rounded=1;whiteSpace=wrap;html=0;fillColor=#F1F5F9;strokeColor=#475569;fontColor=#0F172A;fontSize=13;fontFamily=Helvetica;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="1254" y="364" width="234" height="70" as="geometry"/>
+        </mxCell>
+        <mxCell id="node_st_vendor" value="Vendor sources in $VOL_DATA_DIR&#10;Read only, never modified. DoltHub: private mirror at $VOL_DATA_DIR/vol-strategy-backtester/cache/dolt_mirror/options" style="rounded=1;whiteSpace=wrap;html=0;fillColor=#FEF3C7;strokeColor=#D97706;fontColor=#0F172A;fontSize=13;fontFamily=Helvetica;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="1723" y="364" width="782" height="70" as="geometry"/>
+        </mxCell>
+        <mxCell id="node_st_raw" value="Downloads in repo data/raw/&#10;work_dir(), git-ignored, never committed" style="rounded=1;whiteSpace=wrap;html=0;fillColor=#FEF3C7;strokeColor=#D97706;fontColor=#0F172A;fontSize=13;fontFamily=Helvetica;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="1855" y="580" width="308" height="70" as="geometry"/>
+        </mxCell>
+        <mxCell id="node_p_data" value="volbt.data: load, calendar, quality flags&#10;Schema pin; long format; OSI symbols; flag rather than drop" style="rounded=1;whiteSpace=wrap;html=0;fillColor=#E0E7FF;strokeColor=#4F46E5;fontColor=#0F172A;fontSize=13;fontFamily=Helvetica;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="1901" y="752" width="426" height="70" as="geometry"/>
+        </mxCell>
+        <mxCell id="node_st_clean" value="Clean parquet + DuckDB&#10;Built in M1, in repo data/store/: option_quotes, calendar_actions, spy_bars, rates, dividends, vix, vix3m, chain_mask and the quality and cross-vendor tables" style="rounded=1;whiteSpace=wrap;html=0;fillColor=#FEF3C7;strokeColor=#D97706;fontColor=#0F172A;fontSize=13;fontFamily=Helvetica;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="1621" y="950" width="986" height="70" as="geometry"/>
+        </mxCell>
+        <mxCell id="node_p_pricing" value="volbt.pricing: Black-76, IV, parity forward, CRR lattice, smile&#10;Pure functions, no I/O; imports no volbt module (ADR-0001, ADR-0008)" style="rounded=1;whiteSpace=wrap;html=0;fillColor=#E0E7FF;strokeColor=#4F46E5;fontColor=#0F172A;fontSize=13;fontFamily=Helvetica;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="138" y="950" width="514" height="70" as="geometry"/>
+        </mxCell>
+        <mxCell id="node_p_build" value="volbt.build: pricing build&#10;Reads and writes through volbt.data, calls volbt.pricing; de-Americanises quotes (ADR-0001, ADR-0008)" style="rounded=1;whiteSpace=wrap;html=0;fillColor=#E0E7FF;strokeColor=#4F46E5;fontColor=#0F172A;fontSize=13;fontFamily=Helvetica;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="52" y="1142" width="686" height="70" as="geometry"/>
+        </mxCell>
+        <mxCell id="node_st_derived" value="Derived tables: quote_iv, expiry_forwards, smile_fits" style="rounded=1;whiteSpace=wrap;html=0;fillColor=#FEF3C7;strokeColor=#D97706;fontColor=#0F172A;fontSize=13;fontFamily=Helvetica;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="165" y="1290" width="460" height="56" as="geometry"/>
+        </mxCell>
+        <mxCell id="node_p_signals" value="volbt.signals: RV, HAR/GARCH, IV30, VRP spread&#10;Causal: called each session with the MarketView; monthly refits on data up to t (ADR-0001)" style="rounded=1;whiteSpace=wrap;html=0;fillColor=#E0E7FF;strokeColor=#4F46E5;fontColor=#0F172A;fontSize=13;fontFamily=Helvetica;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="945" y="1646" width="608" height="70" as="geometry"/>
+        </mxCell>
+        <mxCell id="node_p_view" value="MarketView as_of t&#10;Protocol in volbt.view, implemented in volbt.data; LookAheadError after t, SplitError past the split end" style="rounded=1;whiteSpace=wrap;html=0;fillColor=#E0E7FF;strokeColor=#4F46E5;fontColor=#0F172A;fontSize=13;fontFamily=Helvetica;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="1782" y="1498" width="664" height="70" as="geometry"/>
+        </mxCell>
+        <mxCell id="node_p_strat" value="volbt.strategies: structures, entry and exit rules" style="rounded=1;whiteSpace=wrap;html=0;fillColor=#E0E7FF;strokeColor=#4F46E5;fontColor=#0F172A;fontSize=13;fontFamily=Helvetica;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="1770" y="1838" width="424" height="56" as="geometry"/>
+        </mxCell>
+        <mxCell id="node_p_risk" value="volbt.risk: greek and stress budgets, sizing, margin&#10;ADR-0006 (greeks, stress grid cells), ADR-0007 (net margin requirement)" style="rounded=1;whiteSpace=wrap;html=0;fillColor=#E0E7FF;strokeColor=#4F46E5;fontColor=#0F172A;fontSize=13;fontFamily=Helvetica;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="1730" y="1972" width="504" height="70" as="geometry"/>
+        </mxCell>
+        <mxCell id="node_p_engine" value="volbt.engine: daily loop, fills, marks, expiry, hedge&#10;ADR-0002 to ADR-0005" style="rounded=1;whiteSpace=wrap;html=0;fillColor=#E0E7FF;strokeColor=#4F46E5;fontColor=#0F172A;fontSize=13;fontFamily=Helvetica;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="1892" y="2144" width="444" height="70" as="geometry"/>
+        </mxCell>
+        <mxCell id="node_st_ledger" value="Run ledger parquet under runs/run_id" style="rounded=1;whiteSpace=wrap;html=0;fillColor=#FEF3C7;strokeColor=#D97706;fontColor=#0F172A;fontSize=13;fontFamily=Helvetica;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="1938" y="2292" width="352" height="56" as="geometry"/>
+        </mxCell>
+        <mxCell id="node_p_analytics" value="volbt.analytics: metrics, attribution, regimes, stress grid&#10;Reads ledger tables only (ADR-0010)" style="rounded=1;whiteSpace=wrap;html=0;fillColor=#E0E7FF;strokeColor=#4F46E5;fontColor=#0F172A;fontSize=13;fontFamily=Helvetica;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="408" y="2496" width="486" height="70" as="geometry"/>
+        </mxCell>
+        <mxCell id="node_p_export" value="volbt.export + tools/export_app_data.py&#10;JSON Schema validation before write" style="rounded=1;whiteSpace=wrap;html=0;fillColor=#E0E7FF;strokeColor=#4F46E5;fontColor=#0F172A;fontSize=13;fontFamily=Helvetica;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="339" y="2668" width="368" height="70" as="geometry"/>
+        </mxCell>
+        <mxCell id="node_a_json" value="app/public/data JSON: manifest + datasets&#10;Envelope: schema_version, generated_at, source_commit" style="rounded=1;whiteSpace=wrap;html=0;fillColor=#D1FAE5;strokeColor=#059669;fontColor=#0F172A;fontSize=13;fontFamily=Helvetica;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="315" y="2816" width="416" height="70" as="geometry"/>
+        </mxCell>
+        <mxCell id="node_ui_app" value="Vite + React 19 + three.js viewer&#10;Parses, validates and renders; never computes a result" style="rounded=1;whiteSpace=wrap;html=0;fillColor=#FCE7F3;strokeColor=#DB2777;fontColor=#0F172A;fontSize=13;fontFamily=Helvetica;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="324" y="3034" width="398" height="70" as="geometry"/>
+        </mxCell>
+        <mxCell id="edge_0" value="read in place" style="edgeStyle=none;rounded=0;html=0;endArrow=classic;endFill=1;strokeColor=#64748B;strokeWidth=1.6;fontSize=11;fontColor=#475569;fontFamily=Helvetica;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.4412;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="node_src_optionsdx" target="node_st_vendor">
+          <mxGeometry x="0.8401" relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="781" y="228"/>
+              <mxPoint x="2068" y="228"/>
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="edge_1" value="private mirror, not the clone" style="edgeStyle=none;rounded=0;html=0;endArrow=classic;endFill=1;strokeColor=#64748B;strokeWidth=1.6;fontSize=11;fontColor=#475569;fontFamily=Helvetica;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5588;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="node_src_dolthub" target="node_st_vendor">
+          <mxGeometry x="0.8301" relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1241" y="216"/>
+              <mxPoint x="2160" y="216"/>
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="edge_2" value="DoltHub SPY rows, exported once" style="edgeStyle=none;rounded=0;html=0;endArrow=classic;endFill=1;strokeColor=#64748B;strokeWidth=1.6;fontSize=11;fontColor=#475569;fontFamily=Helvetica;exitX=0.4719;exitY=1;exitDx=0;exitDy=0;entryX=0.8214;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="node_st_vendor" target="node_st_raw">
+          <mxGeometry x="0.4815" relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="2092" y="494"/>
+              <mxPoint x="2108" y="494"/>
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="edge_3" value="fetch" style="edgeStyle=none;rounded=0;html=0;endArrow=classic;endFill=1;strokeColor=#64748B;strokeWidth=1.6;fontSize=11;fontColor=#475569;fontFamily=Helvetica;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.1786;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="node_src_yf" target="node_st_raw">
+          <mxGeometry x="0.906" relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="651" y="494"/>
+              <mxPoint x="1910" y="494"/>
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="edge_4" value="fetch" style="edgeStyle=none;rounded=0;html=0;endArrow=classic;endFill=1;strokeColor=#64748B;strokeWidth=1.6;fontSize=11;fontColor=#475569;fontFamily=Helvetica;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.3214;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="node_src_fred" target="node_st_raw">
+          <mxGeometry x="0.9213" relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1032" y="482"/>
+              <mxPoint x="1954" y="482"/>
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="edge_5" value="fetch" style="edgeStyle=none;rounded=0;html=0;endArrow=classic;endFill=1;strokeColor=#64748B;strokeWidth=1.6;fontSize=11;fontColor=#475569;fontFamily=Helvetica;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.4643;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="node_src_cboe" target="node_st_raw">
+          <mxGeometry x="0.8292" relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1371" y="470"/>
+              <mxPoint x="1998" y="470"/>
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="edge_6" value="OptionsDX parquet" style="edgeStyle=none;rounded=0;html=0;endArrow=classic;endFill=1;strokeColor=#64748B;strokeWidth=1.6;fontSize=11;fontColor=#475569;fontFamily=Helvetica;exitX=0.5281;exitY=1;exitDx=0;exitDy=0;entryX=0.608;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="node_st_vendor" target="node_p_data">
+          <mxGeometry x="0.8174" relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="2136" y="494"/>
+              <mxPoint x="2219" y="494"/>
+              <mxPoint x="2219" y="666"/>
+              <mxPoint x="2160" y="666"/>
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="edge_7" value="downloads, DoltHub export" style="edgeStyle=none;rounded=0;html=0;endArrow=classic;endFill=1;strokeColor=#64748B;strokeWidth=1.6;fontSize=11;fontColor=#475569;fontFamily=Helvetica;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.392;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="node_st_raw" target="node_p_data">
+          <mxGeometry x="0.1801" relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="2009" y="666"/>
+              <mxPoint x="2068" y="666"/>
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="edge_8" value="flagged long quotes + reference data" style="edgeStyle=none;rounded=0;html=0;endArrow=classic;endFill=1;strokeColor=#64748B;strokeWidth=1.6;fontSize=11;fontColor=#475569;fontFamily=Helvetica;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="node_p_data" target="node_st_clean">
+          <mxGeometry x="-0.4375" relative="1" as="geometry">
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="edge_9" value="mids, SPY close, r, dividends" style="edgeStyle=none;rounded=0;html=0;endArrow=classic;endFill=1;strokeColor=#64748B;strokeWidth=1.6;fontSize=11;fontColor=#475569;fontFamily=Helvetica;exitX=0.4777;exitY=1;exitDx=0;exitDy=0;entryX=0.5714;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="node_st_clean" target="node_p_build">
+          <mxGeometry x="0.9525" relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="2092" y="1056"/>
+              <mxPoint x="444" y="1056"/>
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="edge_10" value="pure functions" style="edgeStyle=none;rounded=0;html=0;endArrow=classic;endFill=1;strokeColor=#64748B;strokeWidth=1.6;fontSize=11;fontColor=#475569;fontFamily=Helvetica;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.4286;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="node_p_pricing" target="node_p_build">
+          <mxGeometry x="0.2281" relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="395" y="1056"/>
+              <mxPoint x="346" y="1056"/>
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="edge_11" value="IV, forwards, smiles" style="edgeStyle=none;rounded=0;html=0;endArrow=classic;endFill=1;strokeColor=#64748B;strokeWidth=1.6;fontSize=11;fontColor=#475569;fontFamily=Helvetica;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="node_p_build" target="node_st_derived">
+          <mxGeometry x="-0.0769" relative="1" as="geometry">
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="edge_12" value="chain slice for t" style="edgeStyle=none;rounded=0;html=0;endArrow=classic;endFill=1;strokeColor=#64748B;strokeWidth=1.6;fontSize=11;fontColor=#475569;fontFamily=Helvetica;exitX=0.5223;exitY=1;exitDx=0;exitDy=0;entryX=0.5437;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="node_st_clean" target="node_p_view">
+          <mxGeometry x="0.6522" relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="2136" y="1056"/>
+              <mxPoint x="2114" y="1056"/>
+              <mxPoint x="2114" y="1362"/>
+              <mxPoint x="2143" y="1362"/>
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="edge_13" value="surface for t" style="edgeStyle=none;rounded=0;html=0;endArrow=classic;endFill=1;strokeColor=#64748B;strokeWidth=1.6;fontSize=11;fontColor=#475569;fontFamily=Helvetica;exitX=0.5478;exitY=1;exitDx=0;exitDy=0;entryX=0.4563;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="node_st_derived" target="node_p_view">
+          <mxGeometry x="0.8725" relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="417" y="1362"/>
+              <mxPoint x="2085" y="1362"/>
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="edge_14" value="data dated up to t" style="edgeStyle=none;rounded=0;html=0;endArrow=classic;endFill=1;strokeColor=#64748B;strokeWidth=1.6;fontSize=11;fontColor=#475569;fontFamily=Helvetica;exitX=0.4337;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="node_p_view" target="node_p_signals">
+          <mxGeometry x="0.9066" relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="2070" y="1584"/>
+              <mxPoint x="1249" y="1584"/>
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="edge_15" value="signal values at t" style="edgeStyle=none;rounded=0;html=0;endArrow=classic;endFill=1;strokeColor=#64748B;strokeWidth=1.6;fontSize=11;fontColor=#475569;fontFamily=Helvetica;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.4269;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="node_p_signals" target="node_p_strat">
+          <mxGeometry x="0.8398" relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1249" y="1752"/>
+              <mxPoint x="1951" y="1752"/>
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="edge_16" value="as_of t view" style="edgeStyle=none;rounded=0;html=0;endArrow=classic;endFill=1;strokeColor=#64748B;strokeWidth=1.6;fontSize=11;fontColor=#475569;fontFamily=Helvetica;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5731;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="node_p_view" target="node_p_strat">
+          <mxGeometry x="0.7736" relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="2114" y="1752"/>
+              <mxPoint x="2013" y="1752"/>
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="edge_17" value="order intents" style="edgeStyle=none;rounded=0;html=0;endArrow=classic;endFill=1;strokeColor=#64748B;strokeWidth=1.6;fontSize=11;fontColor=#475569;fontFamily=Helvetica;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="node_p_strat" target="node_p_risk">
+          <mxGeometry x="-0.0769" relative="1" as="geometry">
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="edge_18" value="scaled or rejected orders" style="edgeStyle=none;rounded=0;html=0;endArrow=classic;endFill=1;strokeColor=#64748B;strokeWidth=1.6;fontSize=11;fontColor=#475569;fontFamily=Helvetica;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.4032;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="node_p_risk" target="node_p_engine">
+          <mxGeometry x="0.3089" relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1982" y="2058"/>
+              <mxPoint x="2071" y="2058"/>
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="edge_19" value="quotes for fills and marks" style="edgeStyle=none;rounded=0;html=0;endArrow=classic;endFill=1;strokeColor=#64748B;strokeWidth=1.6;fontSize=11;fontColor=#475569;fontFamily=Helvetica;exitX=0.5663;exitY=1;exitDx=0;exitDy=0;entryX=0.5968;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="node_p_view" target="node_p_engine">
+          <mxGeometry x="0.8884" relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="2158" y="1584"/>
+              <mxPoint x="2246" y="1584"/>
+              <mxPoint x="2246" y="2058"/>
+              <mxPoint x="2157" y="2058"/>
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="edge_20" value="orders, fills, marks, pnl" style="edgeStyle=none;rounded=0;html=0;endArrow=classic;endFill=1;strokeColor=#64748B;strokeWidth=1.6;fontSize=11;fontColor=#475569;fontFamily=Helvetica;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="node_p_engine" target="node_st_ledger">
+          <mxGeometry x="-0.0769" relative="1" as="geometry">
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="edge_21" value="ledger tables" style="edgeStyle=none;rounded=0;html=0;endArrow=classic;endFill=1;strokeColor=#64748B;strokeWidth=1.6;fontSize=11;fontColor=#475569;fontFamily=Helvetica;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="node_st_ledger" target="node_p_analytics">
+          <mxGeometry x="0.8858" relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="2114" y="2384"/>
+              <mxPoint x="651" y="2384"/>
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="edge_22" value="results frames" style="edgeStyle=none;rounded=0;html=0;endArrow=classic;endFill=1;strokeColor=#64748B;strokeWidth=1.6;fontSize=11;fontColor=#475569;fontFamily=Helvetica;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5788;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="node_p_analytics" target="node_p_export">
+          <mxGeometry x="0.5821" relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="651" y="2582"/>
+              <mxPoint x="552" y="2582"/>
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="edge_23" value="surface frames" style="edgeStyle=none;rounded=0;html=0;endArrow=classic;endFill=1;strokeColor=#64748B;strokeWidth=1.6;fontSize=11;fontColor=#475569;fontFamily=Helvetica;exitX=0.4522;exitY=1;exitDx=0;exitDy=0;entryX=0.4212;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="node_st_derived" target="node_p_export">
+          <mxGeometry x="0.9085" relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="373" y="1362"/>
+              <mxPoint x="395" y="1362"/>
+              <mxPoint x="395" y="2582"/>
+              <mxPoint x="494" y="2582"/>
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="edge_24" value="versioned JSON" style="edgeStyle=none;rounded=0;html=0;endArrow=classic;endFill=1;strokeColor=#64748B;strokeWidth=1.6;fontSize=11;fontColor=#475569;fontFamily=Helvetica;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="node_p_export" target="node_a_json">
+          <mxGeometry x="-0.0769" relative="1" as="geometry">
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="edge_25" value="fetch + parse" style="edgeStyle=none;rounded=0;html=0;endArrow=classic;endFill=1;strokeColor=#64748B;strokeWidth=1.6;fontSize=11;fontColor=#475569;fontFamily=Helvetica;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="node_a_json" target="node_ui_app">
+          <mxGeometry x="-0.2432" relative="1" as="geometry">
+          </mxGeometry>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

@@ -1,0 +1,72 @@
+# One trading session t of the daily engine (ADR-0001 step order).
+# Orders created on day t fill at the t+1 snapshot (ADR-0002). Hedges trade at the same close (ADR-0005).
+# Revised after the M0 review: start-of-day cancels, order-date volume cap, causal signals from the view,
+# stress budget and net margin, lattice early-exercise test for puts.
+# Converted from the hand-written engine-daily-loop.sequence.mmd (since removed). Two things the kit has no syntax for:
+#  - "Note over Eng,View" and "Note over Eng,Exp" become a note on the message that follows (drawn right of the to lifeline);
+#  - the shaded "rect" block around the five start-of-day messages is dropped; its heading is the note on the first of them.
+kind: sequence
+title: "Engine daily loop: one trading session t"
+subtitle: "Orders created on day t fill at the t+1 snapshot (ADR-0002); hedges trade at the same close (ADR-0005)"
+autonumber: true
+participants:
+  - {id: Eng, label: "Engine", type: process}
+  - {id: Store, label: "Chain store", type: store}
+  - {id: View, label: "MarketView as_of t", type: process}
+  - {id: Fill, label: "Fill model", type: process}
+  - {id: Exp, label: "Expiry and assignment", type: process}
+  - {id: Mark, label: "Marker", type: process}
+  - {id: Hedge, label: "Hedger", type: process}
+  - {id: Risk, label: "Risk and margin", type: process}
+  - {id: Sig, label: "Signals", type: process}
+  - {id: Strat, label: "Strategy", type: process}
+  - {id: Led, label: "Ledger", type: store}
+messages:
+  - {from: Eng, to: Store, label: "load snapshot t: option_quotes, quote_iv, smile_fits, S_t, r_t, dividends, VIX"}
+  - {from: Store, to: Eng, label: "snapshot t, or none on a missing session", kind: return}
+  - {from: Eng, to: View, label: "create view with as_of = t and the run's split", note: "A read dated after t raises LookAheadError, and as_of past the split end raises SplitError"}
+  # start of day: events decided at t-1 (was a rect block)
+  - {from: Eng, to: Exp, label: "book early assignments and exercises decided at t-1", note: "Start of day: events decided at t-1"}
+  - {from: Exp, to: Eng, label: "share deliveries at strike K", kind: return}
+  - {from: Eng, to: Eng, label: "cancel pending orders on lots these events removed (LOT_REMOVED)"}
+  - {from: Eng, to: Eng, label: "dividends with ex-date t on share positions"}
+  - {from: Eng, to: Eng, label: "cash interest from t-1 to t at r_cc of t-1"}
+  - {from: Eng, to: Fill, label: "pending orders created at t-1"}
+  - alt:
+      - when: "snapshot t exists"
+        messages:
+          - {from: Fill, to: View, label: "quote for each leg"}
+          - {from: Fill, to: Eng, label: "fills at mid plus or minus k times half-spread in integer cents, fees", kind: return}
+          - {from: Fill, to: Eng, label: "cap from the order-date volume V_t (hard cap of record), remainder cancelled with reason", kind: return}
+      - when: "no snapshot on t"
+        messages:
+          - {from: Fill, to: Eng, label: "orders wait for the next snapshot", kind: return}
+  - {from: Eng, to: Exp, label: "contracts expiring at t"}
+  - {from: Exp, to: View, label: "SPY official close S_t"}
+  - {from: Exp, to: Eng, label: "ITM by at least 0.01 settles into shares at K, else expires, pin flags", kind: return}
+  - {from: Eng, to: Mark, label: "mark every open lot"}
+  - {from: Mark, to: View, label: "quote mid, zero-bid mid, surface IV or stale surface"}
+  - {from: Mark, to: Eng, label: "mark_price, mark_source, surface flags, Black-76 greeks per lot", kind: return}
+  - {from: Eng, to: Eng, label: "NAV_mid and NAV_liq"}
+  - {from: Eng, to: Hedge, label: "net delta including delivered shares"}
+  - alt:
+      - when: "schedule or band says hedge"
+        messages:
+          - {from: Hedge, to: Eng, label: "SPY trade at S_t with commission and slippage", kind: return}
+      - when: "no hedge today"
+        messages:
+          - {from: Hedge, to: Eng, label: "no trade", kind: return}
+  - {from: Eng, to: Led, label: "greeks_snapshots and P&L attribution against t-1"}
+  - {from: Eng, to: Risk, label: "end-of-day greek budgets, stress grid cells, net margin requirement"}
+  - {from: Risk, to: Eng, label: "reduce-only orders for t+1 on breach or margin call", kind: return}
+  - {from: Eng, to: Sig, label: "compute signals from the view, refitting on schedule"}
+  - {from: Sig, to: View, label: "SPY bars, VIX and surface dated up to t"}
+  - {from: Sig, to: Eng, label: "IV30, RV forecast, VRP spread, regime, model_fit_date", kind: return}
+  - {from: Eng, to: Strat, label: "view, signals, open positions"}
+  - {from: Strat, to: Eng, label: "exits and entries as order intents", kind: return}
+  - {from: Eng, to: Risk, label: "pre-trade check of each intent: greeks, stress cells, net margin"}
+  - {from: Risk, to: Eng, label: "scaled, rejected or accepted orders queued for t+1", kind: return}
+  - {from: Eng, to: Exp, label: "early-exercise test for t+1: calls by closed form before an ex-date, puts on the CRR lattice"}
+  - {from: Exp, to: Eng, label: "assignments and exercises effective at t+1", kind: return}
+  - {from: Eng, to: Led, label: "orders, fills, position_marks, hedges, expiry_events, risk_events, signals, daily_pnl"}
+  - {from: Led, to: Eng, label: "rows appended for session t", kind: return}

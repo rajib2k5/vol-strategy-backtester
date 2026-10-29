@@ -154,7 +154,7 @@ The grid uses full revaluation, not greeks.
    - The same SR = 0.10 then gives DSR = **0.6319**.
 3. **Regime boundaries.**
    - A previous VIX close of 19.99 → bucket 15–20; 20.00 → bucket 20–30.
-   - VIX 17.31 → 37.32 (2018-02-05) is a shock. VIX 30.0 → 33.0 is not: +10% and +3 points.
+   - VIX from about 17 to about 37 (2018-02-05) is a shock. VIX 30.0 → 33.0 is not: +10% and +3 points.
 4. **Split guard.**
    - A run tagged `development` that creates a `MarketView` with any `as_of` after 2019-12-31 raises `SplitError`. The guard sits in the view, so signals are covered.
    - A `holdout` run whose `config_hash` has no frozen-validation record also raises.

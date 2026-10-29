@@ -17,6 +17,8 @@ the 2020–23 and 2024–26 DoltHub structure is "the same"; and `src/volbt/` ho
 
 ## Verdicts
 
+> **Data notice.** The counts, dates and summaries of DoltHub rows in the tables below are derived from the DoltHub database `post-no-preference/options` (<https://www.dolthub.com/repositories/post-no-preference/options>), licensed [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/), and are shared under the same licence. The rest of this repository is MIT. See [DATA.md](../../DATA.md).
+
 | # | Claim (the fix) | Verdict | Key evidence |
 |---|---|---|---|
 | 1 | `git_state` fails closed | PARTIALLY REFUTED | Corrupt index, `showUntrackedFiles=no`, ignored submodules and hung git → dirty; every old-behaviour mutant killed. Still reads clean under `--assume-unchanged`, `--skip-worktree`, `.git/info/exclude` and a global `core.excludesFile`. A timeout kills git but orphans its children. |

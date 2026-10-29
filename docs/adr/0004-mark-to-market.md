@@ -36,7 +36,7 @@ In 2019, puts with `K/S < 0.80` had `bid = 0` on 22.1% of rows. At `K/S ≥ 0.97
 
 The vendor's IV and greeks are not reliable enough to mark with. On 2023-06-15, for the 443 strike with 29 DTE:
 
-- **Call and put IVs disagree.** The vendor shows `[C_IV]` = 0.1206 and `[P_IV]` = 0.1149, a gap of 0.57 vol points at the same strike.
+- **Call and put IVs disagree.** The vendor shows `[C_IV]` about 0.12 and `[P_IV]` about 0.11, a gap of about 0.6 vol points at the same strike.
 - **Our recompute.** Taking the forward implied by put-call parity and solving from the mid gives 0.1196.
 - **Vendor theta does not reconcile.** The vendor shows −0.0914 per day. Black-Scholes-Merton (BSM) on calendar days gives between −0.104 (r = q = 0) and −0.126 (r = 5.25%, q = 1.5%). Vendor gamma and vega match BSM to within 1%.
 

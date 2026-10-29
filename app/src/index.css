@@ -7,6 +7,7 @@
   --line: #2c3547;
   --accent: #e0a458;
   --teal: #4fb8a8;
+  --blue: #7d9bd1;
   --up: #3fa66a;
   --down: #c25450;
   --mono: 'SF Mono', ui-monospace, Menlo, Consolas, monospace;
@@ -75,6 +76,7 @@ a { color: var(--teal); }
   --line: #DBD7CC;
   --accent: #8A6D1C;
   --teal: #25655B;
+  --blue: #3B5B9A;
   --up: #1F7A48;
   --down: #A63E3A;
 }
@@ -111,3 +113,13 @@ dl.meta .badge { margin: 0 0 0 .6rem; }
 dl.layer-details { display: grid; gap: .6rem 1.4rem; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); margin: 0 0 1rem; }
 dl.layer-details dt { font-family: var(--mono); font-size: .66rem; letter-spacing: .1em; text-transform: uppercase; color: var(--accent); }
 dl.layer-details dd { margin: .1rem 0 0; font-size: .88rem; color: var(--muted); }
+
+/* ---- Data quality page ---- */
+.badge.ok-badge { color: var(--up); border-color: var(--up); }
+.verdict { margin: 0 0 .8rem; }
+ul.failures { margin: 0 0 .8rem; color: var(--down); }
+table.dq th.num, table.dq td.num { text-align: right; }
+table.dq th[scope="row"] { text-align: left; font-family: var(--mono); font-size: .72rem; letter-spacing: 0; text-transform: none; color: var(--ink); border-bottom: 1px solid var(--line); padding: .4rem .8rem .4rem 0; vertical-align: top; }
+table.dense { font-size: .76rem; }
+table.dense td, table.dense th.num { padding-right: .45rem; }
+.flag-note { display: block; font-family: inherit; font-size: .7rem; color: var(--muted); font-weight: 400; max-width: 22ch; line-height: 1.3; }

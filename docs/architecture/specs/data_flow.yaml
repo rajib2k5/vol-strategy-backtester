@@ -1,0 +1,102 @@
+# Data flow: vendor data -> chain store -> features/signals -> engine -> ledger -> analytics -> JSON -> app.
+# Table names match data_model_reference_erd.yaml. Diagram-kit schema (see ../README.md).
+# Revised after the M0 review: signals are computed in the loop from the MarketView; quotes are de-Americanised; DoltHub mask for the surface-gap runs.
+# Refreshed after M1 (2026-10-29) against src/volbt/data/pipeline.py and tools/export_app_data.py. The "Ingest and clean (M1, built)" lane is what
+# the build does today, in its order: reference tables, clean, the quality report written to the store, the gate, option_quotes and calendar_actions,
+# chain_mask, the cross-vendor check, build_summary.json. Lanes marked planned are not built: volbt.pricing, signals, strategies, risk, engine and
+# export are empty packages. Only the MarketView is built beyond M1's lane, and it does not yet serve chain_mask.
+# Where data lives (2026-10-29, volbt.config): vendor sources are only read, from $VOL_DATA_DIR; DoltHub is queried through a private mirror under it
+# ($VOL_DATA_DIR/vol-strategy-backtester/cache/dolt_mirror/options), never the shared clone. Downloads and built tables are written to the repo's
+# git-ignored data/ (work_dir()): data/raw/ and data/store/.
+kind: flow
+title: "Data flow from vendor files to the app"
+direction: TB
+lanes:
+  - {id: vendors, label: "Vendors"}
+  - {id: ingest, label: "Ingest and clean (M1, built)"}
+  - {id: features, label: "Pricing build (M2, planned)"}
+  - {id: simulation, label: "Simulation (M3 to M5, planned)"}
+  - {id: results, label: "Results (M6, planned)"}
+  - {id: presentation, label: "Presentation (app built in M0)"}
+nodes:
+  - {id: v_optionsdx, label: "raw_optionsdx_eod", sublabel: "33 bracketed columns, one wide row per date, expiry, strike; read in place from $VOL_DATA_DIR", type: source, lane: vendors}
+  - {id: v_dolthub, label: "raw_dolthub_option_chain", sublabel: "13 columns; queried through a private mirror in $VOL_DATA_DIR, never the shared clone; SPY rows exported once", type: source, lane: vendors}
+  - {id: v_yf, label: "yfinance SPY OHLC + dividends", type: external, lane: vendors}
+  - {id: v_fred, label: "FRED DGS3MO", type: external, lane: vendors}
+  - {id: v_cboe, label: "Cboe VIX and VIX3M", sublabel: "VIX3M is available: 4,304 rows", type: external, lane: vendors}
+  - {id: i_ref, label: "Fetch and parse reference series", sublabel: "tools/build_data.py --fetch downloads into the repo's data/raw/; yfinance with auto_adjust=False", type: process, lane: ingest}
+  - {id: s_ref, label: "spy_bars, rates, dividends, vix, vix3m", type: store, lane: ingest}
+  - {id: i_cal, label: "Date map from SPY bars", sublabel: "calendar_actions: keep each session, drop every other vendor date; never from chain dates (OptionsDX: 12 closure dates, all dropped)", type: process, lane: ingest}
+  - {id: i_load, label: "Load chains + pin schema", sublabel: "OptionsDX parquet from $VOL_DATA_DIR and the exported DoltHub rows from data/raw/; a changed column stops the build", type: process, lane: ingest}
+  - {id: i_flags, label: "Reshape long, OSI symbol, quality_flags", sublabel: "13-bit bitmask in ADR-0009; rows are flagged, only calendar drops are deleted", type: process, lane: ingest}
+  - {id: s_quality, label: "quality_flag_counts, quality_calendar, quality_underlying, quality_rows_per_date, quality_non_session_dates", sublabel: "The report; written even when the gate fails, so a failure can be read", type: store, lane: ingest}
+  - {id: g_quality, label: "Quality gate passed?", sublabel: "Limits set after looking at the data; a failure raises QualityGateError and deletes any old option_quotes", type: process, lane: ingest}  # was type: decision
+  - {id: s_quotes, label: "option_quotes, calendar_actions", sublabel: "19,022,008 quotes, partitioned by source and year, in the repo's data/store/", type: store, lane: ingest}
+  - {id: i_mask, label: "DoltHub sampling mask for surface-gap runs", sublabel: "chain_mask: the expiry and strike pairs DoltHub lists per date (dolthub), and with Tue/Thu carried forward (dolthub_daily)", type: process, lane: ingest}
+  - {id: i_xvendor, label: "Cross-vendor check, 2020-2023", sublabel: "30-day ATM IV and parity-implied SPY price on the 572 dates both vendors list; reports the share of dates inside each threshold, with no verdict", type: process, lane: ingest}
+  - {id: s_xvendor, label: "cross_vendor_overlap, cross_vendor_previous_session", type: store, lane: ingest}
+  - {id: s_summary, label: "build_summary.json", sublabel: "Counts, quantiles, shares inside the cross-vendor thresholds and the gate result; no clock time", type: store, lane: ingest}
+  - {id: i_export_dq, label: "tools/export_app_data.py: data_quality.json", sublabel: "Aggregates only: flag counts per year, rows per source, calendar fixes, cross-vendor quantiles, gate limits", type: process, lane: ingest}
+  - {id: f_forward, label: "Parity forward per expiry, de-Americanised", sublabel: "CRR early-exercise premium removed from 10 near-K* pairs, then median F_K over 5 strikes near K* (ADR-0008)", type: process, lane: features}
+  - {id: f_iv, label: "IV solve on de-Americanised OTM mids", sublabel: "Premium removed within |k| 0.15; Newton then bisection", type: process, lane: features}
+  - {id: f_smile, label: "Smile nodes in total variance", sublabel: "Wing, cross-expiry and tenor rules applied at mark time (ADR-0004)", type: process, lane: features}
+  - {id: s_iv, label: "expiry_forwards, quote_iv, smile_fits", type: store, lane: features}
+  - {id: e_view, label: "MarketView as_of t", sublabel: "Built in M1 (StoreView): LookAheadError after t; SplitError past the split end", type: process, lane: simulation}
+  - {id: e_sig, label: "Signals from the view: RV, HAR/GARCH, IV30 minus RV forecast", sublabel: "Causal; expanding window from 2000, refit monthly on data up to t (ADR-0001)", type: process, lane: simulation}
+  - {id: e_loop, label: "Daily loop: fills, expiry, marks, hedge, risk, orders", sublabel: "Order of steps in engine_daily_loop_sequence.mmd", type: process, lane: simulation}
+  - {id: s_ledger, label: "runs, signals, orders, order_legs, fills, positions, lots, position_marks, hedges, expiry_events, risk_events, greeks_snapshots, daily_pnl", type: store, lane: simulation}
+  - {id: r_metrics, label: "Metrics, PSR/DSR, regimes, stress windows", type: process, lane: results}
+  - {id: r_attr, label: "Greek P&L attribution", type: process, lane: results}
+  - {id: r_grid, label: "Spot x vol stress grid", sublabel: "Full revaluation", type: process, lane: results}
+  - {id: r_export, label: "Export + JSON Schema validation", type: process, lane: results}
+  - {id: a_json, label: "manifest.json + dataset JSON files", sublabel: "Written today: manifest, illustrative_surface (M0), data_quality (M1). The M2 to M6 datasets are planned", type: output, lane: presentation}
+  - {id: u_app, label: "React app renders", type: ui, lane: presentation}
+edges:
+  - {from: v_yf, to: i_ref, label: "OHLC, dividends"}
+  - {from: v_fred, to: i_ref, label: "yield, percent"}
+  - {from: v_cboe, to: i_ref, label: "daily closes"}
+  - {from: i_ref, to: s_ref, label: "typed tables"}
+  - {from: s_ref, to: i_cal, label: "SPY sessions"}
+  - {from: v_optionsdx, to: i_load, label: "parquet, read in place"}
+  - {from: v_dolthub, to: i_load, label: "SELECT on the mirror, exported to data/raw/"}
+  - {from: i_load, to: i_flags, label: "wide rows"}
+  - {from: i_cal, to: i_flags, label: "session check, non-session dates dropped"}
+  - {from: s_ref, to: i_flags, label: "SPY close for UNDERLYING_MISMATCH"}
+  - {from: i_flags, to: s_quality, label: "report tables"}
+  - {from: s_quality, to: g_quality, label: "limits checked"}
+  - {from: g_quality, to: s_quotes, label: "pass: write"}
+  - {from: g_quality, to: i_load, label: "fail: stop, fix loader"}
+  - {from: g_quality, to: s_summary, label: "gate result"}
+  - {from: s_quotes, to: f_forward, label: "call and put mids"}
+  - {from: s_ref, to: f_forward, label: "r_cc, dividends"}
+  - {from: f_forward, to: f_iv, label: "F, DF, tau"}
+  - {from: s_quotes, to: f_iv, label: "OTM mids"}
+  - {from: f_iv, to: f_smile, label: "IV by strike"}
+  - {from: f_smile, to: s_iv, label: "derived tables"}
+  - {from: f_forward, to: s_iv, label: "forwards"}
+  - {from: s_quotes, to: e_view, label: "quotes for t"}
+  - {from: s_quotes, to: i_mask, label: "DoltHub's listed pairs"}
+  - {from: s_quotes, to: i_xvendor, label: "both vendors' rows, 2020-2023"}
+  - {from: s_ref, to: i_xvendor, label: "SPY bars, rates, dividends"}
+  - {from: i_xvendor, to: s_xvendor, label: "overlap and hypothesis test"}
+  - {from: i_xvendor, to: s_summary, label: "quantiles, shares within thresholds"}
+  - {from: s_quality, to: i_export_dq, label: "flag counts, calendar, rows per date"}
+  - {from: s_summary, to: i_export_dq, label: "cross-vendor quantiles, gate result"}
+  - {from: i_export_dq, to: a_json, label: "write data_quality.json"}
+  - {from: i_mask, to: e_view, label: "planned: the view does not serve chain_mask yet"}
+  - {from: s_iv, to: e_view, label: "surface for t"}
+  - {from: s_ref, to: e_view, label: "SPY bars, rates, VIX"}
+  - {from: e_view, to: e_sig, label: "SPY bars, VIX, surface up to t"}
+  - {from: e_sig, to: e_loop, label: "signal values at t"}
+  - {from: e_view, to: e_loop, label: "one session"}
+  - {from: e_loop, to: s_ledger, label: "append rows"}
+  - {from: s_ledger, to: r_metrics, label: "daily_pnl"}
+  - {from: s_ledger, to: r_attr, label: "position_marks"}
+  - {from: s_ledger, to: r_grid, label: "lots at as_of"}
+  - {from: r_metrics, to: r_export, label: "metrics"}
+  - {from: r_attr, to: r_export, label: "pnl_attribution"}
+  - {from: r_grid, to: r_export, label: "stress_grid"}
+  - {from: s_iv, to: r_export, label: "surface_frames"}
+  - {from: s_ledger, to: r_export, label: "blotter, positions, greeks"}
+  - {from: r_export, to: a_json, label: "write"}
+  - {from: a_json, to: u_app, label: "fetch"}

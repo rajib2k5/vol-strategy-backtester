@@ -3,11 +3,14 @@ import { DataLoadError, describeLoadFailure, loadAppData, type FetchLike } from 
 import { fakeFetch } from '../test/fakeFetch'
 import manifestFixture from '../test/fixtures/manifest.json'
 import surfaceFixture from '../test/fixtures/illustrative_surface.json'
+import dataQualityFixture from '../test/fixtures/data_quality.json'
 
 const FILES = {
   './data/manifest.json': manifestFixture,
   './data/illustrative_surface.json': surfaceFixture,
+  './data/data_quality.json': dataQualityFixture,
 }
+const URLS = ['./data/manifest.json', './data/illustrative_surface.json', './data/data_quality.json']
 
 afterEach(() => {
   vi.unstubAllGlobals()
@@ -25,21 +28,28 @@ async function failure(fetchFn: FetchLike): Promise<DataLoadError> {
 }
 
 describe('loadAppData: happy path', () => {
-  it('fetches the manifest, then the dataset it lists, using only relative URLs', async () => {
+  it('fetches the manifest, then each dataset it lists in turn, using only relative URLs', async () => {
     const requested: string[] = []
     const data = await loadAppData(fakeFetch(FILES, requested))
-    expect(requested).toEqual(['./data/manifest.json', './data/illustrative_surface.json'])
+    expect(requested).toEqual(URLS)
     expect(requested.every((u) => u.startsWith('./'))).toBe(true)
     expect(data.manifest.source_commit).toBe('a1b2c3d4e5f6')
     expect(data.surface.iv).toEqual(surfaceFixture.iv)
+    expect(data.dataQuality.sources.rows).toEqual(dataQualityFixture.sources.rows)
   })
 
-  it('takes the dataset path from the manifest, not from a hard-coded name', async () => {
+  it('takes each dataset path from the manifest, not from a hard-coded name', async () => {
     const moved = JSON.parse(JSON.stringify(manifestFixture)) as { datasets: { path: string }[] }
     moved.datasets[0].path = 'surfaces/v1/s.json'
+    moved.datasets[1].path = 'quality/q.json'
     const requested: string[] = []
-    await loadAppData(fakeFetch({ './data/manifest.json': moved, './data/surfaces/v1/s.json': surfaceFixture }, requested))
-    expect(requested).toEqual(['./data/manifest.json', './data/surfaces/v1/s.json'])
+    await loadAppData(
+      fakeFetch(
+        { './data/manifest.json': moved, './data/surfaces/v1/s.json': surfaceFixture, './data/quality/q.json': dataQualityFixture },
+        requested,
+      ),
+    )
+    expect(requested).toEqual(['./data/manifest.json', './data/surfaces/v1/s.json', './data/quality/q.json'])
   })
 
   it('uses the global fetch when none is injected', async () => {
@@ -47,7 +57,7 @@ describe('loadAppData: happy path', () => {
     const stub = fakeFetch(FILES, urls)
     vi.stubGlobal('fetch', (url: string) => stub(url))
     const data = await loadAppData()
-    expect(urls).toEqual(['./data/manifest.json', './data/illustrative_surface.json'])
+    expect(urls).toEqual(URLS)
     expect(data.surface.dte).toEqual([7, 30, 90])
   })
 })
@@ -62,6 +72,11 @@ describe('loadAppData: transport failures (kind = fetch)', () => {
     const e = await failure(fakeFetch({ './data/manifest.json': manifestFixture }))
     expect(e.kind).toBe('fetch')
     expect(e.message).toBe('./data/illustrative_surface.json answered HTTP 404')
+  })
+  it('the data-quality file missing (HTTP 404) after a good manifest and surface', async () => {
+    const e = await failure(fakeFetch({ './data/manifest.json': manifestFixture, './data/illustrative_surface.json': surfaceFixture }))
+    expect(e.kind).toBe('fetch')
+    expect(e.message).toBe('./data/data_quality.json answered HTTP 404')
   })
   it('network error, keeping the underlying reason', async () => {
     const e = await failure(async () => {
@@ -100,21 +115,34 @@ describe('loadAppData: contract failures (kind = contract)', () => {
     expect(e.kind).toBe('contract')
     expect(e.message).toContain('does not list the "illustrative_surface" dataset')
   })
-  it.each(['0.2.0', '0.1.1'])('a dataset (%s) whose schema_version differs from its manifest entry (0.1.0)', async (version) => {
+  it('a manifest that lists the surface but not the data-quality dataset', async () => {
+    const m = JSON.parse(JSON.stringify(manifestFixture)) as { datasets: unknown[] }
+    m.datasets.pop()
+    const e = await failure(fakeFetch({ ...FILES, './data/manifest.json': m }))
+    expect(e.kind).toBe('contract')
+    expect(e.message).toContain('does not list the "data_quality" dataset')
+  })
+  it.each(['0.3.0', '0.2.1'])('a dataset (%s) whose schema_version differs from its manifest entry (0.2.0)', async (version) => {
     // Both files are individually valid; only the pair is inconsistent.
     const other = { ...surfaceFixture, schema_version: version }
     const e = await failure(fakeFetch({ ...FILES, './data/illustrative_surface.json': other }))
     expect(e.kind).toBe('contract')
     expect(e.message).toBe(
-      `manifest.json: illustrative_surface: the manifest lists schema_version "0.1.0" but illustrative_surface.json says "${version}"`,
+      `manifest.json: illustrative_surface: the manifest lists schema_version "0.2.0" but illustrative_surface.json says "${version}"`,
     )
+  })
+  it('a data-quality file whose schema_version differs from its manifest entry', async () => {
+    const other = { ...dataQualityFixture, schema_version: '0.2.1' }
+    const e = await failure(fakeFetch({ ...FILES, './data/data_quality.json': other }))
+    expect(e.kind).toBe('contract')
+    expect(e.message).toBe('manifest.json: data_quality: the manifest lists schema_version "0.2.0" but data_quality.json says "0.2.1"')
   })
   it('a manifest entry whose schema_version differs from its (valid) dataset file', async () => {
     const m = JSON.parse(JSON.stringify(manifestFixture)) as { datasets: { schema_version: string }[] }
     m.datasets[0].schema_version = '0.3.0'
     const e = await failure(fakeFetch({ ...FILES, './data/manifest.json': m }))
     expect(e.kind).toBe('contract')
-    expect(e.message).toContain('the manifest lists schema_version "0.3.0" but illustrative_surface.json says "0.1.0"')
+    expect(e.message).toContain('the manifest lists schema_version "0.3.0" but illustrative_surface.json says "0.2.0"')
   })
   it('a dataset with a ragged iv grid', async () => {
     const bad = JSON.parse(JSON.stringify(surfaceFixture)) as { iv: number[][] }
@@ -122,6 +150,13 @@ describe('loadAppData: contract failures (kind = contract)', () => {
     const e = await failure(fakeFetch({ ...FILES, './data/illustrative_surface.json': bad }))
     expect(e.kind).toBe('contract')
     expect(e.message).toContain('illustrative_surface.json: illustrative_surface.iv[0]: has 3 values but moneyness has 4 (ragged grid)')
+  })
+  it('a data-quality file with a ragged table, naming the file and the column', async () => {
+    const bad = JSON.parse(JSON.stringify(dataQualityFixture)) as { calendar: { rows: number[] } }
+    bad.calendar.rows.pop()
+    const e = await failure(fakeFetch({ ...FILES, './data/data_quality.json': bad }))
+    expect(e.kind).toBe('contract')
+    expect(e.message).toBe('data_quality.json: data_quality.calendar.rows: has 3 values but "source" has 4')
   })
 })
 

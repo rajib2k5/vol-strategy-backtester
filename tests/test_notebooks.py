@@ -28,6 +28,57 @@ def test_committed_notebook_equals_a_fresh_build():
         "notebooks/00_scaffold_tour.ipynb is stale; run: uv run python tools/build_notebooks.py")
 
 
+DATA_LAYER = REPO / "notebooks" / "01_data_layer.ipynb"
+
+
+def test_committed_data_layer_notebook_equals_a_fresh_build():
+    assert DATA_LAYER.exists(), "run: uv run python tools/build_notebooks.py"
+    fresh = build_notebooks.render_notebooks()["01_data_layer.ipynb"]
+    assert DATA_LAYER.read_bytes() == fresh.encode("utf-8"), (
+        "notebooks/01_data_layer.ipynb is stale; run: uv run python tools/build_notebooks.py")
+
+
+def test_data_layer_notebook_runs_top_to_bottom_without_volbt():
+    # The copied osi, flags and calendar cells must be self-contained: the calendar's own
+    # `from volbt.data.flags import ...` is dropped, and the flags cells define those names.
+    nb = json.loads(DATA_LAYER.read_text(encoding="utf-8"))
+    sources = ["".join(c["source"]) for c in nb["cells"] if c["cell_type"] == "code"]
+    assert not any("import volbt" in s or "from volbt" in s for s in sources)
+    namespace = {}
+    for source in sources:
+        exec(source, namespace)
+    assert namespace["symbol"] == "SPY   240315C00450000"
+    assert [int(b) for b in namespace["bits"]] == [4, 8, 16, 32, 0]
+    assert list(namespace["date_map"]["action"]) == ["session", "drop", "session", "session", "drop"]
+
+
+def test_the_prefix_keeps_ids_of_two_modules_apart(tmp_path):
+    path = write_module(tmp_path, """
+        import os
+
+        def f():
+            return 1
+    """)
+    assert [i for i, _ in build_notebooks.module_cells(path, prefix="osi-")] == ["osi-code-imports", "osi-code-f"]
+
+
+def test_volbt_imports_are_dropped_only_when_asked(tmp_path):
+    path = write_module(tmp_path, """
+        import bisect
+        from volbt.data.flags import STALE
+        import numpy as np
+
+        def f():
+            return STALE
+    """)
+    kept = dict(build_notebooks.module_cells(path))
+    assert "from volbt.data.flags import STALE" in kept["code-imports"]
+    dropped = build_notebooks.module_cells(path, drop_volbt_imports=True)
+    assert dict(dropped)["code-imports"] == "import bisect"
+    assert dict(dropped)["code-imports-2"] == "import numpy as np"
+    assert all("volbt" not in source for _, source in dropped)
+
+
 def test_build_is_byte_deterministic():
     # Two independent builds must match exactly (no random cell ids, no timestamps).
     assert build_notebooks.render_notebooks() == build_notebooks.render_notebooks()
@@ -70,7 +121,7 @@ def test_check_names_a_notebook_that_changed_by_one_character(tmp_path):
 
 
 def test_check_names_a_missing_notebook(tmp_path):
-    assert build_notebooks.drifted_notebooks(tmp_path) == ["00_scaffold_tour.ipynb"]
+    assert build_notebooks.drifted_notebooks(tmp_path) == ["00_scaffold_tour.ipynb", "01_data_layer.ipynb"]
 
 
 def test_check_cli_exits_nonzero_and_names_the_notebook_on_drift(tmp_path, monkeypatch, capsys):
@@ -364,7 +415,7 @@ def test_a_module_with_different_content_still_builds_with_stable_ids(tmp_path):
 @pytest.mark.parametrize("path", [
     "notebooks/00_scaffold_tour.ipynb", "app/public/data/manifest.json",
     "tools/build_notebooks.py", "src/volbt/contract.py",
-    "docs/architecture/rendered/architecture.svg", "docs/architecture/architecture.mmd",
+    "docs/architecture/out/architecture.svg", "docs/architecture/out/architecture.mmd",
     "README.md", "app/src/lib/contract.ts", "app/src/App.tsx"])
 def test_gitattributes_pins_text_files_to_lf(path):
     if shutil.which("git") is None:
@@ -378,7 +429,7 @@ def test_gitattributes_pins_text_files_to_lf(path):
 def test_gitattributes_marks_png_as_binary():
     if shutil.which("git") is None:
         pytest.skip("git is not installed")
-    path = "docs/architecture/rendered/architecture.png"
+    path = "docs/architecture/out/architecture.png"
     result = subprocess.run(["git", "check-attr", "-a", "--", path],
                             cwd=REPO, capture_output=True, text=True, check=True)
     # "binary" is a macro that unsets text, diff and merge.
