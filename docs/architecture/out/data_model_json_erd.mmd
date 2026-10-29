@@ -1,0 +1,201 @@
+---
+title: "vol-strategy-backtester data model: Python to app JSON contract"
+---
+erDiagram
+    json_manifest {
+        string schema_version
+        string generated_at
+        string source_commit
+        json_manifest_dataset[] datasets
+    }
+    json_manifest_dataset {
+        string name PK
+        string path
+        string schema_version
+        string description
+    }
+    json_illustrative_surface {
+        string schema_version
+        string generated_at
+        string source_commit
+        boolean illustrative
+        string label
+        number[] moneyness
+        number[] dte
+        number[][] iv
+        object params
+    }
+    json_data_quality {
+        string schema_version
+        string generated_at
+        string source_commit
+        string label
+        string[] flag_names
+        string[] flag_descriptions
+        object flags_by_year
+        object sources
+        object calendar
+        object cross_vendor
+        object gate
+    }
+    json_run["json#95;run (planned, M2)"] {
+        string run_id PK, FK
+        string config_hash
+        string data_fingerprint
+        string data_source
+        string execution_mode
+        string fill_timing
+        string cap_mode
+        string chain_mask
+        string sample_start
+        string sample_end
+    }
+    json_surface_frames["json#95;surface#95;frames (planned, M2)"] {
+        string schema_version
+        string generated_at
+        string source_commit
+        json_run run FK
+        boolean illustrative
+        object units
+        number[] grid_moneyness
+        number[] grid_dte
+        object[] frames
+    }
+    json_blotter["json#95;blotter (planned, M3)"] {
+        string schema_version
+        string generated_at
+        string source_commit
+        json_run run FK
+        object units
+        object[] fills
+    }
+    json_positions_timeline["json#95;positions#95;timeline (planned, M3)"] {
+        string schema_version
+        string generated_at
+        string source_commit
+        json_run run FK
+        object units
+        object[] positions
+        string[] dates
+        number[] open_count
+    }
+    json_greeks_timeline["json#95;greeks#95;timeline (planned, M5)"] {
+        string schema_version
+        string generated_at
+        string source_commit
+        json_run run FK
+        object units
+        string[] dates
+        number[] delta_usd
+        number[] gamma_1pct_usd
+        number[] vega_1vol_usd
+        number[] theta_1d_usd
+        object budgets
+    }
+    json_pnl_attribution["json#95;pnl#95;attribution (planned, M6)"] {
+        string schema_version
+        string generated_at
+        string source_commit
+        json_run run FK
+        object units
+        string[] dates
+        number[] nav_mid
+        number[] nav_liq
+        number[] pnl_delta
+        number[] pnl_gamma
+        number[] pnl_vega
+        number[] pnl_theta
+        number[] pnl_fees
+        number[] pnl_interest
+        number[] pnl_residual
+    }
+    json_stress_grid["json#95;stress#95;grid (planned, M6)"] {
+        string schema_version
+        string generated_at
+        string source_commit
+        json_run run FK
+        object units
+        string as_of
+        number[] spot_shocks_pct
+        number[] vol_shocks_pts
+        number[][] pnl_usd
+    }
+    json_metrics["json#95;metrics (planned, M6)"] {
+        string schema_version
+        string generated_at
+        string source_commit
+        json_run run FK
+        object units
+        object overall
+        object[] by_regime
+        object[] by_stress_window
+        number n_trials
+        number n_trials_eff
+        number psr
+        number dsr
+        number dsr_raw
+        number dsr_eff
+    }
+    quality_flag_counts["quality#95;flag#95;counts (partial)"] {
+        BIGINT rows
+    }
+    quality_calendar["quality#95;calendar (partial)"] {
+        BIGINT rows
+    }
+    quality_rows_per_date["quality#95;rows#95;per#95;date (partial)"] {
+        BIGINT rows
+    }
+    cross_vendor_overlap["cross#95;vendor#95;overlap (partial)"] {
+        DOUBLE iv30_diff_pts "nullable"
+    }
+    runs["runs (partial, planned, M3)"] {
+        VARCHAR run_id PK
+    }
+    smile_fits["smile#95;fits (partial, planned, M2)"] {
+        DOUBLE atm_iv
+    }
+    fills["fills (partial, planned, M3)"] {
+        BIGINT fill_id PK
+    }
+    positions["positions (partial, planned, M3)"] {
+        BIGINT position_id PK
+    }
+    greeks_snapshots["greeks#95;snapshots (partial, planned, M5)"] {
+        DATE session_date PK
+    }
+    daily_pnl["daily#95;pnl (partial, planned, M3)"] {
+        DATE session_date PK
+        DOUBLE daily_return
+    }
+    position_marks["position#95;marks (partial, planned, M3)"] {
+        DATE session_date PK
+    }
+    json_manifest ||--o{ json_manifest_dataset : "lists"
+    json_manifest_dataset ||--|| json_illustrative_surface : "describes"
+    json_manifest_dataset ||--|| json_data_quality : "describes"
+    json_manifest_dataset ||--|| json_surface_frames : "describes"
+    json_manifest_dataset ||--|| json_blotter : "describes"
+    json_manifest_dataset ||--|| json_positions_timeline : "describes"
+    json_manifest_dataset ||--|| json_greeks_timeline : "describes"
+    json_manifest_dataset ||--|| json_pnl_attribution : "describes"
+    json_manifest_dataset ||--|| json_stress_grid : "describes"
+    json_manifest_dataset ||--|| json_metrics : "describes"
+    runs ||--|| json_run : "serialised as"
+    json_run ||--o{ json_surface_frames : "provenance"
+    json_run ||--o{ json_blotter : "provenance"
+    json_run ||--o{ json_positions_timeline : "provenance"
+    json_run ||--o{ json_greeks_timeline : "provenance"
+    json_run ||--o{ json_pnl_attribution : "provenance"
+    json_run ||--o{ json_stress_grid : "provenance"
+    json_run ||--o{ json_metrics : "provenance"
+    quality_flag_counts ||--o{ json_data_quality : "exported (N#58;M)"
+    quality_calendar ||--o{ json_data_quality : "exported (N#58;M)"
+    quality_rows_per_date ||--o{ json_data_quality : "summed from (N#58;M)"
+    cross_vendor_overlap ||--o{ json_data_quality : "summarised from (N#58;M)"
+    smile_fits ||--o{ json_surface_frames : "exported (N#58;M)"
+    fills ||--o{ json_blotter : "exported (N#58;M)"
+    positions ||--o{ json_positions_timeline : "exported (N#58;M)"
+    greeks_snapshots ||--o{ json_greeks_timeline : "exported (N#58;M)"
+    daily_pnl ||--o{ json_pnl_attribution : "exported (N#58;M)"
+    position_marks ||--o{ json_stress_grid : "revalued into (N#58;M)"
+    daily_pnl ||--o{ json_metrics : "summarised into (N#58;M)"

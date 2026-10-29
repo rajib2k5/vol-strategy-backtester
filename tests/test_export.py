@@ -13,10 +13,11 @@ REPO = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(REPO / "tools"))
 
 import export_app_data  # noqa: E402
+from data_quality_store import make_store  # noqa: E402
 
 SHA = "0123456789abcdef0123456789abcdef01234567"
 FIXED_NOW = datetime(2026, 10, 27, 12, 0, 0, tzinfo=timezone.utc)
-ENVELOPE = {"schema_version": "0.1.0", "generated_at": "2026-10-27T12:00:00Z", "source_commit": SHA}
+ENVELOPE = {"schema_version": "0.2.0", "generated_at": "2026-10-27T12:00:00Z", "source_commit": SHA}
 
 
 def reject_non_finite(token):
@@ -42,28 +43,46 @@ def read_json(path):
     )
 
 
+@pytest.fixture(scope="module")
+def quality_body(tmp_path_factory):
+    """data_quality.json's content, derived from the tiny store of tests/data_quality_store.py."""
+    return export_app_data.data_quality_body(make_store(tmp_path_factory.mktemp("store")))
+
+
 @pytest.fixture
-def exported(tmp_path):
-    export_app_data.build_payloads(tmp_path, lambda: (SHA, False), FIXED_NOW)
+def exported(tmp_path, quality_body):
+    export_app_data.build_payloads(tmp_path, lambda: (SHA, False), FIXED_NOW, quality_body=quality_body)
     return tmp_path
 
 
-def test_writes_exactly_the_two_files(exported):
-    assert sorted(p.name for p in exported.iterdir()) == ["illustrative_surface.json", "manifest.json"]
+def test_writes_exactly_the_three_files(exported):
+    assert sorted(p.name for p in exported.iterdir()) == ["data_quality.json", "illustrative_surface.json", "manifest.json"]
 
 
 def test_manifest_content(exported):
     assert read_json(exported / "manifest.json") == {
         **ENVELOPE,
-        "datasets": [{
-            "name": "illustrative_surface",
-            "path": "illustrative_surface.json",
-            "schema_version": "0.1.0",
-            "description": (
-                "Illustrative SSVI implied-vol surface for the milestone-0 3D hero. "
-                "Not market data."
-            ),
-        }],
+        "datasets": [
+            {
+                "name": "illustrative_surface",
+                "path": "illustrative_surface.json",
+                "schema_version": "0.2.0",
+                "description": (
+                    "Illustrative SSVI implied-vol surface for the milestone-0 3D hero. "
+                    "Not market data."
+                ),
+            },
+            {
+                "name": "data_quality",
+                "path": "data_quality.json",
+                "schema_version": "0.2.0",
+                "description": (
+                    "Milestone-1 data-quality aggregates: quote flags per source and year, rows per "
+                    "source, the calendar fixes, the cross-vendor agreement and the quality-gate "
+                    "result. Counts and quantiles only; no quotes."
+                ),
+            },
+        ],
     }
 
 
@@ -172,22 +191,22 @@ def test_every_file_ends_with_exactly_one_newline_and_has_no_carriage_returns(ex
         assert b"\r" not in data, path.name
 
 
-def test_files_are_written_with_lf_even_where_text_mode_would_write_crlf(tmp_path, windows_text_mode):
+def test_files_are_written_with_lf_even_where_text_mode_would_write_crlf(tmp_path, windows_text_mode, quality_body):
     # On Windows the default text mode would turn each "\n" into "\r\n": same export, different
     # bytes, a spurious git diff. The fixture applies that rule on any OS.
-    export_app_data.build_payloads(tmp_path, lambda: (SHA, False), FIXED_NOW)
+    export_app_data.build_payloads(tmp_path, lambda: (SHA, False), FIXED_NOW, quality_body=quality_body)
     for path in tmp_path.iterdir():
         assert b"\r" not in path.read_bytes(), path.name
 
 
-def test_output_directory_is_created(tmp_path):
+def test_output_directory_is_created(tmp_path, quality_body):
     target = tmp_path / "a" / "b"
-    export_app_data.build_payloads(target, lambda: (SHA, False), FIXED_NOW)
+    export_app_data.build_payloads(target, lambda: (SHA, False), FIXED_NOW, quality_body=quality_body)
     assert (target / "manifest.json").is_file()
 
 
-def test_no_head_gives_uncommitted(tmp_path):
-    export_app_data.build_payloads(tmp_path, lambda: (None, False), FIXED_NOW)
+def test_no_head_gives_uncommitted(tmp_path, quality_body):
+    export_app_data.build_payloads(tmp_path, lambda: (None, False), FIXED_NOW, quality_body=quality_body)
     assert read_json(tmp_path / "manifest.json")["source_commit"] == "uncommitted"
 
 
@@ -206,13 +225,14 @@ def test_script_runs_as_a_plain_script_from_another_directory(tmp_path):
     out = tmp_path / "out"
     elsewhere = tmp_path / "elsewhere"
     elsewhere.mkdir()
+    store = make_store(tmp_path / "store")
     script = REPO / "tools" / "export_app_data.py"
     result = subprocess.run(
-        [sys.executable, str(script), "--out-dir", str(out)],
+        [sys.executable, str(script), "--out-dir", str(out), "--store", str(store.root)],
         cwd=elsewhere, capture_output=True, text=True,
     )
     assert result.returncode == 0, result.stderr
-    assert (out / "manifest.json").is_file() and (out / "illustrative_surface.json").is_file()
+    assert sorted(p.name for p in out.iterdir()) == ["data_quality.json", "illustrative_surface.json", "manifest.json"]
     # --out-dir was absolute, so nothing may land next to the (different) working directory.
     assert list(elsewhere.iterdir()) == []
 
@@ -242,21 +262,31 @@ def lookup_for(source_commit):
 COMMITTED_DIR = REPO / "app" / "public" / "data"
 
 
+def committed_quality_body(committed_dir):
+    """data_quality.json's content after the envelope, as committed. The default run has no store to
+    rebuild it from; tests/test_export_data_quality.py (marked real_data) does that comparison."""
+    written = read_json(committed_dir / "data_quality.json")
+    return {key: value for key, value in written.items() if key not in ENVELOPE}
+
+
 def assert_matches_a_fresh_export(committed_dir, fresh_dir, name):
     """Export again into fresh_dir, stamped with the committed envelope, and compare BYTES.
 
     generated_at and source_commit change on every run, so the fresh export reuses the committed
     manifest's values; after that, any difference at all (a value, the key order, the
-    indentation, a CRLF line ending) is drift.
+    indentation, a CRLF line ending) is drift. data_quality.json's own numbers come from the store,
+    so here they are taken from the committed file: that checks its layout and the manifest, not
+    the numbers.
     """
     stamp = read_json(committed_dir / "manifest.json")
     now = datetime.strptime(stamp["generated_at"], "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=timezone.utc)
-    export_app_data.build_payloads(fresh_dir, lookup_for(stamp["source_commit"]), now)
+    export_app_data.build_payloads(fresh_dir, lookup_for(stamp["source_commit"]), now,
+                                   quality_body=committed_quality_body(committed_dir))
     assert (fresh_dir / name).read_bytes() == (committed_dir / name).read_bytes(), (
         f"app/public/data/{name} is stale; run: uv run python tools/export_app_data.py")
 
 
-@pytest.mark.parametrize("name", ["manifest.json", "illustrative_surface.json"])
+@pytest.mark.parametrize("name", ["manifest.json", "illustrative_surface.json", "data_quality.json"])
 def test_committed_app_data_matches_a_fresh_export_byte_for_byte(tmp_path, name):
     # Catches "changed the model, forgot to re-run the exporter".
     if not (COMMITTED_DIR / name).exists():

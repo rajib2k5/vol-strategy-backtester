@@ -1,0 +1,261 @@
+# Every stored table, plus the Python -> app JSON contract entities.
+# Types are DuckDB/Parquet types for tables; JSON types (string, number, boolean, array<...>, object) for json_* entities.
+# Column names and enums match ADR-0002..0010. Diagram-kit schema (see ../README.md).
+# Revised after the M0 review: order-date volume cap, integer-cent prices, net margin, stress budget, de-Americanised forwards, causal signals, trial accounting.
+# Refreshed after M1 (2026-10-29): data_quality.json (implemented, written by tools/export_app_data.py) is added, with partial copies of the four built
+# tables it is read from. Every other dataset below is still planned. schema_version is 0.2.0: a new file is a MINOR bump.
+# Every entity not built carries "(planned, Mn)" in its label, as in the reference spec; the milestone is the ADR-0001 dataset table's. json_run takes the
+# earliest results dataset that carries it (surface_frames, M2). A partial copy of an unbuilt table is marked with that table's milestone (the
+# ledger tables: see data_model_ledger_erd.yaml); partial copies of built tables are not.
+# The kit's erd schema has no entity description or column note field, so the interim notes are kept as comments.
+# Types: array<T> is written T[]; DECIMAL(p,s) is DECIMAL_p_s (a comma is not allowed in a type); [BRACKETED] vendor
+# column names lose their brackets. Relations are drawn from the referencing (child) column to the referenced column;
+# relations the interim schema drew between tables with no foreign key use a representative column (marked below).
+# One of three data-model specs (vendor and reference tables, per-run ledger, Python -> app JSON contract). The single
+# 35-entity diagram was too dense to read, so it is split. An entity marked (partial) repeats, from another spec, only the
+# columns that a relation in this diagram joins; its full column list is in the spec that owns it.
+kind: erd
+title: "vol-strategy-backtester data model: Python to app JSON contract"
+subtitle: "Built: manifest.json, illustrative_surface.json, data_quality.json. Planned: json_run (M2) and 7 datasets, M2 to M6."
+entities:
+  # app/public/data/manifest.json (M0, implemented).
+  - id: json_manifest
+    columns:
+      - {name: schema_version, type: string}  # MAJOR.MINOR.PATCH
+      - {name: generated_at, type: string}  # UTC ISO-8601 with Z
+      - {name: source_commit, type: string}  # sha, sha-dirty or uncommitted
+      - {name: datasets, type: "json_manifest_dataset[]"}  # type array<json_manifest_dataset>
+  # One entry in manifest.datasets (M0, implemented).
+  - id: json_manifest_dataset
+    columns:
+      - {name: name, type: string, pk: true}
+      - {name: path, type: string}
+      - {name: schema_version, type: string}
+      - {name: description, type: string}
+  # illustrative_surface.json (M0, implemented): SSVI surface for the hero, not market data.
+  - id: json_illustrative_surface
+    columns:
+      - {name: schema_version, type: string}
+      - {name: generated_at, type: string}
+      - {name: source_commit, type: string}
+      - {name: illustrative, type: boolean}  # always true
+      - {name: label, type: string}
+      - {name: moneyness, type: "number[]"}  # type array<number>; log-moneyness, increasing
+      - {name: dte, type: "number[]"}  # type array<number>; days, increasing
+      - {name: iv, type: "number[][]"}  # type array<array<number>>; iv[i_dte][j_moneyness], decimal
+      - {name: params, type: object}
+  # data_quality.json (M1, implemented): aggregates of the built store, column-wise; counts, shares and quantiles, never a quote. Read from quality_flag_counts,
+  # quality_calendar, quality_rows_per_date and build_summary.json (the cross-vendor quantiles, the shares of dates inside each threshold and the gate result, which are not tables).
+  - id: json_data_quality
+    columns:
+      - {name: schema_version, type: string}
+      - {name: generated_at, type: string}
+      - {name: source_commit, type: string}
+      - {name: label, type: string}
+      - {name: flag_names, type: "string[]"}  # type array<string>; the 13 flags in bit order
+      - {name: flag_descriptions, type: "string[]"}  # type array<string>; one line per flag, same order
+      - {name: flags_by_year, type: object}  # source[], year[], rows[], counts{flag: number[]}, shares{flag: number[]}; one row per source and year
+      - {name: sources, type: object}  # source[], rows[], dates[]
+      - {name: calendar, type: object}  # source[], action[], dates[], rows[]; action is session or drop
+      - {name: cross_vendor, type: object}  # label, overlap_dates, basis, distributions{}, within_thresholds{key[], label[], threshold[], unit[], dates[], share_within[]}, by_year{year[], dates[], iv30_share_within[], spot_dolthub_share_within[], spot_dolthub_vs_close_median_bp[], spot_optionsdx_vs_close_median_bp[]}; measurements, no verdict
+      - {name: gate, type: object}  # passed, failures[], thresholds{rule[], source[], what[], bound[], limit[], worst[], unit[]}
+  # Provenance block every results dataset carries after the envelope (planned, MINOR bump).
+  - id: json_run
+    label: "json_run (planned, M2)"
+    columns:
+      - {name: run_id, type: string, pk: true, fk: runs.run_id}
+      - {name: config_hash, type: string}
+      - {name: data_fingerprint, type: string}
+      - {name: data_source, type: string}
+      - {name: execution_mode, type: string}
+      - {name: fill_timing, type: string}
+      - {name: cap_mode, type: string}
+      - {name: chain_mask, type: string}
+      - {name: sample_start, type: string}
+      - {name: sample_end, type: string}
+  # surface_frames.json (M2): weekly IV surfaces on a fixed grid.
+  - id: json_surface_frames
+    label: "json_surface_frames (planned, M2)"
+    columns:
+      - {name: schema_version, type: string}
+      - {name: generated_at, type: string}
+      - {name: source_commit, type: string}
+      - {name: run, type: json_run, fk: json_run.run_id}  # run_id names the pricing build; execution fields are null
+      - {name: illustrative, type: boolean}  # false
+      - {name: units, type: object}
+      - {name: grid_moneyness, type: "number[]"}  # type array<number>
+      - {name: grid_dte, type: "number[]"}  # type array<number>
+      - {name: frames, type: "object[]"}  # type array<object>; {date, spot, atm_iv_30d, iv[dte][k], quoted_share}
+  # blotter.json (M3): every fill.
+  - id: json_blotter
+    label: "json_blotter (planned, M3)"
+    columns:
+      - {name: schema_version, type: string}
+      - {name: generated_at, type: string}
+      - {name: source_commit, type: string}
+      - {name: run, type: json_run, fk: json_run.run_id}
+      - {name: units, type: object}
+      - {name: fills, type: "object[]"}  # type array<object>; {fill_id, date, osi_symbol, qty, price, mid, half_spread, fees, fill_source, intent}
+  # positions_timeline.json (M3).
+  - id: json_positions_timeline
+    label: "json_positions_timeline (planned, M3)"
+    columns:
+      - {name: schema_version, type: string}
+      - {name: generated_at, type: string}
+      - {name: source_commit, type: string}
+      - {name: run, type: json_run, fk: json_run.run_id}
+      - {name: units, type: object}
+      - {name: positions, type: "object[]"}  # type array<object>; {position_id, structure, opened, closed, legs[], exit_reason}
+      - {name: dates, type: "string[]"}  # type array<string>
+      - {name: open_count, type: "number[]"}  # type array<number>
+  # greeks_timeline.json (M5), column-wise.
+  - id: json_greeks_timeline
+    label: "json_greeks_timeline (planned, M5)"
+    columns:
+      - {name: schema_version, type: string}
+      - {name: generated_at, type: string}
+      - {name: source_commit, type: string}
+      - {name: run, type: json_run, fk: json_run.run_id}
+      - {name: units, type: object}
+      - {name: dates, type: "string[]"}  # type array<string>
+      - {name: delta_usd, type: "number[]"}  # type array<number>
+      - {name: gamma_1pct_usd, type: "number[]"}  # type array<number>
+      - {name: vega_1vol_usd, type: "number[]"}  # type array<number>
+      - {name: theta_1d_usd, type: "number[]"}  # type array<number>
+      - {name: budgets, type: object}
+  # pnl_attribution.json (M6), column-wise.
+  - id: json_pnl_attribution
+    label: "json_pnl_attribution (planned, M6)"
+    columns:
+      - {name: schema_version, type: string}
+      - {name: generated_at, type: string}
+      - {name: source_commit, type: string}
+      - {name: run, type: json_run, fk: json_run.run_id}
+      - {name: units, type: object}
+      - {name: dates, type: "string[]"}  # type array<string>
+      - {name: nav_mid, type: "number[]"}  # type array<number>
+      - {name: nav_liq, type: "number[]"}  # type array<number>
+      - {name: pnl_delta, type: "number[]"}  # type array<number>
+      - {name: pnl_gamma, type: "number[]"}  # type array<number>
+      - {name: pnl_vega, type: "number[]"}  # type array<number>
+      - {name: pnl_theta, type: "number[]"}  # type array<number>
+      - {name: pnl_fees, type: "number[]"}  # type array<number>
+      - {name: pnl_interest, type: "number[]"}  # type array<number>
+      - {name: pnl_residual, type: "number[]"}  # type array<number>
+  # stress_grid.json (M6): full-revaluation spot x vol grid.
+  - id: json_stress_grid
+    label: "json_stress_grid (planned, M6)"
+    columns:
+      - {name: schema_version, type: string}
+      - {name: generated_at, type: string}
+      - {name: source_commit, type: string}
+      - {name: run, type: json_run, fk: json_run.run_id}
+      - {name: units, type: object}
+      - {name: as_of, type: string}
+      - {name: spot_shocks_pct, type: "number[]"}  # type array<number>
+      - {name: vol_shocks_pts, type: "number[]"}  # type array<number>
+      - {name: pnl_usd, type: "number[][]"}  # type array<array<number>>; pnl_usd[i_vol][j_spot]
+  # metrics.json (M6).
+  - id: json_metrics
+    label: "json_metrics (planned, M6)"
+    columns:
+      - {name: schema_version, type: string}
+      - {name: generated_at, type: string}
+      - {name: source_commit, type: string}
+      - {name: run, type: json_run, fk: json_run.run_id}
+      - {name: units, type: object}
+      - {name: overall, type: object}  # cagr, sharpe, sortino, calmar, max_dd_mid, max_dd_liq, skew, kurtosis, avg and peak margin use
+      - {name: by_regime, type: "object[]"}  # type array<object>
+      - {name: by_stress_window, type: "object[]"}  # type array<object>; includes Aug-2024 with status NO_DATA
+      - {name: n_trials, type: number}  # N_raw: trials plus re-runs plus logged design choices (ADR-0010)
+      - {name: n_trials_eff, type: number}  # N_eff, clustered at rho* = 0.5; reported, never used alone (ADR-0010)
+      - {name: psr, type: number}
+      - {name: dsr, type: number}  # headline: min(dsr_raw, dsr_eff)
+      - {name: dsr_raw, type: number}
+      - {name: dsr_eff, type: number}
+  # Partial copy of quality_flag_counts (built), defined in the other data-model spec: only the columns joined from this diagram.
+  - id: quality_flag_counts
+    label: "quality_flag_counts (partial)"
+    columns:
+      - {name: rows, type: BIGINT}
+  # Partial copy of quality_calendar (built), defined in the other data-model spec: only the columns joined from this diagram.
+  - id: quality_calendar
+    label: "quality_calendar (partial)"
+    columns:
+      - {name: rows, type: BIGINT}
+  # Partial copy of quality_rows_per_date (built), defined in the other data-model spec: only the columns joined from this diagram.
+  - id: quality_rows_per_date
+    label: "quality_rows_per_date (partial)"
+    columns:
+      - {name: rows, type: BIGINT}
+  # Partial copy of cross_vendor_overlap (built), defined in the other data-model spec: only the columns joined from this diagram.
+  - id: cross_vendor_overlap
+    label: "cross_vendor_overlap (partial)"
+    columns:
+      - {name: iv30_diff_pts, type: DOUBLE, nullable: true}
+  # Partial copy of runs, defined in the other data-model spec: only the columns joined from this diagram.
+  - id: runs
+    label: "runs (partial, planned, M3)"
+    columns:
+      - {name: run_id, type: VARCHAR, pk: true}
+  # Partial copy of smile_fits, defined in the other data-model spec: only the columns joined from this diagram.
+  - id: smile_fits
+    label: "smile_fits (partial, planned, M2)"
+    columns:
+      - {name: atm_iv, type: DOUBLE}
+  # Partial copy of fills, defined in the other data-model spec: only the columns joined from this diagram.
+  - id: fills
+    label: "fills (partial, planned, M3)"
+    columns:
+      - {name: fill_id, type: BIGINT, pk: true}
+  # Partial copy of positions, defined in the other data-model spec: only the columns joined from this diagram.
+  - id: positions
+    label: "positions (partial, planned, M3)"
+    columns:
+      - {name: position_id, type: BIGINT, pk: true}
+  # Partial copy of greeks_snapshots, defined in the other data-model spec: only the columns joined from this diagram.
+  - id: greeks_snapshots
+    label: "greeks_snapshots (partial, planned, M5)"
+    columns:
+      - {name: session_date, type: DATE, pk: true}
+  # Partial copy of daily_pnl, defined in the other data-model spec: only the columns joined from this diagram.
+  - id: daily_pnl
+    label: "daily_pnl (partial, planned, M3)"
+    columns:
+      - {name: session_date, type: DATE, pk: true}
+      - {name: daily_return, type: DOUBLE}
+  # Partial copy of position_marks, defined in the other data-model spec: only the columns joined from this diagram.
+  - id: position_marks
+    label: "position_marks (partial, planned, M3)"
+    columns:
+      - {name: session_date, type: DATE, pk: true}
+relations:
+  - {from: json_manifest_dataset.name, to: json_manifest.datasets, cardinality: "0..*", label: "lists"}  # no foreign key: representative column
+  - {from: json_illustrative_surface.schema_version, to: json_manifest_dataset.schema_version, cardinality: "1..1", label: "describes"}  # no foreign key: representative column
+  - {from: json_data_quality.schema_version, to: json_manifest_dataset.schema_version, cardinality: "1..1", label: "describes"}  # no foreign key: representative column
+  - {from: json_surface_frames.schema_version, to: json_manifest_dataset.schema_version, cardinality: "1..1", label: "describes"}  # no foreign key: representative column
+  - {from: json_blotter.schema_version, to: json_manifest_dataset.schema_version, cardinality: "1..1", label: "describes"}  # no foreign key: representative column
+  - {from: json_positions_timeline.schema_version, to: json_manifest_dataset.schema_version, cardinality: "1..1", label: "describes"}  # no foreign key: representative column
+  - {from: json_greeks_timeline.schema_version, to: json_manifest_dataset.schema_version, cardinality: "1..1", label: "describes"}  # no foreign key: representative column
+  - {from: json_pnl_attribution.schema_version, to: json_manifest_dataset.schema_version, cardinality: "1..1", label: "describes"}  # no foreign key: representative column
+  - {from: json_stress_grid.schema_version, to: json_manifest_dataset.schema_version, cardinality: "1..1", label: "describes"}  # no foreign key: representative column
+  - {from: json_metrics.schema_version, to: json_manifest_dataset.schema_version, cardinality: "1..1", label: "describes"}  # no foreign key: representative column
+  - {from: json_run.run_id, to: runs.run_id, cardinality: "1..1", label: "serialised as"}
+  - {from: json_surface_frames.run, to: json_run.run_id, cardinality: "0..*", label: "provenance"}
+  - {from: json_blotter.run, to: json_run.run_id, cardinality: "0..*", label: "provenance"}
+  - {from: json_positions_timeline.run, to: json_run.run_id, cardinality: "0..*", label: "provenance"}
+  - {from: json_greeks_timeline.run, to: json_run.run_id, cardinality: "0..*", label: "provenance"}
+  - {from: json_pnl_attribution.run, to: json_run.run_id, cardinality: "0..*", label: "provenance"}
+  - {from: json_stress_grid.run, to: json_run.run_id, cardinality: "0..*", label: "provenance"}
+  - {from: json_metrics.run, to: json_run.run_id, cardinality: "0..*", label: "provenance"}
+  - {from: json_data_quality.flags_by_year, to: quality_flag_counts.rows, cardinality: "0..*", label: "exported (N:M)"}  # no foreign key: representative column
+  - {from: json_data_quality.calendar, to: quality_calendar.rows, cardinality: "0..*", label: "exported (N:M)"}  # no foreign key: representative column
+  - {from: json_data_quality.sources, to: quality_rows_per_date.rows, cardinality: "0..*", label: "summed from (N:M)"}  # no foreign key: representative column
+  - {from: json_data_quality.cross_vendor, to: cross_vendor_overlap.iv30_diff_pts, cardinality: "0..*", label: "summarised from (N:M)"}  # no foreign key: representative column
+  - {from: json_surface_frames.frames, to: smile_fits.atm_iv, cardinality: "0..*", label: "exported (N:M)"}  # no foreign key: representative column
+  - {from: json_blotter.fills, to: fills.fill_id, cardinality: "0..*", label: "exported (N:M)"}  # no foreign key: representative column
+  - {from: json_positions_timeline.positions, to: positions.position_id, cardinality: "0..*", label: "exported (N:M)"}  # no foreign key: representative column
+  - {from: json_greeks_timeline.dates, to: greeks_snapshots.session_date, cardinality: "0..*", label: "exported (N:M)"}  # no foreign key: representative column
+  - {from: json_pnl_attribution.dates, to: daily_pnl.session_date, cardinality: "0..*", label: "exported (N:M)"}  # no foreign key: representative column
+  - {from: json_stress_grid.as_of, to: position_marks.session_date, cardinality: "0..*", label: "revalued into (N:M)"}  # no foreign key: representative column
+  - {from: json_metrics.overall, to: daily_pnl.daily_return, cardinality: "0..*", label: "summarised into (N:M)"}  # no foreign key: representative column

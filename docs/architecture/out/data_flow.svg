@@ -1,0 +1,832 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="3301" height="3774" viewBox="0 0 3301 3774">
+  <title>Data flow from vendor files to the app</title>
+  <rect x="0" y="0" width="3301" height="3774" fill="#F8FAFC"/>
+  <text x="32" y="52" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="20" font-weight="700" fill="#0F172A">Data flow from vendor files to the app</text>
+  <g id="lane_vendors">
+    <rect x="32" y="80" width="2429" height="140" rx="14" fill="#F1F5F9" stroke="#E2E8F0" stroke-width="1"/>
+    <text x="48" y="100" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="11" font-weight="700" letter-spacing="0.8" fill="#64748B">VENDORS</text>
+  </g>
+  <g id="lane_ingest">
+    <rect x="32" y="334" width="2429" height="1698" rx="14" fill="#EFF6FF" stroke="#DBEAFE" stroke-width="1"/>
+    <text x="48" y="354" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="11" font-weight="700" letter-spacing="0.8" fill="#64748B">INGEST AND CLEAN (M1, BUILT)</text>
+  </g>
+  <g id="lane_features">
+    <rect x="2489" y="80" width="780" height="3606" rx="14" fill="#F5F3FF" stroke="#E9E5FD" stroke-width="1"/>
+    <text x="2505" y="100" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="11" font-weight="700" letter-spacing="0.8" fill="#64748B">PRICING BUILD (M2, PLANNED)</text>
+  </g>
+  <g id="lane_simulation">
+    <rect x="32" y="2304" width="2429" height="594" rx="14" fill="#ECFDF5" stroke="#D1FAE5" stroke-width="1"/>
+    <text x="48" y="2324" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="11" font-weight="700" letter-spacing="0.8" fill="#64748B">SIMULATION (M3 TO M5, PLANNED)</text>
+  </g>
+  <g id="lane_results">
+    <rect x="32" y="2988" width="2429" height="322" rx="14" fill="#FFF7ED" stroke="#FFEDD5" stroke-width="1"/>
+    <text x="48" y="3008" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="11" font-weight="700" letter-spacing="0.8" fill="#64748B">RESULTS (M6, PLANNED)</text>
+  </g>
+  <g id="lane_presentation">
+    <rect x="32" y="3412" width="2429" height="274" rx="14" fill="#FDF2F8" stroke="#FCE7F3" stroke-width="1"/>
+    <text x="48" y="3432" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="11" font-weight="700" letter-spacing="0.8" fill="#64748B">PRESENTATION (APP BUILT IN M0)</text>
+  </g>
+  <g id="edge_0">
+    <path d="M1685 200L1685 240Q1685 248 1693 248L1738 248Q1746 248 1746 256L1746 376" fill="none" stroke="#64748B" stroke-width="1.6" stroke-linejoin="round"/>
+    <polygon points="1746,384 1741.5,375 1750.5,375" fill="#64748B"/>
+  </g>
+  <g id="edge_1">
+    <path d="M1974 200L1974 228Q1974 236 1966 236L1817 236Q1809 236 1809 244L1809 376" fill="none" stroke="#64748B" stroke-width="1.6" stroke-linejoin="round"/>
+    <polygon points="1809,384 1804.5,375 1813.5,375" fill="#64748B"/>
+  </g>
+  <g id="edge_2">
+    <path d="M2236 200L2236 240Q2236 248 2228 248L1870 248Q1862 248 1862 256L1862 376" fill="none" stroke="#64748B" stroke-width="1.6" stroke-linejoin="round"/>
+    <polygon points="1862,384 1857.5,375 1866.5,375" fill="#64748B"/>
+  </g>
+  <g id="edge_3">
+    <path d="M1804 454L1804 524" fill="none" stroke="#64748B" stroke-width="1.6" stroke-linejoin="round"/>
+    <polygon points="1804,532 1799.5,523 1808.5,523" fill="#64748B"/>
+  </g>
+  <g id="edge_4">
+    <path d="M1760 588L1760 620Q1760 628 1752 628L1564 628Q1556 628 1556 636L1556 682" fill="none" stroke="#64748B" stroke-width="1.6" stroke-linejoin="round"/>
+    <polygon points="1556,690 1551.5,681 1560.5,681" fill="#64748B"/>
+  </g>
+  <g id="edge_5">
+    <path d="M375 200L375 240Q375 248 383 248L908 248Q916 248 916 256L916 376" fill="none" stroke="#64748B" stroke-width="1.6" stroke-linejoin="round"/>
+    <polygon points="916,384 911.5,375 920.5,375" fill="#64748B"/>
+  </g>
+  <g id="edge_6">
+    <path d="M1114 200L1114 240Q1114 248 1106 248L1064 248Q1056 248 1056 256L1056 376" fill="none" stroke="#64748B" stroke-width="1.6" stroke-linejoin="round"/>
+    <polygon points="1056,384 1051.5,375 1060.5,375" fill="#64748B"/>
+  </g>
+  <g id="edge_7">
+    <path d="M1008 454L1008 462Q1008 470 1000 470L994 470Q986 470 986 478L986 780Q986 788 994 788L1483 788Q1491 788 1491 796L1491 866" fill="none" stroke="#64748B" stroke-width="1.6" stroke-linejoin="round"/>
+    <polygon points="1491,874 1486.5,865 1495.5,865" fill="#64748B"/>
+  </g>
+  <g id="edge_8">
+    <path d="M1556 760L1556 780Q1556 788 1564 788L1618 788Q1626 788 1626 796L1626 866" fill="none" stroke="#64748B" stroke-width="1.6" stroke-linejoin="round"/>
+    <polygon points="1626,874 1621.5,865 1630.5,865" fill="#64748B"/>
+  </g>
+  <g id="edge_9">
+    <path d="M1804 588L1804 620Q1804 628 1812 628L1993 628Q2001 628 2001 636L2001 780Q2001 788 1993 788L1769 788Q1761 788 1761 796L1761 866" fill="none" stroke="#64748B" stroke-width="1.6" stroke-linejoin="round"/>
+    <polygon points="1761,874 1756.5,865 1765.5,865" fill="#64748B"/>
+  </g>
+  <g id="edge_10">
+    <path d="M1626 944L1626 1014" fill="none" stroke="#64748B" stroke-width="1.6" stroke-linejoin="round"/>
+    <polygon points="1626,1022 1621.5,1013 1630.5,1013" fill="#64748B"/>
+  </g>
+  <g id="edge_11">
+    <path d="M1604 1092L1604 1112Q1604 1120 1596 1120L1139 1120Q1131 1120 1131 1128L1131 1198" fill="none" stroke="#64748B" stroke-width="1.6" stroke-linejoin="round"/>
+    <polygon points="1131,1206 1126.5,1197 1135.5,1197" fill="#64748B"/>
+  </g>
+  <g id="edge_12">
+    <path d="M1119 1276L1119 1284Q1119 1292 1127 1292L1503 1292Q1511 1292 1511 1300L1511 1346" fill="none" stroke="#64748B" stroke-width="1.6" stroke-linejoin="round"/>
+    <polygon points="1511,1354 1506.5,1345 1515.5,1345" fill="#64748B"/>
+  </g>
+  <g id="edge_13">
+    <path d="M1063 1206L1063 1128Q1063 1120 1055 1120L883 1120Q875 1120 875 1112L875 478Q875 470 883 470L960 470Q964 470 964 466L964 462" fill="none" stroke="#64748B" stroke-width="1.6" stroke-linejoin="round"/>
+    <polygon points="964,454 968.5,463 959.5,463" fill="#64748B"/>
+  </g>
+  <g id="edge_14">
+    <path d="M1075 1276L1075 1284Q1075 1292 1067 1292L690 1292Q682 1292 682 1300L682 1640Q682 1648 690 1648L1330 1648Q1338 1648 1338 1656L1338 1738" fill="none" stroke="#64748B" stroke-width="1.6" stroke-linejoin="round"/>
+    <polygon points="1338,1746 1333.5,1737 1342.5,1737" fill="#64748B"/>
+  </g>
+  <g id="edge_15">
+    <path d="M1599 1424L1599 1444Q1599 1452 1607 1452L2840 1452Q2848 1452 2848 1460L2848 1542" fill="none" stroke="#64748B" stroke-width="1.6" stroke-linejoin="round"/>
+    <polygon points="2848,1550 2843.5,1541 2852.5,1541" fill="#64748B"/>
+  </g>
+  <g id="edge_16">
+    <path d="M1892 588L1892 596Q1892 604 1900 604L2175 604Q2183 604 2183 612L2183 1432Q2183 1440 2191 1440L2902 1440Q2910 1440 2910 1448L2910 1542" fill="none" stroke="#64748B" stroke-width="1.6" stroke-linejoin="round"/>
+    <polygon points="2910,1550 2905.5,1541 2914.5,1541" fill="#64748B"/>
+  </g>
+  <g id="edge_17">
+    <path d="M2857 1620L2857 1652Q2857 1660 2849 1660L2785 1660Q2777 1660 2777 1668L2777 1738" fill="none" stroke="#64748B" stroke-width="1.6" stroke-linejoin="round"/>
+    <polygon points="2777,1746 2772.5,1737 2781.5,1737" fill="#64748B"/>
+  </g>
+  <g id="edge_18">
+    <path d="M1511 1424L1511 1459.5Q1511 1464 1506.5 1464L1506.5 1464Q1502 1464 1502 1468.5L1502 1652Q1502 1660 1510 1660L2725 1660Q2733 1660 2733 1668L2733 1738" fill="none" stroke="#64748B" stroke-width="1.6" stroke-linejoin="round"/>
+    <polygon points="2733,1746 2728.5,1737 2737.5,1737" fill="#64748B"/>
+  </g>
+  <g id="edge_19">
+    <path d="M2755 1816L2755 1934" fill="none" stroke="#64748B" stroke-width="1.6" stroke-linejoin="round"/>
+    <polygon points="2755,1942 2750.5,1933 2759.5,1933" fill="#64748B"/>
+  </g>
+  <g id="edge_20">
+    <path d="M2755 2012L2755 2040Q2755 2048 2763 2048L2844 2048Q2852 2048 2852 2056L2852 2126" fill="none" stroke="#64748B" stroke-width="1.6" stroke-linejoin="round"/>
+    <polygon points="2852,2134 2847.5,2125 2856.5,2125" fill="#64748B"/>
+  </g>
+  <g id="edge_21">
+    <path d="M2901 1620L2901 1652Q2901 1660 2909 1660L2995 1660Q3003 1660 3003 1668L3003 2040Q3003 2048 2995 2048L2914 2048Q2906 2048 2906 2056L2906 2126" fill="none" stroke="#64748B" stroke-width="1.6" stroke-linejoin="round"/>
+    <polygon points="2906,2134 2901.5,2125 2910.5,2125" fill="#64748B"/>
+  </g>
+  <g id="edge_22">
+    <path d="M1467 1424L1467 1456Q1467 1464 1475 1464L1480 1464Q1488 1464 1488 1472L1488 1652Q1488 1660 1480 1660L1076 1660Q1068 1660 1068 1668L1068 1824Q1068 1832 1076 1832L1168 1832Q1176 1832 1176 1840L1176 2210Q1176 2218 1184 2218L1283 2218Q1291 2218 1291 2226L1291 2346" fill="none" stroke="#64748B" stroke-width="1.6" stroke-linejoin="round"/>
+    <polygon points="1291,2354 1286.5,2345 1295.5,2345" fill="#64748B"/>
+  </g>
+  <g id="edge_23">
+    <path d="M1423 1424L1423 1456Q1423 1464 1415 1464L1093 1464Q1085 1464 1085 1472L1085 1542" fill="none" stroke="#64748B" stroke-width="1.6" stroke-linejoin="round"/>
+    <polygon points="1085,1550 1080.5,1541 1089.5,1541" fill="#64748B"/>
+  </g>
+  <g id="edge_24">
+    <path d="M1555 1424L1555 1456Q1555 1464 1563 1464L1912 1464Q1920 1464 1920 1472L1920 1542" fill="none" stroke="#64748B" stroke-width="1.6" stroke-linejoin="round"/>
+    <polygon points="1920,1550 1915.5,1541 1924.5,1541" fill="#64748B"/>
+  </g>
+  <g id="edge_25">
+    <path d="M1848 588L1848 608Q1848 616 1856 616L2161 616Q2169 616 2169 624L2169 1432Q2169 1440 2161 1440L2030 1440Q2022 1440 2022 1448L2022 1542" fill="none" stroke="#64748B" stroke-width="1.6" stroke-linejoin="round"/>
+    <polygon points="2022,1550 2017.5,1541 2026.5,1541" fill="#64748B"/>
+  </g>
+  <g id="edge_26">
+    <path d="M1993 1620L1993 1738" fill="none" stroke="#64748B" stroke-width="1.6" stroke-linejoin="round"/>
+    <polygon points="1993,1746 1988.5,1737 1997.5,1737" fill="#64748B"/>
+  </g>
+  <g id="edge_27">
+    <path d="M1949 1620L1949 1640Q1949 1648 1941 1648L1458 1648Q1450 1648 1450 1656L1450 1738" fill="none" stroke="#64748B" stroke-width="1.6" stroke-linejoin="round"/>
+    <polygon points="1450,1746 1445.5,1737 1454.5,1737" fill="#64748B"/>
+  </g>
+  <g id="edge_28">
+    <path d="M1648 1092L1648 1112Q1648 1120 1656 1120L2147 1120Q2155 1120 2155 1128L2155 1456Q2155 1464 2163 1464L2432 1464Q2440 1464 2440 1472L2440 1640Q2440 1648 2432 1648L2256 1648Q2248 1648 2248 1656L2248 1848Q2248 1856 2240 1856L1776 1856Q1768 1856 1768 1864L1768 1934" fill="none" stroke="#64748B" stroke-width="1.6" stroke-linejoin="round"/>
+    <polygon points="1768,1942 1763.5,1933 1772.5,1933" fill="#64748B"/>
+  </g>
+  <g id="edge_29">
+    <path d="M1394 1816L1394 1848Q1394 1856 1402 1856L1644 1856Q1652 1856 1652 1864L1652 1934" fill="none" stroke="#64748B" stroke-width="1.6" stroke-linejoin="round"/>
+    <polygon points="1652,1942 1647.5,1933 1656.5,1933" fill="#64748B"/>
+  </g>
+  <g id="edge_30">
+    <path d="M1710 2012L1710 3318Q1710 3326 1702 3326L1441 3326Q1433 3326 1433 3334L1433 3454" fill="none" stroke="#64748B" stroke-width="1.6" stroke-linejoin="round"/>
+    <polygon points="1433,3462 1428.5,3453 1437.5,3453" fill="#64748B"/>
+  </g>
+  <g id="edge_31">
+    <path d="M1085 1620L1085 1628Q1085 1636 1077 1636L1062 1636Q1054 1636 1054 1644L1054 1836Q1054 1844 1062 1844L1154 1844Q1162 1844 1162 1852L1162 2210Q1162 2218 1154 2218L1146 2218Q1138 2218 1138 2226L1138 2346" fill="none" stroke="#64748B" stroke-width="1.6" stroke-linejoin="round"/>
+    <polygon points="1138,2354 1133.5,2345 1142.5,2345" fill="#64748B"/>
+  </g>
+  <g id="edge_32">
+    <path d="M2857 2190L2857 2210Q2857 2218 2849 2218L1348 2218Q1340 2218 1340 2226L1340 2346" fill="none" stroke="#64748B" stroke-width="1.6" stroke-linejoin="round"/>
+    <polygon points="1340,2354 1335.5,2345 1344.5,2345" fill="#64748B"/>
+  </g>
+  <g id="edge_33">
+    <path d="M1716 588L1716 608Q1716 616 1708 616L1119 616Q1111 616 1111 624L1111 768Q1111 776 1103 776L897 776Q889 776 889 784L889 1100Q889 1108 881 1108L676 1108Q668 1108 668 1116L668 1652Q668 1660 676 1660L1032 1660Q1040 1660 1040 1668L1040 1848Q1040 1856 1048 1856L1140 1856Q1148 1856 1148 1864L1148 2198Q1148 2206 1140 2206L992 2206Q984 2206 984 2214L984 2346" fill="none" stroke="#64748B" stroke-width="1.6" stroke-linejoin="round"/>
+    <polygon points="984,2354 979.5,2345 988.5,2345" fill="#64748B"/>
+  </g>
+  <g id="edge_34">
+    <path d="M1140 2424L1140 2432Q1140 2440 1132 2440L1027 2440Q1019 2440 1019 2448L1019 2494" fill="none" stroke="#64748B" stroke-width="1.6" stroke-linejoin="round"/>
+    <polygon points="1019,2502 1014.5,2493 1023.5,2493" fill="#64748B"/>
+  </g>
+  <g id="edge_35">
+    <path d="M1019 2572L1019 2580Q1019 2588 1027 2588L1123 2588Q1131 2588 1131 2596L1131 2666" fill="none" stroke="#64748B" stroke-width="1.6" stroke-linejoin="round"/>
+    <polygon points="1131,2674 1126.5,2665 1135.5,2665" fill="#64748B"/>
+  </g>
+  <g id="edge_36">
+    <path d="M1184 2424L1184 2432Q1184 2440 1192 2440L1297 2440Q1305 2440 1305 2448L1305 2580Q1305 2588 1297 2588L1201 2588Q1193 2588 1193 2596L1193 2666" fill="none" stroke="#64748B" stroke-width="1.6" stroke-linejoin="round"/>
+    <polygon points="1193,2674 1188.5,2665 1197.5,2665" fill="#64748B"/>
+  </g>
+  <g id="edge_37">
+    <path d="M1162 2744L1162 2814" fill="none" stroke="#64748B" stroke-width="1.6" stroke-linejoin="round"/>
+    <polygon points="1162,2822 1157.5,2813 1166.5,2813" fill="#64748B"/>
+  </g>
+  <g id="edge_38">
+    <path d="M1096 2878L1096 2918Q1096 2926 1088 2926L841 2926Q833 2926 833 2934L833 3030" fill="none" stroke="#64748B" stroke-width="1.6" stroke-linejoin="round"/>
+    <polygon points="833,3038 828.5,3029 837.5,3029" fill="#64748B"/>
+  </g>
+  <g id="edge_39">
+    <path d="M1140 2878L1140 2918Q1140 2926 1148 2926L1180 2926Q1188 2926 1188 2934L1188 3030" fill="none" stroke="#64748B" stroke-width="1.6" stroke-linejoin="round"/>
+    <polygon points="1188,3038 1183.5,3029 1192.5,3029" fill="#64748B"/>
+  </g>
+  <g id="edge_40">
+    <path d="M1200 2878L1200 2918Q1200 2926 1208 2926L1453 2926Q1461 2926 1461 2934L1461 3030" fill="none" stroke="#64748B" stroke-width="1.6" stroke-linejoin="round"/>
+    <polygon points="1461,3038 1456.5,3029 1465.5,3029" fill="#64748B"/>
+  </g>
+  <g id="edge_41">
+    <path d="M833 3108L833 3140Q833 3148 841 3148L1148 3148Q1156 3148 1156 3156L1156 3226" fill="none" stroke="#64748B" stroke-width="1.6" stroke-linejoin="round"/>
+    <polygon points="1156,3234 1151.5,3225 1160.5,3225" fill="#64748B"/>
+  </g>
+  <g id="edge_42">
+    <path d="M1188 3108L1188 3140Q1188 3148 1196 3148L1203 3148Q1211 3148 1211 3156L1211 3226" fill="none" stroke="#64748B" stroke-width="1.6" stroke-linejoin="round"/>
+    <polygon points="1211,3234 1206.5,3225 1215.5,3225" fill="#64748B"/>
+  </g>
+  <g id="edge_43">
+    <path d="M1461 3108L1461 3116Q1461 3124 1453 3124L1274 3124Q1266 3124 1266 3132L1266 3226" fill="none" stroke="#64748B" stroke-width="1.6" stroke-linejoin="round"/>
+    <polygon points="1266,3234 1261.5,3225 1270.5,3225" fill="#64748B"/>
+  </g>
+  <g id="edge_44">
+    <path d="M2901 2190L2901 2210Q2901 2218 2893 2218L2887 2218Q2879 2218 2879 2226L2879 3140Q2879 3148 2871 3148L1442 3148Q1434 3148 1434 3156L1434 3226" fill="none" stroke="#64748B" stroke-width="1.6" stroke-linejoin="round"/>
+    <polygon points="1434,3234 1429.5,3225 1438.5,3225" fill="#64748B"/>
+  </g>
+  <g id="edge_45">
+    <path d="M1228 2878L1228 2906Q1228 2914 1236 2914L1582 2914Q1590 2914 1590 2922L1590 3128Q1590 3136 1582 3136L1358 3136Q1350 3136 1350 3144L1350 3226" fill="none" stroke="#64748B" stroke-width="1.6" stroke-linejoin="round"/>
+    <polygon points="1350,3234 1345.5,3225 1354.5,3225" fill="#64748B"/>
+  </g>
+  <g id="edge_46">
+    <path d="M1295 3290L1295 3318Q1295 3326 1303 3326L1347 3326Q1355 3326 1355 3334L1355 3454" fill="none" stroke="#64748B" stroke-width="1.6" stroke-linejoin="round"/>
+    <polygon points="1355,3462 1350.5,3453 1359.5,3453" fill="#64748B"/>
+  </g>
+  <g id="edge_47">
+    <path d="M1394 3532L1394 3602" fill="none" stroke="#64748B" stroke-width="1.6" stroke-linejoin="round"/>
+    <polygon points="1394,3610 1389.5,3601 1398.5,3601" fill="#64748B"/>
+  </g>
+  <g id="node_v_optionsdx">
+    <rect x="52" y="131" width="646" height="70" rx="10" fill="#0F172A" fill-opacity="0.05"/>
+    <rect x="51" y="132" width="648" height="71" rx="11" fill="#0F172A" fill-opacity="0.04"/>
+    <rect x="50" y="134" width="650" height="72" rx="12" fill="#0F172A" fill-opacity="0.03"/>
+    <rect x="52" y="130" width="646" height="70" rx="10" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1"/>
+    <rect x="66" y="150" width="30" height="30" rx="8" fill="#E0F2FE"/>
+    <g transform="translate(73 157)" fill="none" stroke="#0284C7" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M4 1.5h5.5L13 5v9.5H4z"/>
+      <path d="M9.5 1.5V5H13"/>
+      <path d="M6.5 8.5h4M6.5 11.5h4"/>
+    </g>
+    <text x="108" y="150" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="9.5" font-weight="700" letter-spacing="0.8" fill="#0369A1">SOURCE</text>
+    <text x="108" y="168" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="14" font-weight="600" fill="#0F172A">raw_optionsdx_eod</text>
+    <text x="108" y="184" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="12" font-weight="400" fill="#64748B">33 bracketed columns, one wide row per date, expiry, strike; read in place from $VOL_DATA_DIR</text>
+  </g>
+  <g id="node_v_dolthub">
+    <rect x="738" y="131" width="752" height="70" rx="10" fill="#0F172A" fill-opacity="0.05"/>
+    <rect x="737" y="132" width="754" height="71" rx="11" fill="#0F172A" fill-opacity="0.04"/>
+    <rect x="736" y="134" width="756" height="72" rx="12" fill="#0F172A" fill-opacity="0.03"/>
+    <rect x="738" y="130" width="752" height="70" rx="10" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1"/>
+    <rect x="752" y="150" width="30" height="30" rx="8" fill="#E0F2FE"/>
+    <g transform="translate(759 157)" fill="none" stroke="#0284C7" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M4 1.5h5.5L13 5v9.5H4z"/>
+      <path d="M9.5 1.5V5H13"/>
+      <path d="M6.5 8.5h4M6.5 11.5h4"/>
+    </g>
+    <text x="794" y="150" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="9.5" font-weight="700" letter-spacing="0.8" fill="#0369A1">SOURCE</text>
+    <text x="794" y="168" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="14" font-weight="600" fill="#0F172A">raw_dolthub_option_chain</text>
+    <text x="794" y="184" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="12" font-weight="400" fill="#64748B">13 columns; queried through a private mirror in $VOL_DATA_DIR, never the shared clone; SPY rows exported once</text>
+  </g>
+  <g id="node_v_yf">
+    <rect x="1530" y="131" width="310" height="70" rx="10" fill="#0F172A" fill-opacity="0.05"/>
+    <rect x="1529" y="132" width="312" height="71" rx="11" fill="#0F172A" fill-opacity="0.04"/>
+    <rect x="1528" y="134" width="314" height="72" rx="12" fill="#0F172A" fill-opacity="0.03"/>
+    <rect x="1530" y="130" width="310" height="70" rx="10" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1"/>
+    <rect x="1544" y="150" width="30" height="30" rx="8" fill="#F1F5F9"/>
+    <g transform="translate(1551 157)" fill="none" stroke="#475569" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="8" cy="8" r="6"/>
+      <ellipse cx="8" cy="8" rx="2.6" ry="6"/>
+      <path d="M2 8h12"/>
+    </g>
+    <text x="1586" y="157.75" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="9.5" font-weight="700" letter-spacing="0.8" fill="#475569">EXTERNAL</text>
+    <text x="1586" y="175.75" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="14" font-weight="600" fill="#0F172A">yfinance SPY OHLC + dividends</text>
+  </g>
+  <g id="node_v_fred">
+    <rect x="1880" y="131" width="188" height="70" rx="10" fill="#0F172A" fill-opacity="0.05"/>
+    <rect x="1879" y="132" width="190" height="71" rx="11" fill="#0F172A" fill-opacity="0.04"/>
+    <rect x="1878" y="134" width="192" height="72" rx="12" fill="#0F172A" fill-opacity="0.03"/>
+    <rect x="1880" y="130" width="188" height="70" rx="10" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1"/>
+    <rect x="1894" y="150" width="30" height="30" rx="8" fill="#F1F5F9"/>
+    <g transform="translate(1901 157)" fill="none" stroke="#475569" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="8" cy="8" r="6"/>
+      <ellipse cx="8" cy="8" rx="2.6" ry="6"/>
+      <path d="M2 8h12"/>
+    </g>
+    <text x="1936" y="157.75" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="9.5" font-weight="700" letter-spacing="0.8" fill="#475569">EXTERNAL</text>
+    <text x="1936" y="175.75" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="14" font-weight="600" fill="#0F172A">FRED DGS3MO</text>
+  </g>
+  <g id="node_v_cboe">
+    <rect x="2108" y="131" width="256" height="70" rx="10" fill="#0F172A" fill-opacity="0.05"/>
+    <rect x="2107" y="132" width="258" height="71" rx="11" fill="#0F172A" fill-opacity="0.04"/>
+    <rect x="2106" y="134" width="260" height="72" rx="12" fill="#0F172A" fill-opacity="0.03"/>
+    <rect x="2108" y="130" width="256" height="70" rx="10" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1"/>
+    <rect x="2122" y="150" width="30" height="30" rx="8" fill="#F1F5F9"/>
+    <g transform="translate(2129 157)" fill="none" stroke="#475569" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="8" cy="8" r="6"/>
+      <ellipse cx="8" cy="8" rx="2.6" ry="6"/>
+      <path d="M2 8h12"/>
+    </g>
+    <text x="2164" y="150" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="9.5" font-weight="700" letter-spacing="0.8" fill="#475569">EXTERNAL</text>
+    <text x="2164" y="168" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="14" font-weight="600" fill="#0F172A">Cboe VIX and VIX3M</text>
+    <text x="2164" y="184" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="12" font-weight="400" fill="#64748B">VIX3M is available: 4,304 rows</text>
+  </g>
+  <g id="node_i_ref">
+    <rect x="1488" y="385" width="632" height="70" rx="10" fill="#0F172A" fill-opacity="0.05"/>
+    <rect x="1487" y="386" width="634" height="71" rx="11" fill="#0F172A" fill-opacity="0.04"/>
+    <rect x="1486" y="388" width="636" height="72" rx="12" fill="#0F172A" fill-opacity="0.03"/>
+    <rect x="1488" y="384" width="632" height="70" rx="10" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1"/>
+    <rect x="1502" y="404" width="30" height="30" rx="8" fill="#E0E7FF"/>
+    <g transform="translate(1509 411)" fill="none" stroke="#4F46E5" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M2.5 5h11M2.5 11h11"/>
+      <circle cx="6" cy="5" r="1.8" fill="#FFFFFF"/>
+      <circle cx="10.5" cy="11" r="1.8" fill="#FFFFFF"/>
+    </g>
+    <text x="1544" y="404" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="9.5" font-weight="700" letter-spacing="0.8" fill="#4338CA">PROCESS</text>
+    <text x="1544" y="422" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="14" font-weight="600" fill="#0F172A">Fetch and parse reference series</text>
+    <text x="1544" y="438" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="12" font-weight="400" fill="#64748B">tools/build_data.py --fetch downloads into the repo's data/raw/; yfinance with auto_adjust=False</text>
+  </g>
+  <g id="node_s_ref">
+    <rect x="1629" y="533" width="350" height="56" rx="10" fill="#0F172A" fill-opacity="0.05"/>
+    <rect x="1628" y="534" width="352" height="57" rx="11" fill="#0F172A" fill-opacity="0.04"/>
+    <rect x="1627" y="536" width="354" height="58" rx="12" fill="#0F172A" fill-opacity="0.03"/>
+    <rect x="1629" y="532" width="350" height="56" rx="10" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1"/>
+    <rect x="1643" y="545" width="30" height="30" rx="8" fill="#FEF3C7"/>
+    <g transform="translate(1650 552)" fill="none" stroke="#D97706" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+      <ellipse cx="8" cy="4" rx="5" ry="2"/>
+      <path d="M3 4v8c0 1.1 2.24 2 5 2s5-.9 5-2V4"/>
+      <path d="M3 8c0 1.1 2.24 2 5 2s5-.9 5-2"/>
+    </g>
+    <text x="1685" y="552.75" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="9.5" font-weight="700" letter-spacing="0.8" fill="#B45309">STORE</text>
+    <text x="1685" y="570.75" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="14" font-weight="600" fill="#0F172A">spy_bars, rates, dividends, vix, vix3m</text>
+  </g>
+  <g id="node_i_cal">
+    <rect x="1124" y="691" width="864" height="70" rx="10" fill="#0F172A" fill-opacity="0.05"/>
+    <rect x="1123" y="692" width="866" height="71" rx="11" fill="#0F172A" fill-opacity="0.04"/>
+    <rect x="1122" y="694" width="868" height="72" rx="12" fill="#0F172A" fill-opacity="0.03"/>
+    <rect x="1124" y="690" width="864" height="70" rx="10" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1"/>
+    <rect x="1138" y="710" width="30" height="30" rx="8" fill="#E0E7FF"/>
+    <g transform="translate(1145 717)" fill="none" stroke="#4F46E5" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M2.5 5h11M2.5 11h11"/>
+      <circle cx="6" cy="5" r="1.8" fill="#FFFFFF"/>
+      <circle cx="10.5" cy="11" r="1.8" fill="#FFFFFF"/>
+    </g>
+    <text x="1180" y="710" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="9.5" font-weight="700" letter-spacing="0.8" fill="#4338CA">PROCESS</text>
+    <text x="1180" y="728" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="14" font-weight="600" fill="#0F172A">Date map from SPY bars</text>
+    <text x="1180" y="744" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="12" font-weight="400" fill="#64748B">calendar_actions: keep each session, drop every other vendor date; never from chain dates (OptionsDX: 12 closure dates, all dropped)</text>
+  </g>
+  <g id="node_i_load">
+    <rect x="583" y="385" width="806" height="70" rx="10" fill="#0F172A" fill-opacity="0.05"/>
+    <rect x="582" y="386" width="808" height="71" rx="11" fill="#0F172A" fill-opacity="0.04"/>
+    <rect x="581" y="388" width="810" height="72" rx="12" fill="#0F172A" fill-opacity="0.03"/>
+    <rect x="583" y="384" width="806" height="70" rx="10" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1"/>
+    <rect x="597" y="404" width="30" height="30" rx="8" fill="#E0E7FF"/>
+    <g transform="translate(604 411)" fill="none" stroke="#4F46E5" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M2.5 5h11M2.5 11h11"/>
+      <circle cx="6" cy="5" r="1.8" fill="#FFFFFF"/>
+      <circle cx="10.5" cy="11" r="1.8" fill="#FFFFFF"/>
+    </g>
+    <text x="639" y="404" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="9.5" font-weight="700" letter-spacing="0.8" fill="#4338CA">PROCESS</text>
+    <text x="639" y="422" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="14" font-weight="600" fill="#0F172A">Load chains + pin schema</text>
+    <text x="639" y="438" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="12" font-weight="400" fill="#64748B">OptionsDX parquet from $VOL_DATA_DIR and the exported DoltHub rows from data/raw/; a changed column stops the build</text>
+  </g>
+  <g id="node_i_flags">
+    <rect x="1359" y="875" width="534" height="70" rx="10" fill="#0F172A" fill-opacity="0.05"/>
+    <rect x="1358" y="876" width="536" height="71" rx="11" fill="#0F172A" fill-opacity="0.04"/>
+    <rect x="1357" y="878" width="538" height="72" rx="12" fill="#0F172A" fill-opacity="0.03"/>
+    <rect x="1359" y="874" width="534" height="70" rx="10" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1"/>
+    <rect x="1373" y="894" width="30" height="30" rx="8" fill="#E0E7FF"/>
+    <g transform="translate(1380 901)" fill="none" stroke="#4F46E5" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M2.5 5h11M2.5 11h11"/>
+      <circle cx="6" cy="5" r="1.8" fill="#FFFFFF"/>
+      <circle cx="10.5" cy="11" r="1.8" fill="#FFFFFF"/>
+    </g>
+    <text x="1415" y="894" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="9.5" font-weight="700" letter-spacing="0.8" fill="#4338CA">PROCESS</text>
+    <text x="1415" y="912" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="14" font-weight="600" fill="#0F172A">Reshape long, OSI symbol, quality_flags</text>
+    <text x="1415" y="928" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="12" font-weight="400" fill="#64748B">13-bit bitmask in ADR-0009; rows are flagged, only calendar drops are deleted</text>
+  </g>
+  <g id="node_s_quality">
+    <rect x="1186" y="1023" width="880" height="70" rx="10" fill="#0F172A" fill-opacity="0.05"/>
+    <rect x="1185" y="1024" width="882" height="71" rx="11" fill="#0F172A" fill-opacity="0.04"/>
+    <rect x="1184" y="1026" width="884" height="72" rx="12" fill="#0F172A" fill-opacity="0.03"/>
+    <rect x="1186" y="1022" width="880" height="70" rx="10" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1"/>
+    <rect x="1200" y="1042" width="30" height="30" rx="8" fill="#FEF3C7"/>
+    <g transform="translate(1207 1049)" fill="none" stroke="#D97706" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+      <ellipse cx="8" cy="4" rx="5" ry="2"/>
+      <path d="M3 4v8c0 1.1 2.24 2 5 2s5-.9 5-2V4"/>
+      <path d="M3 8c0 1.1 2.24 2 5 2s5-.9 5-2"/>
+    </g>
+    <text x="1242" y="1042" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="9.5" font-weight="700" letter-spacing="0.8" fill="#B45309">STORE</text>
+    <text x="1242" y="1060" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="14" font-weight="600" fill="#0F172A">quality_flag_counts, quality_calendar, quality_underlying, quality_rows_per_date, quality_non_session_dates</text>
+    <text x="1242" y="1076" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="12" font-weight="400" fill="#64748B">The report; written even when the gate fails, so a failure can be read</text>
+  </g>
+  <g id="node_g_quality">
+    <rect x="760" y="1207" width="674" height="70" rx="10" fill="#0F172A" fill-opacity="0.05"/>
+    <rect x="759" y="1208" width="676" height="71" rx="11" fill="#0F172A" fill-opacity="0.04"/>
+    <rect x="758" y="1210" width="678" height="72" rx="12" fill="#0F172A" fill-opacity="0.03"/>
+    <rect x="760" y="1206" width="674" height="70" rx="10" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1"/>
+    <rect x="774" y="1226" width="30" height="30" rx="8" fill="#E0E7FF"/>
+    <g transform="translate(781 1233)" fill="none" stroke="#4F46E5" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M2.5 5h11M2.5 11h11"/>
+      <circle cx="6" cy="5" r="1.8" fill="#FFFFFF"/>
+      <circle cx="10.5" cy="11" r="1.8" fill="#FFFFFF"/>
+    </g>
+    <text x="816" y="1226" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="9.5" font-weight="700" letter-spacing="0.8" fill="#4338CA">PROCESS</text>
+    <text x="816" y="1244" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="14" font-weight="600" fill="#0F172A">Quality gate passed?</text>
+    <text x="816" y="1260" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="12" font-weight="400" fill="#64748B">Limits set after looking at the data; a failure raises QualityGateError and deletes any old option_quotes</text>
+  </g>
+  <g id="node_s_quotes">
+    <rect x="1254" y="1355" width="514" height="70" rx="10" fill="#0F172A" fill-opacity="0.05"/>
+    <rect x="1253" y="1356" width="516" height="71" rx="11" fill="#0F172A" fill-opacity="0.04"/>
+    <rect x="1252" y="1358" width="518" height="72" rx="12" fill="#0F172A" fill-opacity="0.03"/>
+    <rect x="1254" y="1354" width="514" height="70" rx="10" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1"/>
+    <rect x="1268" y="1374" width="30" height="30" rx="8" fill="#FEF3C7"/>
+    <g transform="translate(1275 1381)" fill="none" stroke="#D97706" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+      <ellipse cx="8" cy="4" rx="5" ry="2"/>
+      <path d="M3 4v8c0 1.1 2.24 2 5 2s5-.9 5-2V4"/>
+      <path d="M3 8c0 1.1 2.24 2 5 2s5-.9 5-2"/>
+    </g>
+    <text x="1310" y="1374" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="9.5" font-weight="700" letter-spacing="0.8" fill="#B45309">STORE</text>
+    <text x="1310" y="1392" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="14" font-weight="600" fill="#0F172A">option_quotes, calendar_actions</text>
+    <text x="1310" y="1408" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="12" font-weight="400" fill="#64748B">19,022,008 quotes, partitioned by source and year, in the repo's data/store/</text>
+  </g>
+  <g id="node_i_mask">
+    <rect x="695" y="1551" width="780" height="70" rx="10" fill="#0F172A" fill-opacity="0.05"/>
+    <rect x="694" y="1552" width="782" height="71" rx="11" fill="#0F172A" fill-opacity="0.04"/>
+    <rect x="693" y="1554" width="784" height="72" rx="12" fill="#0F172A" fill-opacity="0.03"/>
+    <rect x="695" y="1550" width="780" height="70" rx="10" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1"/>
+    <rect x="709" y="1570" width="30" height="30" rx="8" fill="#E0E7FF"/>
+    <g transform="translate(716 1577)" fill="none" stroke="#4F46E5" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M2.5 5h11M2.5 11h11"/>
+      <circle cx="6" cy="5" r="1.8" fill="#FFFFFF"/>
+      <circle cx="10.5" cy="11" r="1.8" fill="#FFFFFF"/>
+    </g>
+    <text x="751" y="1570" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="9.5" font-weight="700" letter-spacing="0.8" fill="#4338CA">PROCESS</text>
+    <text x="751" y="1588" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="14" font-weight="600" fill="#0F172A">DoltHub sampling mask for surface-gap runs</text>
+    <text x="751" y="1604" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="12" font-weight="400" fill="#64748B">chain_mask: the expiry and strike pairs DoltHub lists per date (dolthub), and with Tue/Thu carried forward (dolthub_daily)</text>
+  </g>
+  <g id="node_i_xvendor">
+    <rect x="1515" y="1551" width="912" height="70" rx="10" fill="#0F172A" fill-opacity="0.05"/>
+    <rect x="1514" y="1552" width="914" height="71" rx="11" fill="#0F172A" fill-opacity="0.04"/>
+    <rect x="1513" y="1554" width="916" height="72" rx="12" fill="#0F172A" fill-opacity="0.03"/>
+    <rect x="1515" y="1550" width="912" height="70" rx="10" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1"/>
+    <rect x="1529" y="1570" width="30" height="30" rx="8" fill="#E0E7FF"/>
+    <g transform="translate(1536 1577)" fill="none" stroke="#4F46E5" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M2.5 5h11M2.5 11h11"/>
+      <circle cx="6" cy="5" r="1.8" fill="#FFFFFF"/>
+      <circle cx="10.5" cy="11" r="1.8" fill="#FFFFFF"/>
+    </g>
+    <text x="1571" y="1570" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="9.5" font-weight="700" letter-spacing="0.8" fill="#4338CA">PROCESS</text>
+    <text x="1571" y="1588" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="14" font-weight="600" fill="#0F172A">Cross-vendor check, 2020-2023</text>
+    <text x="1571" y="1604" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="12" font-weight="400" fill="#64748B">30-day ATM IV and parity-implied SPY price on the 572 dates both vendors list; reports the share of dates inside each threshold, with no verdict</text>
+  </g>
+  <g id="node_s_xvendor">
+    <rect x="1747" y="1747" width="488" height="70" rx="10" fill="#0F172A" fill-opacity="0.05"/>
+    <rect x="1746" y="1748" width="490" height="71" rx="11" fill="#0F172A" fill-opacity="0.04"/>
+    <rect x="1745" y="1750" width="492" height="72" rx="12" fill="#0F172A" fill-opacity="0.03"/>
+    <rect x="1747" y="1746" width="488" height="70" rx="10" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1"/>
+    <rect x="1761" y="1766" width="30" height="30" rx="8" fill="#FEF3C7"/>
+    <g transform="translate(1768 1773)" fill="none" stroke="#D97706" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+      <ellipse cx="8" cy="4" rx="5" ry="2"/>
+      <path d="M3 4v8c0 1.1 2.24 2 5 2s5-.9 5-2V4"/>
+      <path d="M3 8c0 1.1 2.24 2 5 2s5-.9 5-2"/>
+    </g>
+    <text x="1803" y="1773.75" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="9.5" font-weight="700" letter-spacing="0.8" fill="#B45309">STORE</text>
+    <text x="1803" y="1791.75" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="14" font-weight="600" fill="#0F172A">cross_vendor_overlap, cross_vendor_previous_session</text>
+  </g>
+  <g id="node_s_summary">
+    <rect x="1081" y="1747" width="626" height="70" rx="10" fill="#0F172A" fill-opacity="0.05"/>
+    <rect x="1080" y="1748" width="628" height="71" rx="11" fill="#0F172A" fill-opacity="0.04"/>
+    <rect x="1079" y="1750" width="630" height="72" rx="12" fill="#0F172A" fill-opacity="0.03"/>
+    <rect x="1081" y="1746" width="626" height="70" rx="10" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1"/>
+    <rect x="1095" y="1766" width="30" height="30" rx="8" fill="#FEF3C7"/>
+    <g transform="translate(1102 1773)" fill="none" stroke="#D97706" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+      <ellipse cx="8" cy="4" rx="5" ry="2"/>
+      <path d="M3 4v8c0 1.1 2.24 2 5 2s5-.9 5-2V4"/>
+      <path d="M3 8c0 1.1 2.24 2 5 2s5-.9 5-2"/>
+    </g>
+    <text x="1137" y="1766" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="9.5" font-weight="700" letter-spacing="0.8" fill="#B45309">STORE</text>
+    <text x="1137" y="1784" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="14" font-weight="600" fill="#0F172A">build_summary.json</text>
+    <text x="1137" y="1800" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="12" font-weight="400" fill="#64748B">Counts, quantiles, shares inside the cross-vendor thresholds and the gate result; no clock time</text>
+  </g>
+  <g id="node_i_export_dq">
+    <rect x="1365" y="1943" width="690" height="70" rx="10" fill="#0F172A" fill-opacity="0.05"/>
+    <rect x="1364" y="1944" width="692" height="71" rx="11" fill="#0F172A" fill-opacity="0.04"/>
+    <rect x="1363" y="1946" width="694" height="72" rx="12" fill="#0F172A" fill-opacity="0.03"/>
+    <rect x="1365" y="1942" width="690" height="70" rx="10" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1"/>
+    <rect x="1379" y="1962" width="30" height="30" rx="8" fill="#E0E7FF"/>
+    <g transform="translate(1386 1969)" fill="none" stroke="#4F46E5" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M2.5 5h11M2.5 11h11"/>
+      <circle cx="6" cy="5" r="1.8" fill="#FFFFFF"/>
+      <circle cx="10.5" cy="11" r="1.8" fill="#FFFFFF"/>
+    </g>
+    <text x="1421" y="1962" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="9.5" font-weight="700" letter-spacing="0.8" fill="#4338CA">PROCESS</text>
+    <text x="1421" y="1980" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="14" font-weight="600" fill="#0F172A">tools/export_app_data.py: data_quality.json</text>
+    <text x="1421" y="1996" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="12" font-weight="400" fill="#64748B">Aggregates only: flag counts per year, rows per source, calendar fixes, cross-vendor quantiles, gate limits</text>
+  </g>
+  <g id="node_f_forward">
+    <rect x="2509" y="1551" width="740" height="70" rx="10" fill="#0F172A" fill-opacity="0.05"/>
+    <rect x="2508" y="1552" width="742" height="71" rx="11" fill="#0F172A" fill-opacity="0.04"/>
+    <rect x="2507" y="1554" width="744" height="72" rx="12" fill="#0F172A" fill-opacity="0.03"/>
+    <rect x="2509" y="1550" width="740" height="70" rx="10" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1"/>
+    <rect x="2523" y="1570" width="30" height="30" rx="8" fill="#E0E7FF"/>
+    <g transform="translate(2530 1577)" fill="none" stroke="#4F46E5" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M2.5 5h11M2.5 11h11"/>
+      <circle cx="6" cy="5" r="1.8" fill="#FFFFFF"/>
+      <circle cx="10.5" cy="11" r="1.8" fill="#FFFFFF"/>
+    </g>
+    <text x="2565" y="1570" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="9.5" font-weight="700" letter-spacing="0.8" fill="#4338CA">PROCESS</text>
+    <text x="2565" y="1588" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="14" font-weight="600" fill="#0F172A">Parity forward per expiry, de-Americanised</text>
+    <text x="2565" y="1604" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="12" font-weight="400" fill="#64748B">CRR early-exercise premium removed from 10 near-K* pairs, then median F_K over 5 strikes near K* (ADR-0008)</text>
+  </g>
+  <g id="node_f_iv">
+    <rect x="2553" y="1747" width="404" height="70" rx="10" fill="#0F172A" fill-opacity="0.05"/>
+    <rect x="2552" y="1748" width="406" height="71" rx="11" fill="#0F172A" fill-opacity="0.04"/>
+    <rect x="2551" y="1750" width="408" height="72" rx="12" fill="#0F172A" fill-opacity="0.03"/>
+    <rect x="2553" y="1746" width="404" height="70" rx="10" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1"/>
+    <rect x="2567" y="1766" width="30" height="30" rx="8" fill="#E0E7FF"/>
+    <g transform="translate(2574 1773)" fill="none" stroke="#4F46E5" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M2.5 5h11M2.5 11h11"/>
+      <circle cx="6" cy="5" r="1.8" fill="#FFFFFF"/>
+      <circle cx="10.5" cy="11" r="1.8" fill="#FFFFFF"/>
+    </g>
+    <text x="2609" y="1766" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="9.5" font-weight="700" letter-spacing="0.8" fill="#4338CA">PROCESS</text>
+    <text x="2609" y="1784" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="14" font-weight="600" fill="#0F172A">IV solve on de-Americanised OTM mids</text>
+    <text x="2609" y="1800" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="12" font-weight="400" fill="#64748B">Premium removed within |k| 0.15; Newton then bisection</text>
+  </g>
+  <g id="node_f_smile">
+    <rect x="2519" y="1943" width="472" height="70" rx="10" fill="#0F172A" fill-opacity="0.05"/>
+    <rect x="2518" y="1944" width="474" height="71" rx="11" fill="#0F172A" fill-opacity="0.04"/>
+    <rect x="2517" y="1946" width="476" height="72" rx="12" fill="#0F172A" fill-opacity="0.03"/>
+    <rect x="2519" y="1942" width="472" height="70" rx="10" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1"/>
+    <rect x="2533" y="1962" width="30" height="30" rx="8" fill="#E0E7FF"/>
+    <g transform="translate(2540 1969)" fill="none" stroke="#4F46E5" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M2.5 5h11M2.5 11h11"/>
+      <circle cx="6" cy="5" r="1.8" fill="#FFFFFF"/>
+      <circle cx="10.5" cy="11" r="1.8" fill="#FFFFFF"/>
+    </g>
+    <text x="2575" y="1962" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="9.5" font-weight="700" letter-spacing="0.8" fill="#4338CA">PROCESS</text>
+    <text x="2575" y="1980" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="14" font-weight="600" fill="#0F172A">Smile nodes in total variance</text>
+    <text x="2575" y="1996" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="12" font-weight="400" fill="#64748B">Wing, cross-expiry and tenor rules applied at mark time (ADR-0004)</text>
+  </g>
+  <g id="node_s_iv">
+    <rect x="2706" y="2135" width="346" height="56" rx="10" fill="#0F172A" fill-opacity="0.05"/>
+    <rect x="2705" y="2136" width="348" height="57" rx="11" fill="#0F172A" fill-opacity="0.04"/>
+    <rect x="2704" y="2138" width="350" height="58" rx="12" fill="#0F172A" fill-opacity="0.03"/>
+    <rect x="2706" y="2134" width="346" height="56" rx="10" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1"/>
+    <rect x="2720" y="2147" width="30" height="30" rx="8" fill="#FEF3C7"/>
+    <g transform="translate(2727 2154)" fill="none" stroke="#D97706" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+      <ellipse cx="8" cy="4" rx="5" ry="2"/>
+      <path d="M3 4v8c0 1.1 2.24 2 5 2s5-.9 5-2V4"/>
+      <path d="M3 8c0 1.1 2.24 2 5 2s5-.9 5-2"/>
+    </g>
+    <text x="2762" y="2154.75" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="9.5" font-weight="700" letter-spacing="0.8" fill="#B45309">STORE</text>
+    <text x="2762" y="2172.75" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="14" font-weight="600" fill="#0F172A">expiry_forwards, quote_iv, smile_fits</text>
+  </g>
+  <g id="node_e_view">
+    <rect x="904" y="2355" width="516" height="70" rx="10" fill="#0F172A" fill-opacity="0.05"/>
+    <rect x="903" y="2356" width="518" height="71" rx="11" fill="#0F172A" fill-opacity="0.04"/>
+    <rect x="902" y="2358" width="520" height="72" rx="12" fill="#0F172A" fill-opacity="0.03"/>
+    <rect x="904" y="2354" width="516" height="70" rx="10" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1"/>
+    <rect x="918" y="2374" width="30" height="30" rx="8" fill="#E0E7FF"/>
+    <g transform="translate(925 2381)" fill="none" stroke="#4F46E5" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M2.5 5h11M2.5 11h11"/>
+      <circle cx="6" cy="5" r="1.8" fill="#FFFFFF"/>
+      <circle cx="10.5" cy="11" r="1.8" fill="#FFFFFF"/>
+    </g>
+    <text x="960" y="2374" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="9.5" font-weight="700" letter-spacing="0.8" fill="#4338CA">PROCESS</text>
+    <text x="960" y="2392" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="14" font-weight="600" fill="#0F172A">MarketView as_of t</text>
+    <text x="960" y="2408" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="12" font-weight="400" fill="#64748B">Built in M1 (StoreView): LookAheadError after t; SplitError past the split end</text>
+  </g>
+  <g id="node_e_sig">
+    <rect x="746" y="2503" width="546" height="70" rx="10" fill="#0F172A" fill-opacity="0.05"/>
+    <rect x="745" y="2504" width="548" height="71" rx="11" fill="#0F172A" fill-opacity="0.04"/>
+    <rect x="744" y="2506" width="550" height="72" rx="12" fill="#0F172A" fill-opacity="0.03"/>
+    <rect x="746" y="2502" width="546" height="70" rx="10" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1"/>
+    <rect x="760" y="2522" width="30" height="30" rx="8" fill="#E0E7FF"/>
+    <g transform="translate(767 2529)" fill="none" stroke="#4F46E5" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M2.5 5h11M2.5 11h11"/>
+      <circle cx="6" cy="5" r="1.8" fill="#FFFFFF"/>
+      <circle cx="10.5" cy="11" r="1.8" fill="#FFFFFF"/>
+    </g>
+    <text x="802" y="2522" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="9.5" font-weight="700" letter-spacing="0.8" fill="#4338CA">PROCESS</text>
+    <text x="802" y="2540" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="14" font-weight="600" fill="#0F172A">Signals from the view: RV, HAR/GARCH, IV30 minus RV forecast</text>
+    <text x="802" y="2556" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="12" font-weight="400" fill="#64748B">Causal; expanding window from 2000, refit monthly on data up to t (ADR-0001)</text>
+  </g>
+  <g id="node_e_loop">
+    <rect x="943" y="2675" width="438" height="70" rx="10" fill="#0F172A" fill-opacity="0.05"/>
+    <rect x="942" y="2676" width="440" height="71" rx="11" fill="#0F172A" fill-opacity="0.04"/>
+    <rect x="941" y="2678" width="442" height="72" rx="12" fill="#0F172A" fill-opacity="0.03"/>
+    <rect x="943" y="2674" width="438" height="70" rx="10" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1"/>
+    <rect x="957" y="2694" width="30" height="30" rx="8" fill="#E0E7FF"/>
+    <g transform="translate(964 2701)" fill="none" stroke="#4F46E5" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M2.5 5h11M2.5 11h11"/>
+      <circle cx="6" cy="5" r="1.8" fill="#FFFFFF"/>
+      <circle cx="10.5" cy="11" r="1.8" fill="#FFFFFF"/>
+    </g>
+    <text x="999" y="2694" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="9.5" font-weight="700" letter-spacing="0.8" fill="#4338CA">PROCESS</text>
+    <text x="999" y="2712" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="14" font-weight="600" fill="#0F172A">Daily loop: fills, expiry, marks, hedge, risk, orders</text>
+    <text x="999" y="2728" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="12" font-weight="400" fill="#64748B">Order of steps in engine_daily_loop_sequence.mmd</text>
+  </g>
+  <g id="node_s_ledger">
+    <rect x="627" y="2823" width="1070" height="56" rx="10" fill="#0F172A" fill-opacity="0.05"/>
+    <rect x="626" y="2824" width="1072" height="57" rx="11" fill="#0F172A" fill-opacity="0.04"/>
+    <rect x="625" y="2826" width="1074" height="58" rx="12" fill="#0F172A" fill-opacity="0.03"/>
+    <rect x="627" y="2822" width="1070" height="56" rx="10" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1"/>
+    <rect x="641" y="2835" width="30" height="30" rx="8" fill="#FEF3C7"/>
+    <g transform="translate(648 2842)" fill="none" stroke="#D97706" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+      <ellipse cx="8" cy="4" rx="5" ry="2"/>
+      <path d="M3 4v8c0 1.1 2.24 2 5 2s5-.9 5-2V4"/>
+      <path d="M3 8c0 1.1 2.24 2 5 2s5-.9 5-2"/>
+    </g>
+    <text x="683" y="2842.75" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="9.5" font-weight="700" letter-spacing="0.8" fill="#B45309">STORE</text>
+    <text x="683" y="2860.75" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="14" font-weight="600" fill="#0F172A">runs, signals, orders, order_legs, fills, positions, lots, position_marks, hedges, expiry_events, risk_events, greeks_snapshots, daily_pnl</text>
+  </g>
+  <g id="node_r_metrics">
+    <rect x="635" y="3039" width="396" height="70" rx="10" fill="#0F172A" fill-opacity="0.05"/>
+    <rect x="634" y="3040" width="398" height="71" rx="11" fill="#0F172A" fill-opacity="0.04"/>
+    <rect x="633" y="3042" width="400" height="72" rx="12" fill="#0F172A" fill-opacity="0.03"/>
+    <rect x="635" y="3038" width="396" height="70" rx="10" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1"/>
+    <rect x="649" y="3058" width="30" height="30" rx="8" fill="#E0E7FF"/>
+    <g transform="translate(656 3065)" fill="none" stroke="#4F46E5" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M2.5 5h11M2.5 11h11"/>
+      <circle cx="6" cy="5" r="1.8" fill="#FFFFFF"/>
+      <circle cx="10.5" cy="11" r="1.8" fill="#FFFFFF"/>
+    </g>
+    <text x="691" y="3065.75" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="9.5" font-weight="700" letter-spacing="0.8" fill="#4338CA">PROCESS</text>
+    <text x="691" y="3083.75" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="14" font-weight="600" fill="#0F172A">Metrics, PSR/DSR, regimes, stress windows</text>
+  </g>
+  <g id="node_r_attr">
+    <rect x="1071" y="3039" width="234" height="70" rx="10" fill="#0F172A" fill-opacity="0.05"/>
+    <rect x="1070" y="3040" width="236" height="71" rx="11" fill="#0F172A" fill-opacity="0.04"/>
+    <rect x="1069" y="3042" width="238" height="72" rx="12" fill="#0F172A" fill-opacity="0.03"/>
+    <rect x="1071" y="3038" width="234" height="70" rx="10" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1"/>
+    <rect x="1085" y="3058" width="30" height="30" rx="8" fill="#E0E7FF"/>
+    <g transform="translate(1092 3065)" fill="none" stroke="#4F46E5" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M2.5 5h11M2.5 11h11"/>
+      <circle cx="6" cy="5" r="1.8" fill="#FFFFFF"/>
+      <circle cx="10.5" cy="11" r="1.8" fill="#FFFFFF"/>
+    </g>
+    <text x="1127" y="3065.75" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="9.5" font-weight="700" letter-spacing="0.8" fill="#4338CA">PROCESS</text>
+    <text x="1127" y="3083.75" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="14" font-weight="600" fill="#0F172A">Greek P&amp;L attribution</text>
+  </g>
+  <g id="node_r_grid">
+    <rect x="1345" y="3039" width="232" height="70" rx="10" fill="#0F172A" fill-opacity="0.05"/>
+    <rect x="1344" y="3040" width="234" height="71" rx="11" fill="#0F172A" fill-opacity="0.04"/>
+    <rect x="1343" y="3042" width="236" height="72" rx="12" fill="#0F172A" fill-opacity="0.03"/>
+    <rect x="1345" y="3038" width="232" height="70" rx="10" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1"/>
+    <rect x="1359" y="3058" width="30" height="30" rx="8" fill="#E0E7FF"/>
+    <g transform="translate(1366 3065)" fill="none" stroke="#4F46E5" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M2.5 5h11M2.5 11h11"/>
+      <circle cx="6" cy="5" r="1.8" fill="#FFFFFF"/>
+      <circle cx="10.5" cy="11" r="1.8" fill="#FFFFFF"/>
+    </g>
+    <text x="1401" y="3058" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="9.5" font-weight="700" letter-spacing="0.8" fill="#4338CA">PROCESS</text>
+    <text x="1401" y="3076" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="14" font-weight="600" fill="#0F172A">Spot x vol stress grid</text>
+    <text x="1401" y="3092" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="12" font-weight="400" fill="#64748B">Full revaluation</text>
+  </g>
+  <g id="node_r_export">
+    <rect x="1134" y="3235" width="322" height="56" rx="10" fill="#0F172A" fill-opacity="0.05"/>
+    <rect x="1133" y="3236" width="324" height="57" rx="11" fill="#0F172A" fill-opacity="0.04"/>
+    <rect x="1132" y="3238" width="326" height="58" rx="12" fill="#0F172A" fill-opacity="0.03"/>
+    <rect x="1134" y="3234" width="322" height="56" rx="10" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1"/>
+    <rect x="1148" y="3247" width="30" height="30" rx="8" fill="#E0E7FF"/>
+    <g transform="translate(1155 3254)" fill="none" stroke="#4F46E5" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M2.5 5h11M2.5 11h11"/>
+      <circle cx="6" cy="5" r="1.8" fill="#FFFFFF"/>
+      <circle cx="10.5" cy="11" r="1.8" fill="#FFFFFF"/>
+    </g>
+    <text x="1190" y="3254.75" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="9.5" font-weight="700" letter-spacing="0.8" fill="#4338CA">PROCESS</text>
+    <text x="1190" y="3272.75" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="14" font-weight="600" fill="#0F172A">Export + JSON Schema validation</text>
+  </g>
+  <g id="node_a_json">
+    <rect x="1053" y="3463" width="682" height="70" rx="10" fill="#0F172A" fill-opacity="0.05"/>
+    <rect x="1052" y="3464" width="684" height="71" rx="11" fill="#0F172A" fill-opacity="0.04"/>
+    <rect x="1051" y="3466" width="686" height="72" rx="12" fill="#0F172A" fill-opacity="0.03"/>
+    <rect x="1053" y="3462" width="682" height="70" rx="10" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1"/>
+    <rect x="1067" y="3482" width="30" height="30" rx="8" fill="#D1FAE5"/>
+    <g transform="translate(1074 3489)" fill="none" stroke="#059669" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M8 10.5V2"/>
+      <path d="M5 5l3-3 3 3"/>
+      <path d="M2.5 10v3.5h11V10"/>
+    </g>
+    <text x="1109" y="3482" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="9.5" font-weight="700" letter-spacing="0.8" fill="#047857">OUTPUT</text>
+    <text x="1109" y="3500" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="14" font-weight="600" fill="#0F172A">manifest.json + dataset JSON files</text>
+    <text x="1109" y="3516" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="12" font-weight="400" fill="#64748B">Written today: manifest, illustrative_surface (M0), data_quality (M1). The M2 to M6 datasets are planned</text>
+  </g>
+  <g id="node_u_app">
+    <rect x="1289" y="3611" width="210" height="56" rx="10" fill="#0F172A" fill-opacity="0.05"/>
+    <rect x="1288" y="3612" width="212" height="57" rx="11" fill="#0F172A" fill-opacity="0.04"/>
+    <rect x="1287" y="3614" width="214" height="58" rx="12" fill="#0F172A" fill-opacity="0.03"/>
+    <rect x="1289" y="3610" width="210" height="56" rx="10" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1"/>
+    <rect x="1303" y="3623" width="30" height="30" rx="8" fill="#FCE7F3"/>
+    <g transform="translate(1310 3630)" fill="none" stroke="#DB2777" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+      <rect x="1.5" y="2.5" width="13" height="11" rx="2"/>
+      <path d="M1.5 6h13"/>
+      <circle cx="4" cy="4.25" r="0.5"/>
+    </g>
+    <text x="1345" y="3630.75" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="9.5" font-weight="700" letter-spacing="0.8" fill="#BE185D">UI</text>
+    <text x="1345" y="3648.75" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="14" font-weight="600" fill="#0F172A">React app renders</text>
+  </g>
+  <rect x="1689" y="258" width="114" height="20" rx="10" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1"/>
+  <text x="1746" y="272.14" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="11.5" font-weight="500" text-anchor="middle" fill="#475569">OHLC, dividends</text>
+  <rect x="1762" y="282" width="94" height="20" rx="10" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1"/>
+  <text x="1809" y="296.14" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="11.5" font-weight="500" text-anchor="middle" fill="#475569">yield, percent</text>
+  <rect x="1820" y="258" width="84" height="20" rx="10" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1"/>
+  <text x="1862" y="272.14" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="11.5" font-weight="500" text-anchor="middle" fill="#475569">daily closes</text>
+  <rect x="1760.5" y="480" width="87" height="20" rx="10" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1"/>
+  <text x="1804" y="494.14" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="11.5" font-weight="500" text-anchor="middle" fill="#475569">typed tables</text>
+  <rect x="1507.5" y="638" width="97" height="20" rx="10" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1"/>
+  <text x="1556" y="652.14" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="11.5" font-weight="500" text-anchor="middle" fill="#475569">SPY sessions</text>
+  <rect x="845.5" y="258" width="141" height="20" rx="10" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1"/>
+  <text x="916" y="272.14" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="11.5" font-weight="500" text-anchor="middle" fill="#475569">parquet, read in place</text>
+  <rect x="921.5" y="282" width="269" height="20" rx="10" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1"/>
+  <text x="1056" y="296.14" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="11.5" font-weight="500" text-anchor="middle" fill="#475569">SELECT on the mirror, exported to data/raw/</text>
+  <rect x="1453.5" y="798" width="75" height="20" rx="10" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1"/>
+  <text x="1491" y="812.14" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="11.5" font-weight="500" text-anchor="middle" fill="#475569">wide rows</text>
+  <rect x="1497" y="822" width="258" height="20" rx="10" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1"/>
+  <text x="1626" y="836.14" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="11.5" font-weight="500" text-anchor="middle" fill="#475569">session check, non-session dates dropped</text>
+  <rect x="1633" y="798" width="256" height="20" rx="10" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1"/>
+  <text x="1761" y="812.14" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="11.5" font-weight="500" text-anchor="middle" fill="#475569">SPY close for UNDERLYING_MISMATCH</text>
+  <rect x="1581.5" y="970" width="89" height="20" rx="10" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1"/>
+  <text x="1626" y="984.14" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="11.5" font-weight="500" text-anchor="middle" fill="#475569">report tables</text>
+  <rect x="1082" y="1154" width="98" height="20" rx="10" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1"/>
+  <text x="1131" y="1168.14" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="11.5" font-weight="500" text-anchor="middle" fill="#475569">limits checked</text>
+  <rect x="1471.5" y="1302" width="79" height="20" rx="10" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1"/>
+  <text x="1511" y="1316.14" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="11.5" font-weight="500" text-anchor="middle" fill="#475569">pass: write</text>
+  <rect x="1001" y="1130" width="124" height="20" rx="10" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1"/>
+  <text x="1063" y="1144.14" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="11.5" font-weight="500" text-anchor="middle" fill="#475569">fail: stop, fix loader</text>
+  <rect x="1299" y="1670" width="78" height="20" rx="10" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1"/>
+  <text x="1338" y="1684.14" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="11.5" font-weight="500" text-anchor="middle" fill="#475569">gate result</text>
+  <rect x="2791.5" y="1474" width="113" height="20" rx="10" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1"/>
+  <text x="2848" y="1488.14" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="11.5" font-weight="500" text-anchor="middle" fill="#475569">call and put mids</text>
+  <rect x="2858.5" y="1498" width="103" height="20" rx="10" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1"/>
+  <text x="2910" y="1512.14" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="11.5" font-weight="500" text-anchor="middle" fill="#475569">r_cc, dividends</text>
+  <rect x="2739.5" y="1694" width="75" height="20" rx="10" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1"/>
+  <text x="2777" y="1708.14" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="11.5" font-weight="500" text-anchor="middle" fill="#475569">F, DF, tau</text>
+  <rect x="2694.5" y="1670" width="77" height="20" rx="10" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1"/>
+  <text x="2733" y="1684.14" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="11.5" font-weight="500" text-anchor="middle" fill="#475569">OTM mids</text>
+  <rect x="2714.5" y="1866" width="81" height="20" rx="10" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1"/>
+  <text x="2755" y="1880.14" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="11.5" font-weight="500" text-anchor="middle" fill="#475569">IV by strike</text>
+  <rect x="2803.5" y="2058" width="97" height="20" rx="10" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1"/>
+  <text x="2852" y="2072.14" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="11.5" font-weight="500" text-anchor="middle" fill="#475569">derived tables</text>
+  <rect x="2872.5" y="2082" width="67" height="20" rx="10" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1"/>
+  <text x="2906" y="2096.14" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="11.5" font-weight="500" text-anchor="middle" fill="#475569">forwards</text>
+  <rect x="1250" y="2228" width="82" height="20" rx="10" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1"/>
+  <text x="1291" y="2242.14" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="11.5" font-weight="500" text-anchor="middle" fill="#475569">quotes for t</text>
+  <rect x="1016.5" y="1474" width="137" height="20" rx="10" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1"/>
+  <text x="1085" y="1488.14" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="11.5" font-weight="500" text-anchor="middle" fill="#475569">DoltHub's listed pairs</text>
+  <rect x="1824" y="1474" width="192" height="20" rx="10" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1"/>
+  <text x="1920" y="1488.14" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="11.5" font-weight="500" text-anchor="middle" fill="#475569">both vendors' rows, 2020-2023</text>
+  <rect x="1938" y="1498" width="168" height="20" rx="10" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1"/>
+  <text x="2022" y="1512.14" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="11.5" font-weight="500" text-anchor="middle" fill="#475569">SPY bars, rates, dividends</text>
+  <rect x="1906.5" y="1670" width="173" height="20" rx="10" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1"/>
+  <text x="1993" y="1684.14" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="11.5" font-weight="500" text-anchor="middle" fill="#475569">overlap and hypothesis test</text>
+  <rect x="1344" y="1694" width="212" height="20" rx="10" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1"/>
+  <text x="1450" y="1708.14" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="11.5" font-weight="500" text-anchor="middle" fill="#475569">quantiles, shares within thresholds</text>
+  <rect x="1658.5" y="1890" width="219" height="20" rx="10" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1"/>
+  <text x="1768" y="1904.14" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="11.5" font-weight="500" text-anchor="middle" fill="#475569">flag counts, calendar, rows per date</text>
+  <rect x="1546" y="1866" width="212" height="20" rx="10" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1"/>
+  <text x="1652" y="1880.14" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="11.5" font-weight="500" text-anchor="middle" fill="#475569">cross-vendor quantiles, gate result</text>
+  <rect x="1361" y="3360" width="144" height="20" rx="10" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1"/>
+  <text x="1433" y="3374.14" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="11.5" font-weight="500" text-anchor="middle" fill="#475569">write data_quality.json</text>
+  <rect x="990.5" y="2252" width="295" height="20" rx="10" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1"/>
+  <text x="1138" y="2266.14" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="11.5" font-weight="500" text-anchor="middle" fill="#475569">planned: the view does not serve chain_mask yet</text>
+  <rect x="1297.5" y="2252" width="85" height="20" rx="10" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1"/>
+  <text x="1340" y="2266.14" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="11.5" font-weight="500" text-anchor="middle" fill="#475569">surface for t</text>
+  <rect x="916.5" y="2228" width="135" height="20" rx="10" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1"/>
+  <text x="984" y="2242.14" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="11.5" font-weight="500" text-anchor="middle" fill="#475569">SPY bars, rates, VIX</text>
+  <rect x="925.5" y="2450" width="187" height="20" rx="10" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1"/>
+  <text x="1019" y="2464.14" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="11.5" font-weight="500" text-anchor="middle" fill="#475569">SPY bars, VIX, surface up to t</text>
+  <rect x="1074.5" y="2598" width="113" height="20" rx="10" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1"/>
+  <text x="1131" y="2612.14" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="11.5" font-weight="500" text-anchor="middle" fill="#475569">signal values at t</text>
+  <rect x="1150" y="2622" width="86" height="20" rx="10" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1"/>
+  <text x="1193" y="2636.14" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="11.5" font-weight="500" text-anchor="middle" fill="#475569">one session</text>
+  <rect x="1116.5" y="2770" width="91" height="20" rx="10" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1"/>
+  <text x="1162" y="2784.14" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="11.5" font-weight="500" text-anchor="middle" fill="#475569">append rows</text>
+  <rect x="799" y="2936" width="68" height="20" rx="10" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1"/>
+  <text x="833" y="2950.14" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="11.5" font-weight="500" text-anchor="middle" fill="#475569">daily_pnl</text>
+  <rect x="1136" y="2936" width="104" height="20" rx="10" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1"/>
+  <text x="1188" y="2950.14" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="11.5" font-weight="500" text-anchor="middle" fill="#475569">position_marks</text>
+  <rect x="1417.5" y="2936" width="87" height="20" rx="10" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1"/>
+  <text x="1461" y="2950.14" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="11.5" font-weight="500" text-anchor="middle" fill="#475569">lots at as_of</text>
+  <rect x="1126.5" y="3158" width="59" height="20" rx="10" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1"/>
+  <text x="1156" y="3172.14" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="11.5" font-weight="500" text-anchor="middle" fill="#475569">metrics</text>
+  <rect x="1162" y="3182" width="98" height="20" rx="10" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1"/>
+  <text x="1211" y="3196.14" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="11.5" font-weight="500" text-anchor="middle" fill="#475569">pnl_attribution</text>
+  <rect x="1226" y="3158" width="80" height="20" rx="10" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1"/>
+  <text x="1266" y="3172.14" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="11.5" font-weight="500" text-anchor="middle" fill="#475569">stress_grid</text>
+  <rect x="1381" y="3158" width="106" height="20" rx="10" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1"/>
+  <text x="1434" y="3172.14" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="11.5" font-weight="500" text-anchor="middle" fill="#475569">surface_frames</text>
+  <rect x="1272" y="3182" width="156" height="20" rx="10" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1"/>
+  <text x="1350" y="3196.14" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="11.5" font-weight="500" text-anchor="middle" fill="#475569">blotter, positions, greeks</text>
+  <rect x="1332.5" y="3336" width="45" height="20" rx="10" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1"/>
+  <text x="1355" y="3350.14" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="11.5" font-weight="500" text-anchor="middle" fill="#475569">write</text>
+  <rect x="1371" y="3558" width="46" height="20" rx="10" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1"/>
+  <text x="1394" y="3572.14" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="11.5" font-weight="500" text-anchor="middle" fill="#475569">fetch</text>
+  <g id="legend">
+    <rect x="32" y="3718" width="20" height="20" rx="6" fill="#E0F2FE"/>
+    <g transform="translate(34 3720)" fill="none" stroke="#0284C7" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M4 1.5h5.5L13 5v9.5H4z"/>
+      <path d="M9.5 1.5V5H13"/>
+      <path d="M6.5 8.5h4M6.5 11.5h4"/>
+    </g>
+    <text x="60" y="3732" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="11.5" font-weight="400" fill="#64748B">Source</text>
+    <rect x="120.08" y="3718" width="20" height="20" rx="6" fill="#FEF3C7"/>
+    <g transform="translate(122.08 3720)" fill="none" stroke="#D97706" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+      <ellipse cx="8" cy="4" rx="5" ry="2"/>
+      <path d="M3 4v8c0 1.1 2.24 2 5 2s5-.9 5-2V4"/>
+      <path d="M3 8c0 1.1 2.24 2 5 2s5-.9 5-2"/>
+    </g>
+    <text x="148.08" y="3732" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="11.5" font-weight="400" fill="#64748B">Store</text>
+    <rect x="198.32" y="3718" width="20" height="20" rx="6" fill="#E0E7FF"/>
+    <g transform="translate(200.32 3720)" fill="none" stroke="#4F46E5" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M2.5 5h11M2.5 11h11"/>
+      <circle cx="6" cy="5" r="1.8" fill="#FFFFFF"/>
+      <circle cx="10.5" cy="11" r="1.8" fill="#FFFFFF"/>
+    </g>
+    <text x="226.32" y="3732" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="11.5" font-weight="400" fill="#64748B">Process</text>
+    <rect x="292.01" y="3718" width="20" height="20" rx="6" fill="#D1FAE5"/>
+    <g transform="translate(294.01 3720)" fill="none" stroke="#059669" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M8 10.5V2"/>
+      <path d="M5 5l3-3 3 3"/>
+      <path d="M2.5 10v3.5h11V10"/>
+    </g>
+    <text x="320.01" y="3732" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="11.5" font-weight="400" fill="#64748B">Output</text>
+    <rect x="377.99" y="3718" width="20" height="20" rx="6" fill="#F1F5F9"/>
+    <g transform="translate(379.99 3720)" fill="none" stroke="#475569" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="8" cy="8" r="6"/>
+      <ellipse cx="8" cy="8" rx="2.6" ry="6"/>
+      <path d="M2 8h12"/>
+    </g>
+    <text x="405.99" y="3732" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="11.5" font-weight="400" fill="#64748B">External</text>
+    <rect x="472.39" y="3718" width="20" height="20" rx="6" fill="#FCE7F3"/>
+    <g transform="translate(474.39 3720)" fill="none" stroke="#DB2777" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+      <rect x="1.5" y="2.5" width="13" height="11" rx="2"/>
+      <path d="M1.5 6h13"/>
+      <circle cx="4" cy="4.25" r="0.5"/>
+    </g>
+    <text x="500.39" y="3732" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="11.5" font-weight="400" fill="#64748B">UI</text>
+  </g>
+</svg>

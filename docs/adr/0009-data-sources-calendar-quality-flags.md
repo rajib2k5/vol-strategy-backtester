@@ -26,14 +26,14 @@ Round 2 (`docs/validation/00-round2-ledger.md`, claim 11): the error numbers abo
 
 ## Context
 
-All the facts below were measured read-only on 2026-10-28 unless marked otherwise. Both stores were left unmodified.
+All the facts below were measured read-only on 2026-10-28 unless marked otherwise. The OptionsDX files were left unmodified. **Corrected in M1 (2026-10-29): the DoltHub clone was not.** Its data is unchanged, but the M0 measurements ran `dolt` directly in the clone, and on dolt 2.6.1 that rewrites files even to answer a SELECT. `.dolt/`, `.dolt/noms/manifest`, `journal.idx`, the journal and the matching `stats/` files have a modification time of 2026-10-28 14:11 CDT from those runs; their bytes did not change (the data hub's own reproduction, 2026-10-29). From M1 on, dolt runs only in this project's private copy of the clone ("Out-of-sample source" below).
 
 ### Primary in-sample source: OptionsDX via Kaggle
 
 The source is Kaggle `dudesurfin/spy-options-eod-volatility-surface-2010-2023`, MIT licence, files at `$VOL_DATA_DIR/kaggle/spy-eod-2010-2023/`.
 
 **Size and coverage**
-- 14 files, 596,256,111 bytes (569 MiB), 9,468,584 rows.
+- 14 files, about 569 MiB, 9,468,584 rows.
 - 3,508 snapshot dates, 2010-01-04 to 2023-12-29.
 - Average expiries per date grew from 14.6 (2010) to 35.7 (2020). Average strikes per date grew from 133 to 327 (2022).
 
@@ -72,14 +72,22 @@ The source is Kaggle `dudesurfin/spy-options-eod-volatility-surface-2010-2023`, 
 
 | Anomaly | Dates |
 |---|---|
-| Snapshot dates on market closures (12 dates; 44,926 rows) | 2012-10-29, 2012-10-30 (Hurricane Sandy; 1,416 rows each; both show `[UNDERLYING_LAST]` 141.35, a stale underlying, but only 6.6% of their quotes are identical); 2018-12-05; 2022-01-17, 02-21, 04-15, 05-30, 06-20, 07-04, 09-05, 11-24, 12-26 |
+| Snapshot dates on market closures (12 dates; 44,926 rows) | 2012-10-29, 2012-10-30 (Hurricane Sandy; 1,416 rows each; both show the same `[UNDERLYING_LAST]`, a stale underlying, but only 6.6% of their quotes are identical); 2018-12-05; 2022-01-17, 02-21, 04-15, 05-30, 06-20, 07-04, 09-05, 11-24, 12-26 |
 | Weekday sessions missing a snapshot (26) | Count is against our approximate NYSE holiday list. Examples: 2011-01-19 → 2011-01-25 (5 sessions), 2022-06-17, 2022-06-24, 2022-12-16 |
 
-The 2022-06-20 row (Juneteenth closure) shows `[UNDERLYING_LAST]` = 365.86. We believe that is SPY's 2022-06-17 close, and 06-17 itself is missing. That points to a mislabelled snapshot. This is **unverified** until we have yfinance closes.
+The 2022-06-20 row (Juneteenth closure) shows an `[UNDERLYING_LAST]` that we believe is SPY's 2022-06-17 close, and 06-17 itself is missing. That points to a mislabelled snapshot. This was **unverified** at M0, until we had yfinance closes.
+
+**Updated in M1 (2026-10-29): verified.** OptionsDX has no 06-17 snapshot, and its 06-20 `[UNDERLYING_LAST]` equals yfinance's unadjusted 2022-06-17 close to the cent. All 12 closure-dated snapshots carry the previous session's SPY close exactly: 0 cents off on every one. Measured with `uv run python tools/report_m1.py`, block "calendar: OptionsDX" (`docs/milestones/01-data-layer.md`, "Rows, flags and the calendar").
+
+**Updated in M1, round 2 (2026-10-29): the 06-20 snapshot is not a mislabelled 06-17 one, and it is dropped.** Its prices are 06-17's, but its contract list is 06-20's. Filed under 06-17 by the relabel rule (as the first M1 build did), the chain had 9,742 long rows whose first expiry was 2022-06-21: none of the 516 contracts expiring 2022-06-17 that 06-16 listed, and 1,142 (symbol, expiry) pairs that 06-16 did not list, including two expiries first seen on 06-21's chain, 2022-07-25 and 2022-07-27 (DuckDB on the first M1 store, 2026-10-29). So a relabel would show a strategy on 06-17 contracts first listed on 06-20 (look-ahead) and hide that day's own expiries. A matching underlying cannot tell a late snapshot from one that mixes two days. **Default taken 2026-10-29, the owner can override it:** all 12 closure-dated dates are dropped, 2022-06-17 is served as a session without a snapshot, and the underlying-equals-previous-close check is kept as a diagnostic in the quality report (`quality_non_session_dates`), not as a rule.
 
 ### Out-of-sample source: DoltHub `post-no-preference/options`
 
+> **Data notice.** Tables in this ADR that report DoltHub counts, dates or summaries are derived from this database, licensed [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/), and shared under the same licence; the rest of the repository is MIT. See [DATA.md](../../DATA.md).
+
 The clone is at `$VOL_DATA_DIR/dolthub/options`, licensed CC BY-SA 4.0, and is **read-only**: it is shared with other projects.
+
+**Updated in M1 (2026-10-29):** nothing of ours runs dolt in it. Every dolt call runs in a private mirror, a `cp -a` copy at `$VOL_DATA_DIR/vol-strategy-backtester/cache/dolt_mirror/options` (`config.dolthub_mirror_dir()`), under the project-wide rule of that day: two projects querying one clone contend for its files. The loader refuses a target, or a work folder, that resolves inside the shared clone (`docs/concepts/06-private-dolt-mirror.md`). Round 2 of the review found that "the shared clone" followed `VOL_DATA_DIR`: pointed elsewhere, the real clone passed as a mirror and as a work folder. Now the default clone, `~/data/vol-projects/dolthub/options` resolved (with `$HOME`, and with the account's home), is refused whatever the environment says, and dolt runs only in a folder under `$VOL_DATA_DIR/vol-strategy-backtester/cache/` (`config.shared_clones`, `dolthub.mirror_dir`).
 
 **Table `option_chain`.** It has 13 columns, with primary key (`date`, `act_symbol`, `expiration`, `strike`, `call_put`):
 
@@ -107,18 +115,20 @@ theta decimal(5,4), vega decimal(5,4), rho decimal(5,4)
 | Expiry persistence | An expiry first listed at ≥ 25 DTE appears on a median 50% of the DoltHub sessions between its first and last listing (by year range in the last row of this table). 95% of those expiries are listed again at 14–21 DTE, 67% at 10–13 DTE, and none below 10 |
 | Expiry types | 429 expiries listed in 2024–26: Fridays 147, Mondays 107, Tuesdays 100, Wednesdays 62, Thursdays 13. Only 8% are third Fridays |
 | Contract persistence | The 2025-04-30 520 put was quoted on 2 of the 14 sessions between 2025-03-31 and 2025-04-17 (04-02 and 04-14) |
-| Market closures | Rows exist for 2020-01-20 (MLK Day), 2024-01-01 (New Year's Day) and 2024-09-02 (Labor Day) |
+| Market closures | Rows exist for 2020-01-20 (MLK Day), 2024-01-01 (New Year's Day) and 2024-09-02 (Labor Day). **Updated in M1 (2026-10-29):** this list was too short. There are **55** closure dates in 2020-26, not 3. Add the 48 weekend dates (47 Saturdays and 1 Sunday, 2019-02-09 → 2020-01-04) and DoltHub has **103** non-session dates holding 11,218 rows (`uv run python tools/report_m1.py`, block "calendar: DoltHub") |
 | Expiry persistence by regime | **Not the same across 2020–26.** An expiry is listed on a median 0.286 of the sessions between its first and last listing in 2020–22, against 0.50–0.54 in each year from 2023. DoltHub lists about 111 distinct expiries a year in 2020–22 against 36–44 a year later, and the 2020 strike spacing is about 2.97% of spot, against about 2.2–2.3% later. So the masked runs of §4 describe the holdout's expiry churn only from 2023: **2023 is their closest analogue, and 2020–22 is a different regime** |
 
 **Table `volatility_history`** has date, act_symbol, `hv_*` and `iv_*` fields (current, week-ago, month-ago, year high/low). It is not used in M0.
 
-### Other inputs, fetched in M1 to `$VOL_DATA_DIR/vol-strategy-backtester/raw/`
+### Other inputs, fetched in M1 to the repo's git-ignored `data/raw/`
+
+Where M1 writes (default taken 2026-10-29, owner can override): every download goes to `data/raw/` and every built table to `data/store/`, inside the repo's git-ignored `data/` folder (`config.work_dir()`, overridable with `VOLBT_WORK_DIR`). Vendor sources (the Kaggle files, the DoltHub clone) are still only read, from `$VOL_DATA_DIR`. **Corrected in round 2 of the M1 review:** one thing M1 writes does live under `$VOL_DATA_DIR`: the private dolt mirror at `$VOL_DATA_DIR/vol-strategy-backtester/cache/dolt_mirror/options`, made once with `cp -a`, which dolt's housekeeping writes into on every call. Nothing else M1 writes goes there.
 
 | Source | What we take | Notes |
 |---|---|---|
 | yfinance | SPY daily OHLC (unadjusted, `auto_adjust=False`) and dividends | |
 | FRED `DGS3MO` | Daily yield, percent, investment basis | https://fred.stlouisfed.org/series/DGS3MO |
-| Cboe VIX history | `DATE,OPEN,HIGH,LOW,CLOSE` (MM/DD/YYYY), 1990 to date | `cdn.cboe.com/.../VIX_History.csv` now redirects to `https://cdn-api.cboe.com/api/global/us_indices/daily_prices/VIX_History.csv`, verified 2026-10-28. VIX3M from the same family is **unverified**. |
+| Cboe VIX history | `DATE,OPEN,HIGH,LOW,CLOSE` (MM/DD/YYYY), 1990 to date | `cdn.cboe.com/.../VIX_History.csv` now redirects to `https://cdn-api.cboe.com/api/global/us_indices/daily_prices/VIX_History.csv`, verified 2026-10-28. VIX3M from the same family was **unverified** at M0. **Updated in M1 (2026-10-29): available.** `cdn-api.cboe.com/.../VIX3M_History.csv`, 4,304 rows, 2009-09-18 → 2026-10-28 (`uv run python tools/report_m1.py`, block "VIX3M"). |
 
 ## Decision
 
@@ -126,11 +136,13 @@ theta decimal(5,4), vega decimal(5,4), rho decimal(5,4)
    - A session is a date with a SPY bar.
    - Chain rows dated on non-sessions are flagged `NON_SESSION_DATE`.
    - **Relabel rule.** Relabel such a row to the nearest earlier session that has no snapshot of its own, but only if its `[UNDERLYING_LAST]` is within $0.02 of that session's SPY close. Flag it `RELABELLED`. Otherwise drop it from the clean table.
+   - **Updated in M1, round 2 (2026-10-29): the relabel rule is removed.** Every non-session row is dropped, in every source. The one date it moved, OptionsDX 2022-06-20, held 06-20's contract list under 06-17's prices (Context, "Calendar anomalies"). `RELABELLED` keeps bit 8 and is never set, so no other bit moves. The underlying-against-previous-close test is reported per dropped date (`quality.non_session_check`), and moves nothing.
    - Sessions with no snapshot run in the engine with `STALE_SURFACE` marks (ADR-0004), and option orders wait (ADR-0002).
    - The same rule applies to DoltHub, which also has rows on closures (2020-01-20, 2024-01-01, 2024-09-02).
+   - **Updated in M1 (2026-10-29):** DoltHub has 55 closure dates, not 3, and 48 weekend dates. DoltHub gives no underlying, so the $0.02 test cannot pass. M1 drops all 103 of its non-session dates (11,218 rows). Whether to relabel them by a parity test instead is the owner's call (`docs/milestones/01-data-layer.md`, "Decisions taken in M1", item 2).
 2. **The clean table is long and flagged.** `option_quotes` has one row per (`source`, `quote_date`, `osi_symbol`).
    - The OSI symbol has the form `SPY   240315C00450000`: root padded to 6 characters, yymmdd, C or P, then strike × 1000 as 8 digits.
-   - **We flag rows rather than delete them.** The only deletions are the non-session duplicates in point 1.
+   - **We flag rows rather than delete them.** The only deletions are the non-session rows in point 1.
    - Each consumer applies its own rule to the flags: marks in ADR-0004, fills in ADR-0002, the smile and forward in ADR-0008.
 3. **Quality flags.** `quality_flags` is an int bitmask:
 
@@ -144,11 +156,13 @@ theta decimal(5,4), vega decimal(5,4), rho decimal(5,4)
    | 5 | `WIDE` | ask − bid > mid, i.e. relative spread > 100% |
    | 6 | `STALE` | bid and ask both unchanged from the contract's previous snapshot while \|ΔS/S\| ≥ 0.5% |
    | 7 | `NON_SESSION_DATE` | the date is not a SPY session |
-   | 8 | `RELABELLED` | the date was moved by the point-1 rule |
+   | 8 | `RELABELLED` | the date was moved by the point-1 rule. **Reserved and never set from M1, round 2:** the rule was removed |
    | 9 | `VOLUME_UNRELIABLE` | volume is null, or the row is OptionsDX before 2021-01-04, or the row is DoltHub |
    | 10 | `UNDERLYING_MISMATCH` | \|`[UNDERLYING_LAST]`/S_close − 1\| > 0.10% |
-   | 11 | `VENDOR_IV_NULL` | the vendor gives no IV |
+   | 11 | `VENDOR_IV_INVALID` | the vendor's IV is null or ≤ 0 |
    | 12 | `EXPIRY_DAY` | τ = 0 |
+
+   **Updated in M1 (2026-10-29):** bit 11 was `VENDOR_IV_NULL`, "the vendor gives no IV". The M1 review found vendor IVs that are present but unusable: OptionsDX has 216,700 rows with IV from −0.0005 to −0.00001 and 5,984 with IV = 0, and DoltHub has 70 rows with `vol` = 0, all on bid = ask = 0 quotes (216,665 and 5,983 OptionsDX rows in the store rebuilt after round 2, which dropped the 2022-06-20 rows). The bit keeps its number and now covers null or ≤ 0. It does not flag a tiny positive IV: 321,212 OptionsDX rows have 0 < IV ≤ 0.0005 and 482,104 have 0 < IV < 0.01, all unflagged; M2 recomputes IV from quotes, so the vendor's value is not used for pricing. An IV above 5 is not flagged; its count is reported as a measurement (`tools/report_m1.py`, block "vendor IV").
 
    The pricing build (M2) writes `quote_iv.iv_flags` separately: `IV_FAIL`, `PARITY_OUTLIER` and `FORWARD_FALLBACK`.
 4. **Execution mode per source, and how the holdout distortion is estimated.**
@@ -173,10 +187,12 @@ theta decimal(5,4), vega decimal(5,4), rho decimal(5,4)
    - On the overlap dates, compare the 30-day ATM IV computed from each source.
    - Compare DoltHub's parity-implied spot with the SPY close.
    - Together these tell us DoltHub's effective snapshot time and how it differs from OptionsDX. Tolerances are set in M1, after we have looked at the distribution.
+   - **Updated in M1 (2026-10-29):** because the thresholds (1 vol point, 25 bp) were chosen on the same 573 overlap dates they would judge (572 after round 2 dropped the relabelled 2022-06-17 chain), a pass/fail on them could not fail. They are published as measurements: the share of dates inside each, pooled and by year, with no verdict (`docs/milestones/01-data-layer.md`, "The cross-vendor check").
 
 ## Alternatives considered
 
 - **Build the calendar from the chain's own dates.** Rejected. It would include 12 closure-dated snapshots (44,926 rows), two of them with a stale underlying, and it would miss 26 sessions.
+- **Relabel a closure-dated snapshot to an empty previous session when its underlying matches that session's close** (this ADR's first rule, used by the first M1 build). Rejected in M1, round 2: the one snapshot it moved had the right prices and the wrong day's contract list (Context). It would win if the vendor's file for the closure were a pure re-stamp of the previous session's file, which the contract list rules out here.
 - **Drop flagged quotes during cleaning.** Rejected. A held contract with a zero bid still needs a mark. Deleting the row would turn "worth almost nothing" into "missing" and send it to a different marking rule.
 - **Run DoltHub through the same quote-level engine.** Rejected. With strikes re-centred daily, almost every exit would be `NO_QUOTE`, and the backtest would measure the vendor's sampling rather than the strategy.
 - **Interpolate volume for DoltHub from OptionsDX patterns.** Rejected: that would be fabricated data. DoltHub uses the hard cap only.
@@ -190,15 +206,15 @@ theta decimal(5,4), vega decimal(5,4), rho decimal(5,4)
 - **Aug-2024 cannot be replayed historically.** The shock (2024-07-30 → 08-09) is missing. DoltHub has the run-up to 07-29 and the recovery from 08-12, so a run passes through the hole on `STALE_SURFACE` marks, and the stress window is reported as `NO_DATA`. It is covered by the spot × vol stress grid (ADR-0010). Apr-2025 is covered, because every weekday is present from Oct-2024.
 - **Calendar spreads are limited out of sample.** DoltHub has only 3–4 expiries, at about 13, 29 and 51–56 DTE, so front/back pairs are coarse. Calendar results from 2024–26 carry less weight.
 - **Early-close sessions (13:00 ET) still carry a 16:00 snapshot.** Their quotes are post-close, but we treat them as that session's close.
-- **The closure-dated snapshots look like late re-snapshots, not copies.** Their `[UNDERLYING_LAST]` differs from the previous session's by cents: 381.24 on 2022-07-04 against 381.20 on 07-01, and 464.72 on 2022-01-17 against 464.66 on 01-14. At most 2.6% of their quotes match a neighbour's.
+- **The closure-dated snapshots look like late re-snapshots, not copies.** Their `[UNDERLYING_LAST]` differs from the previous session's by cents: about 4 cents on 2022-07-04 against 07-01, and about 6 cents on 2022-01-17 against 01-14. At most 2.6% of their quotes match a neighbour's.
   - So the vendor's normal-day `[UNDERLYING_LAST]` may not be exactly the official close either.
   - The 0.10% `UNDERLYING_MISMATCH` tolerance, about $0.45, would hide a cents-level asynchronicity.
-  - **Unverified** until M1 has yfinance closes. M1 reports the distribution of the difference, not just the flag count.
+  - This was **unverified** at M0. **Updated in M1 (2026-10-29): measured.** The closure-dated snapshots carry the previous session's SPY close exactly (0 cents on all 12). On normal dates `[UNDERLYING_LAST]` is not exactly the close: the median gap is 3 cents, p95 is 12, p99 is 24, and the worst is 162 cents (2020-03-13). The gap is exactly 0 on 476 of 3,496 dates (477 of 3,497 before round 2 dropped the relabelled 2022-06-17 chain), and 37 dates fall beyond the 0.10% tolerance (`uv run python tools/report_m1.py`, block "UNDERLYING_LAST minus the SPY close").
 
 ## How we will test it
 
 1. **Schema pin.** The loader asserts the exact 33 OptionsDX names and types listed above, and the 13 DoltHub columns. The test is run against a 20-row fixture copied from each source's schema, not against the real files.
-2. **Calendar.** A fixture has a chain row on 2022-07-04 and a SPY calendar without 07-04. The row gets `NON_SESSION_DATE` and is dropped. A row on 2022-06-20 with `UNDERLYING_LAST = 365.86`, where 06-17 has no snapshot and the 06-17 SPY close is 365.86, is relabelled to 2022-06-17 with `RELABELLED`.
+2. **Calendar.** A fixture has a chain row on 2022-07-04 and a SPY calendar without 07-04. The row gets `NON_SESSION_DATE` and is dropped. A row on 2022-06-20 whose `UNDERLYING_LAST` equals the 06-17 SPY close (made-up values in the fixture), where 06-17 has no snapshot, was relabelled to 2022-06-17 with `RELABELLED`. **Updated in M1, round 2:** it is dropped too, 2022-06-17 stays without a snapshot, and the quality report's non-session check gives it 0 cents against the 06-17 close.
 3. **Flags, one row each.** Each of these fixture rows must set exactly the stated bits:
 
    | Bid / ask | Bits |
@@ -211,4 +227,5 @@ theta decimal(5,4), vega decimal(5,4), rho decimal(5,4)
 4. **Stale.** A contract with an identical bid/ask on two consecutive sessions while S moves from 400 to 404 (+1%) gets `STALE`. The same contract when S moves to 401 (+0.25%) does not.
 5. **OSI.** (SPY, 2024-03-15, C, 450.00) → `SPY   240315C00450000`. The inverse function parses it back.
 6. **Read-only.** The DoltHub loader opens the clone with a read-only SQL session. A test asserts that the loader's SQL contains no `INSERT`, `UPDATE`, `DELETE`, `CALL DOLT_` or `COMMIT`. This is a guard on our own code, not on behaviour. The behavioural guard is that the M1 job runs `dolt status` before and after and asserts it is clean.
+   - **Updated in M1 (2026-10-29):** the session runs in the private mirror, not the clone. Tests also check that a target or work folder resolving inside the shared clone (directly, through `..` or through a symlink) is refused before any process starts, and run a real dolt on a throwaway clone and its copy: the clone's listing (size, mtime, ctime) stays identical.
 7. **DoltHub mask.** On Wed 2022-06-15 the masked OptionsDX chain holds exactly the (expiry, strike) pairs DoltHub lists that day that OptionsDX also has. On Tue 2022-06-14, which DoltHub lacks, the masked chain is empty: the engine marks with `STALE_SURFACE`, and option orders wait. Under `dolthub_daily`, 2022-06-14 keeps 06-13's pairs instead.

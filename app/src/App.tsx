@@ -2,6 +2,7 @@ import { AppShell } from './lib/shell'
 import { useAppData } from './data/useAppData'
 import { AboutPage } from './views/AboutPage'
 import { ArchitecturePage } from './views/ArchitecturePage'
+import { DataQualityPage } from './views/DataQualityPage'
 import { PITCH, TITLE } from './content/about'
 
 export const APP_SLUG = 'vol-strategy-backtester'
@@ -16,6 +17,7 @@ export default function App() {
       subtitle={PITCH}
       pages={[
         { id: 'about', label: 'About', render: () => <AboutPage state={data} /> },
+        { id: 'data-quality', label: 'Data quality', render: () => <DataQualityPage state={data} /> },
         { id: 'architecture', label: 'Architecture', render: () => <ArchitecturePage /> },
       ]}
     />

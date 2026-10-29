@@ -2,17 +2,19 @@ import { describe, expect, it, vi } from 'vitest'
 import { render, screen, within } from '@testing-library/react'
 import { AboutPage } from './AboutPage'
 import { DataLoadError } from '../data/loadAppData'
-import { parseIllustrativeSurface, parseManifest } from '../lib/contract'
+import { parseDataQuality, parseIllustrativeSurface, parseManifest } from '../lib/contract'
 import { DATA_SOURCES } from '../content/about'
 import manifestFixture from '../test/fixtures/manifest.json'
 import surfaceFixture from '../test/fixtures/illustrative_surface.json'
+import dataQualityFixture from '../test/fixtures/data_quality.json'
 
 vi.mock('@react-three/fiber', () => import('../test/mockFiber'))
 vi.mock('@react-three/drei', () => ({ OrbitControls: () => null }))
 
 const manifest = parseManifest(manifestFixture)
 const surface = parseIllustrativeSurface(surfaceFixture)
-const ready = (m = manifest) => ({ status: 'ready' as const, data: { manifest: m, surface } })
+const dataQuality = parseDataQuality(dataQualityFixture)
+const ready = (m = manifest) => ({ status: 'ready' as const, data: { manifest: m, surface, dataQuality } })
 
 describe('AboutPage: static content (independent of the data)', () => {
   it.each([
@@ -75,11 +77,13 @@ describe('AboutPage: data states', () => {
     render(<AboutPage state={ready()} />)
     expect(screen.getByText('Illustrative SSVI surface — not market data')).toBeInTheDocument()
     const section = screen.getByRole('heading', { name: 'Exported data' }).nextElementSibling as HTMLElement
-    expect(within(section).getByText('Schema version').nextElementSibling).toHaveTextContent('0.1.0')
+    expect(within(section).getByText('Schema version').nextElementSibling).toHaveTextContent('0.2.0')
     expect(within(section).getByText('Generated at').nextElementSibling).toHaveTextContent('2026-10-27T23:30:00Z')
     expect(within(section).getByText('Source commit').nextElementSibling).toHaveTextContent('a1b2c3d4e5f6')
     const row = within(section).getByText('illustrative_surface').closest('tr') as HTMLElement
     expect(row).toHaveTextContent('Test fixture: small SSVI-style grid')
+    // every dataset the manifest lists is shown, the data-quality file too
+    expect(within(section).getByText('data_quality').closest('tr')).toHaveTextContent('Test fixture: small data-quality aggregates')
     expect(screen.queryByText('exported from a dirty working tree')).not.toBeInTheDocument()
     expect(screen.queryByText('no commit yet')).not.toBeInTheDocument()
   })

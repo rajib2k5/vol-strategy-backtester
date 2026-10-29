@@ -11,6 +11,7 @@ dependencies = [
   "pyarrow==26.0.0",
   "pyyaml==6.0.3",
   "nbformat==5.11.1",
+  "yfinance==1.7.0",
 ]
 
 [dependency-groups]
@@ -18,10 +19,21 @@ dev = [
   "pytest==9.2.0",
   "ipykernel==7.4.0",
 ]
+diagrams = [
+    "pyyaml==6.0.3",
+    "resvg-py==0.5.0",
+]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["src"]
+# The default run needs neither the network nor the full vendor data. The marked tests run with
+# `uv run pytest -m real_data` (after tools/build_data.py) or `uv run pytest -m network`.
+markers = [
+    "real_data: reads the full vendor data and the built store under work_dir()",
+    "network: downloads from the internet",
+]
+addopts = "-m 'not real_data and not network'"
 
 # A build backend makes `uv sync` install volbt (editable) into .venv, so
 # `uv run python -c "import volbt"` works everywhere, not only under pytest.

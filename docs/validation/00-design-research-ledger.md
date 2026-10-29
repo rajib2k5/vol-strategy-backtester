@@ -1,6 +1,6 @@
 # Validation ledger 00: milestone-0 design and research
 
-**What was attacked:** `docs/adr/0001–0010`, `docs/concepts/00-background.md`, `docs/prfaq.md`, `docs/architecture/README.md`, `docs/architecture/specs/data-model.erd.yaml` (skimmed) and `docs/architecture/engine-daily-loop.sequence.mmd`.
+**What was attacked:** `docs/adr/0001–0010`, `docs/concepts/00-background.md`, `docs/prfaq.md`, `docs/architecture/README.md`, `docs/architecture/specs/data-model.erd.yaml` (skimmed) and `docs/architecture/engine-daily-loop.sequence.mmd` (now `docs/architecture/out/engine_daily_loop_sequence.mmd`).
 **Date:** 2026-10-28. **Reviewer:** adversarial reviewer (Opus), following the `evidence-gated-validation` skill.
 **Default verdict:** REFUTED. A claim was conceded only on evidence produced in this review.
 
@@ -125,16 +125,18 @@
 
 ## Claim 3: the data facts are right (PARTIALLY REFUTED)
 
+> **Data notice.** The counts, dates and summaries of DoltHub rows in the tables below are derived from the DoltHub database `post-no-preference/options` (<https://www.dolthub.com/repositories/post-no-preference/options>), licensed [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/), and are shared under the same licence. The rest of this repository is MIT. See [DATA.md](../../DATA.md).
+
 | Sub-claim | Measured (probe) | Verdict |
 |---|---|---|
-| 14 files, 596,256,111 B (569 MiB) | `stat`: 14 files, 596,256,111 B = 568.63 MiB | SURVIVES |
+| 14 files, about 569 MiB | `stat`: 14 files, 568.63 MiB | SURVIVES |
 | 9,468,584 rows, 3,508 dates, 2010-01-04 → 2023-12-29 | `p01_basic.py`: `(9468584, 3508, '2010-01-04', '2023-12-29')` | SURVIVES |
 | Rows per date ≈ 1,052 (2010) → 5,070 (2021) | 1,051.9 → 5,070.2 | SURVIVES |
 | Every row stamped 16:00 New York | `[QUOTE_TIME_HOURS]` = 16.0 on 9,468,584 rows; `[QUOTE_UNIXTIME]` and `[EXPIRE_UNIX]` → 16:00 America/New_York on all; 0 date mismatches; one `[UNDERLYING_LAST]` per date; key unique (0 duplicates) | SURVIVES |
 | **"12 rows on market closures"** (prfaq.md:171) | `p04_calendar.py`: **12 snapshot *dates*, holding 44,926 rows** (e.g. 2012-10-29: 1,416 rows; 2022-06-20: 4,871) | **REFUTED** (dates, not rows). ADR-0009:53 labels them "Rows … (12)" while listing dates. |
 | 26 trading days without a snapshot | 26, against a hand-coded NYSE calendar (3,522 sessions): 2010-05-19 … 2022-12-16, matching ADR-0009's examples | SURVIVES |
-| Sandy rows are "stale copies" (ADR-0009:53) | 2012-10-29 and 10-30 both have S = 141.35, but only 6.6% of quotes are identical between them, and 0% vs 10-26 or 10-31 | PARTIALLY REFUTED: the underlying is stale, the quotes are not copies |
-| 2023-06-15, 443 strike, 29 DTE: C_IV 0.1206, P_IV 0.1149, gap 0.57 | `p05_20230615.py`: 0.12062 / 0.11490 / **0.572** vol pts | SURVIVES |
+| Sandy rows are "stale copies" (ADR-0009:53) | 2012-10-29 and 10-30 both have the same S, but only 6.6% of quotes are identical between them, and 0% vs 10-26 or 10-31 | PARTIALLY REFUTED: the underlying is stale, the quotes are not copies |
+| 2023-06-15, 443 strike, 29 DTE: call IV about 0.12, put IV about 0.11, gap about 0.6 vol pts | `p05_20230615.py`: the same, gap about 0.6 vol pts | SURVIVES |
 | F_K at 438–448 spans 0.364 (0.082% of F) | 441.9952 to 442.3580: span 0.3628, 0.082% | SURVIVES |
 | Quote-quality table, ADR-0004:13–21 | `p14_quality.py`: 745,993 (7.89%) / 632,224; 9,435 / 24,046; 11,721; 96,009; 588,461 / 472,386; 2019 22.08% / 0.56% | SURVIVES |
 | Expiries per date 14.6 → 35.7; strikes per date 133 → 327 | 14.6 / 35.68; 132.9 / 326.9 | SURVIVES |
@@ -158,7 +160,7 @@
 - ADR-0004:49: "Tue/Thu before Oct-2024".
 - ADR-0009:83 and ADR-0004:33: "2 of the 14 sessions".
 - prfaq.md:73,176 and ADR-0010:17: "no SPY dates between 2024-07-29 and 2024-08-12 (07-31 to 08-09 missing)".
-- ADR-0009:53: "both show S = 141.35 (stale underlying; quotes differ)".
+- ADR-0009:53: "both show the same S (stale underlying; quotes differ)".
 
 ---
 
@@ -425,12 +427,12 @@ No runtime probe can test exchange rules, so Channel B is N/A. The data are cons
 | Mean VIX vs mean √RV, windows 1990-01-02 → 2026-09-28 (n = 9,248) | 19.43 / 15.33 | **19.43 / 15.33** ✓ |
 | Share of days VIX > RV; mean ln(RV/VIX²); corr(dlog SPX, dVIX) | 85.9%; −0.60; −0.79 | 85.9%; −0.602; −0.786 ✓ |
 | Carr–Wu window, Jan 1996 – Feb 2003 | 23.73 / 18.97 | **23.71** / 18.97. The 0.02 gap is window-boundary sensitive (minor). |
-| VIX close 2024-08-02, 08-05, 08-06 | 23.39, 38.57, 27.71 | 23.39, 38.57, 27.71 ✓ |
+| VIX close 2024-08-02, 08-05, 08-06 | about 23, 39, 28 | the same, to the cent ✓ |
 | Realised vol over the 21 days after 08-05 | 16.2% | 16.2% ✓ |
 | 2022 PUT; SPX; SPX max drawdown | −7.66%; −19.44%; −25.43% | −7.66%; −19.44%; −25.43% ✓ |
-| Feb-2018 | 17.31 → 37.32, +115.6% (largest since 1990), SPX −4.10% | ✓ |
+| Feb-2018 | about 17 → about 37, +115.6% (largest since 1990), SPX −4.10% | ✓ |
 | Mar-2020 | 82.69 | ✓ |
-| 2020-02-21 | VIX 17.08 → 88.0% realised | ✓ |
+| 2020-02-21 | VIX about 17 → 88.0% realised | ✓ |
 | Apr-2025 | 45.31, 52.33 | ✓ |
 | Mean VIX² − RV by year (2018 / 2020 / 2022 / 2024 / 2025) | −6 / −198 / +89 / +89 / +45 | ✓ |
 | 2020: share of days VIX > RV | 76.7% | ✓ |
@@ -540,7 +542,7 @@ Probe: `p16_imports_lookahead.py`.
     - `risk → strategies`, `analytics → engine`, `pricing → data`.
   - The one mutation check (`pricing → engine`) exercises only an upward edge.
 - **Modules that need an import they are not allowed.** `needs … allowed by table = False` for:
-  - **`engine → signals`.** The sequence diagram (`engine-daily-loop.sequence.mmd:59`, `Eng->>Sig`) has the engine call signals directly, but the engine may import only data, pricing, strategies and risk.
+  - **`engine → signals`.** The sequence diagram (`out/engine_daily_loop_sequence.mmd:51`, `Eng->>Sig`) has the engine call signals directly, but the engine may import only data, pricing, strategies and risk.
   - **The pricing build.** ADR-0001:47 says derived tables are "written by `volbt.data` and `volbt.pricing`", but ADR-0001:57 says pricing is "pure functions, no I/O" and may import only numpy/scipy. Building `quote_iv`, `expiry_forwards` and `smile_fits` needs both data and pricing, and no allowed module except `engine` has both.
   - **`signals → data`.** Signals need SPY bars, VIX and quote_iv history but may import only pricing. They must be handed the full history, which is the next problem.
   - Analytics regimes are fine: the ERD's `signals` table carries `vix_bucket` and `vol_regime`.
@@ -571,7 +573,7 @@ Probe: `p16_imports_lookahead.py`.
    - Property test 8 ("≤ 2 decimals") cannot detect this.
    - **Fix (ADR-0002:46–49):** use integer cents or Decimal arithmetic, and add test cases at exact-tick boundaries.
 2. **OptionsDX closure-day snapshots are not copies.**
-   - Identical quotes against the neighbouring days are 0–2.6%, and the underlying differs by cents: 2022-07-04 shows 381.24 vs 07-01's 381.20; 2022-01-17 shows 464.72 vs 01-14's 464.66.
+   - Identical quotes against the neighbouring days are 0–2.6%, and the underlying differs by cents: 2022-07-04 differs from 07-01's by about 4 cents; 2022-01-17 from 01-14's by about 6 cents.
    - That suggests late re-snapshots of the prior session, and that the vendor's normal-day `[UNDERLYING_LAST]` may not equal the official close.
    - Unverified: no yfinance closes were fetched. M1's 0.10% tolerance ($0.45) would hide a cents-level asynchronicity.
 3. **DoltHub's 2019 SPY rows are dated on Saturdays** (46 of 48 dates). The ADR-0009 §5 cross-vendor check has no same-date overlap with OptionsDX in 2019.

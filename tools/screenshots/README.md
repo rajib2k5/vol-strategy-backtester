@@ -7,6 +7,8 @@ Screenshots of the built app for the root README and the design board. They land
 |---|---|
 | `about-dark.png` | About page, dark theme (the app's default), full page, 1440 px wide |
 | `about-light.png` | About page, light theme, full page, 1440 px wide |
+| `data-quality-dark.png` | Data quality page, dark theme, full page, 1440 px wide |
+| `data-quality-light.png` | Data quality page, light theme, full page, 1440 px wide |
 | `architecture-light.png` | Architecture page, light theme, full page, 1440 px wide |
 | `hero-3d.png` | The 3D volatility surface and its axis labels, cropped tight, dark theme, at 2x |
 
@@ -34,7 +36,7 @@ page's animations); `npm run capture` with the build took 50 seconds.
 
 ## How it works
 
-- **Browser.** `puppeteer` 25.16.0, the same pin as `tools/diagrams`, driving its own cached
+- **Browser.** `puppeteer` 25.16.0, the pin `tools/diagrams` used before it moved to the diagram kit, driving its own cached
   Chromium (156.0.8078.47 here). Both versions are exact in `package.json` and locked in
   `package-lock.json`.
 - **WebGL.** Headless Chromium has no GPU, so it starts with
@@ -45,6 +47,9 @@ page's animations); `npm run capture` with the build took 50 seconds.
   the choice under `vol-strategy-backtester:theme` in localStorage. Each shot opens a fresh
   browser context, so it starts on the default theme (dark), and only the light shots click the toggle.
   No CSS is injected.
+- **Data quality page.** After each About shot the script clicks the "Data quality" tab, waits for the
+  gate table and the first chart line, then waits 2.5 s: the line charts draw in over 0.9 s, each
+  line starting 0.18 s after the one before. The page is static after that.
 - **Animations.** The Architecture diagrams animate. Before the full-page capture the script
   waits until every layer has risen in and the sequence diagram's loop is at its hold, where
   every message is drawn, and checks that this still holds after the capture (otherwise it
@@ -73,6 +78,8 @@ page's animations); `npm run capture` with the build took 50 seconds.
 | `about-light.png` | 1440 x 2196 | 249,117 |
 | `architecture-light.png` | 1440 x 6776 | 664,139 |
 | `hero-3d.png` | 994 x 779 | 85,290 |
+| `data-quality-dark.png` | 1440 x 5791 | 558,749 (measured 2026-10-29) |
+| `data-quality-light.png` | 1440 x 5791 | 557,884 (measured 2026-10-29) |
 
 The About shots came out byte-identical in the captures compared (336,863 and 325,334 bytes
 before recompression, each time). The Architecture shot is not: the connector dashes and the

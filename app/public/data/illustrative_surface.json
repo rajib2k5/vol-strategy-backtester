@@ -1,7 +1,7 @@
 {
-  "schema_version": "0.1.0",
-  "generated_at": "2026-10-28T19:39:50Z",
-  "source_commit": "9cd2f19b4f925575696da5d7c0867d75296d670d",
+  "schema_version": "0.2.0",
+  "generated_at": "2026-10-29T16:24:01Z",
+  "source_commit": "046fd8fee1ba7fc17f25bd86df3fb2946392b276-dirty",
   "illustrative": true,
   "label": "Illustrative SSVI surface — not market data",
   "moneyness": [

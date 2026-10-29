@@ -21,7 +21,9 @@ from collections.abc import Callable
 from datetime import datetime, timezone
 from pathlib import Path
 
-SCHEMA_VERSION = "0.1.0"
+# 0.1.0: the manifest and illustrative_surface.json. 0.2.0: data_quality.json added (a new file is a
+# MINOR bump, because a viewer that does not know it still reads the others).
+SCHEMA_VERSION = "0.2.0"
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 

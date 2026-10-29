@@ -11,6 +11,8 @@ __pycache__/
 /runs/
 *.parquet
 *.duckdb
+# ...except the tiny SYNTHETIC fixtures (20 rows each, made-up values), which the schema-pin tests read.
+!/tests/fixtures/*.parquet
 
 # Secrets
 .env
@@ -20,9 +22,6 @@ __pycache__/
 node_modules/
 dist/
 coverage/
-# (already matched by node_modules/ above; spelled out because the install is created by
-# tools/diagrams/render_mermaid.sh and must never be committed)
-tools/diagrams/node_modules/
 
 # Tooling output
 graphify-out/

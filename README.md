@@ -28,9 +28,9 @@ reporting (see [LEARNING_LOG.md](LEARNING_LOG.md)).
 ## Design
 
 - **The engine's day**, in the fixed order of ADR-0001:
-  ![Sequence diagram of one trading session](docs/architecture/rendered/engine-daily-loop.sequence.png)
+  ![Sequence diagram of one trading session](docs/architecture/out/engine_daily_loop_sequence.png)
 - **Architecture**, data flow, process and data model: [`docs/architecture/`](docs/architecture/)
-  (Mermaid sources render on GitHub; SVG/PNG copies in `rendered/`).
+  (Mermaid sources render on GitHub; SVG/PNG/draw.io copies in `out/`).
 - **Decisions:** [`docs/adr/`](docs/adr/), ten ADRs, each with the alternatives it rejected and what
   the milestone-0 adversarial review changed.
 - **Validation:** [`docs/validation/`](docs/validation/), the evidence-gated review ledgers.
@@ -58,7 +58,7 @@ npm run verify   # lint + tests with coverage thresholds + production build
 ```
 
 ```bash
-bash tools/diagrams/render_mermaid.sh            # docs/architecture/*.mmd -> rendered/ SVG + PNG
+uv run --group diagrams python tools/diagrams/build.py docs/architecture/specs --out docs/architecture/out   # specs -> out/
 npm ci --prefix tools/screenshots                # then, from tools/screenshots: npm run capture
 ```
 
@@ -74,6 +74,10 @@ Raw vendor data is **never committed**. Loaders read it from `VOL_DATA_DIR`, whi
 | SPY prices and dividends | yfinance | Yahoo terms: not redistributed |
 | Risk-free rate | FRED `DGS3MO` | Public |
 | VIX history (regimes) | CBOE | Personal, non-commercial use: not redistributed |
+
+## Data and licences
+
+The data is not covered by this repository's MIT licence. [DATA.md](DATA.md) lists each source with its terms and a link, and says what is committed (small derived tables, the app JSON, real values in docs) and what never is (the downloaded vendor files). Tables derived from DoltHub carry a CC BY-SA 4.0 notice next to them, for the app data in [app/public/data/LICENSE-DATA.md](app/public/data/LICENSE-DATA.md). `tools/licensing/check_tracked_data.py` fails the build of a commit that would take a raw vendor file or a data file over 50 MB.
 
 ## Layout
 

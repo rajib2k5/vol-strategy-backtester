@@ -1,0 +1,68 @@
+---
+title: "Research and backtest process with gates"
+---
+flowchart TB
+    subgraph owner["Owner"]
+        o_hyp["State hypothesis and pre-register config grid"]
+        o_adr[/"ADR or config change committed"/]
+        o_freeze["Freeze config\nStop and regime rules frozen with a written rationale; no rule may cite a 2024-2026 event"]
+        a_log[/"LEARNING_LOG.md entry"/]
+    end
+    subgraph pipeline["Automated pipeline"]
+        p_ingest["M1 ingest and quality flags"]
+        p_pricing["M2 forwards, IV, smiles"]
+        p_dev["Development runs 2010-2019\nEach distinct config_hash is a trial"]
+        s_trials[("runs table#58; trial log")]
+        p_val["Validation run 2020-2023, quote mode, hard cap of record\nDiagnostics#58; volume cap 2021-2023, surface runs S, M (DoltHub-masked), M-prime (ADR-0009, ADR-0010)"]
+        p_oos["Holdout run 2024-2026 DoltHub, once\nSemi-blind#58; holdout events are discussed in the background doc"]
+        p_report["Metrics, DSR, regimes, stress windows, grid"]
+    end
+    subgraph gates["Gates and adversarial review"]
+        g_quality["Quality gate\nSchema pinned, flag report reviewed, cross-vendor overlap within tolerance"]
+        g_pricing["Pricing gate\nIV round-trip property test, parity dispersion, vendor reconciliation report"]
+        g_attr["Attribution and mark-quality gate\nResidual within tolerance, DEGRADED days explained"]
+        r_method["Adversarial review of method\nOpus reviewer attacks numbered claims; default verdict is broken"]
+        r_results["Adversarial review of results"]
+        g_publish["Publish gate\nEvery claim measured; determinism re-run identical"]
+    end
+    subgraph publish["Publish"]
+        p_export["Export schema-validated JSON"]
+        u_app("App renders results")
+    end
+    o_hyp -->|"write down"| o_adr
+    o_adr -->|"start"| p_ingest
+    p_ingest -->|"quality report"| g_quality
+    g_quality -->|"fail#58; fix and re-run"| p_ingest
+    g_quality -->|"pass"| p_pricing
+    p_pricing -->|"pricing report"| g_pricing
+    g_pricing -->|"fail"| p_pricing
+    g_pricing -->|"pass"| p_dev
+    p_dev -->|"log trial"| s_trials
+    p_dev -->|"ledger"| g_attr
+    g_attr -->|"fail#58; bug or bad marks"| p_dev
+    g_attr -->|"pass"| r_method
+    r_method -->|"refuted#58; revise"| o_hyp
+    r_method -->|"survives"| o_freeze
+    o_freeze -->|"frozen config_hash"| p_val
+    p_val -->|"validation recorded"| p_oos
+    p_val -->|"run of record and up to 2 defect re-runs charged as trials"| s_trials
+    p_oos -->|"holdout ledger"| p_report
+    s_trials -->|"N_eff (clustered) and N_raw for DSR"| p_report
+    p_report -->|"report + claims"| r_results
+    r_results -->|"verdicts"| g_publish
+    g_publish -->|"no#58; re-measure"| p_report
+    g_publish -->|"yes"| p_export
+    p_export -->|"JSON"| u_app
+    g_publish -->|"record what was wrong"| a_log
+    classDef store fill:#FEF3C7,stroke:#D97706,color:#0F172A
+    class s_trials store
+    classDef process fill:#E0E7FF,stroke:#4F46E5,color:#0F172A
+    class o_hyp,p_ingest,g_quality,p_pricing,g_pricing,p_dev,g_attr,r_method,o_freeze,p_val,p_oos,p_report,r_results,g_publish,p_export process
+    classDef output fill:#D1FAE5,stroke:#059669,color:#0F172A
+    class o_adr,a_log output
+    classDef ui fill:#FCE7F3,stroke:#DB2777,color:#0F172A
+    class u_app ui
+    style owner fill:#F1F5F9,stroke:#E2E8F0,color:#64748B
+    style pipeline fill:#EFF6FF,stroke:#DBEAFE,color:#64748B
+    style gates fill:#F5F3FF,stroke:#E9E5FD,color:#64748B
+    style publish fill:#ECFDF5,stroke:#D1FAE5,color:#64748B

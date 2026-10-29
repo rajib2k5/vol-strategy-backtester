@@ -1,9 +1,11 @@
-# End-to-end components of vol-strategy-backtester. Interim diagram schema (see ../README.md).
+# End-to-end components of vol-strategy-backtester. Diagram-kit schema (see ../README.md).
 # Decisions referenced: ADR-0001 (stack, module boundaries, JSON contract), ADR-0009 (sources).
 # Revised after the M0 review: volbt.build owns the pricing build; signals are computed from the MarketView.
+# Where data lives (2026-10-29, volbt.config): vendor sources are only read, from $VOL_DATA_DIR; DoltHub is queried through a private mirror
+# under it, never the shared clone. Downloads and built tables are written to the repo's git-ignored data/ (work_dir()): data/raw/, data/store/.
 kind: flow
-id: architecture
 title: "vol-strategy-backtester: components"
+direction: TB
 lanes:
   - {id: sources, label: "Vendor sources (outside the repo)"}
   - {id: store, label: "Chain store (M1)"}
@@ -12,34 +14,37 @@ lanes:
   - {id: results, label: "Analytics and export (M6)"}
   - {id: app, label: "App (visualises only)"}
 nodes:
-  - {id: src_optionsdx, label: "Kaggle OptionsDX SPY EOD 2010-2023", type: source, lane: sources, note: "14 parquet files, 9,468,584 rows, 16:00 ET snapshots"}
-  - {id: src_dolthub, label: "DoltHub option_chain SPY 2019-2026", type: source, lane: sources, note: "Shared read-only dolt clone; no volume, sizes or underlying"}
-  - {id: src_yf, label: "yfinance SPY bars and dividends", type: external, lane: sources, note: "Unadjusted close, auto_adjust=False"}
-  - {id: src_fred, label: "FRED DGS3MO", type: external, lane: sources, note: "3-month constant-maturity yield, investment basis"}
+  - {id: src_optionsdx, label: "Kaggle OptionsDX SPY EOD 2010-2023", sublabel: "14 parquet files, 9,468,584 rows, 16:00 ET snapshots", type: source, lane: sources}
+  - {id: src_dolthub, label: "DoltHub option_chain SPY 2019-2026", sublabel: "Shared dolt clone, never queried; no volume, sizes or underlying", type: source, lane: sources}
+  - {id: src_yf, label: "yfinance SPY bars and dividends", sublabel: "Unadjusted close, auto_adjust=False", type: external, lane: sources}
+  - {id: src_fred, label: "FRED DGS3MO", sublabel: "3-month constant-maturity yield, investment basis", type: external, lane: sources}
   - {id: src_cboe, label: "Cboe VIX history CSV", type: external, lane: sources}
-  - {id: st_raw, label: "Raw vendor files under VOL_DATA_DIR", type: store, lane: store, note: "Never modified, never committed"}
-  - {id: p_data, label: "volbt.data: load, calendar, quality flags", type: process, lane: store, note: "Schema pin; long format; OSI symbols; flag rather than drop"}
-  - {id: st_clean, label: "Clean parquet + DuckDB", type: store, lane: store, note: "option_quotes, underlying_bars, rates, dividends, vix_daily, trading_calendar"}
-  - {id: p_pricing, label: "volbt.pricing: Black-76, IV, parity forward, CRR lattice, smile", type: process, lane: core, note: "Pure functions, no I/O; imports no volbt module (ADR-0001, ADR-0008)"}
-  - {id: p_build, label: "volbt.build: pricing build", type: process, lane: core, note: "Reads and writes through volbt.data, calls volbt.pricing; de-Americanises quotes (ADR-0001, ADR-0008)"}
+  - {id: st_vendor, label: "Vendor sources in $VOL_DATA_DIR", sublabel: "Read only, never modified. DoltHub: private mirror at $VOL_DATA_DIR/vol-strategy-backtester/cache/dolt_mirror/options", type: store, lane: store}
+  - {id: st_raw, label: "Downloads in repo data/raw/", sublabel: "work_dir(), git-ignored, never committed", type: store, lane: store}
+  - {id: p_data, label: "volbt.data: load, calendar, quality flags", sublabel: "Schema pin; long format; OSI symbols; flag rather than drop", type: process, lane: store}
+  - {id: st_clean, label: "Clean parquet + DuckDB", sublabel: "Built in M1, in repo data/store/: option_quotes, calendar_actions, spy_bars, rates, dividends, vix, vix3m, chain_mask and the quality and cross-vendor tables", type: store, lane: store}
+  - {id: p_pricing, label: "volbt.pricing: Black-76, IV, parity forward, CRR lattice, smile", sublabel: "Pure functions, no I/O; imports no volbt module (ADR-0001, ADR-0008)", type: process, lane: core}
+  - {id: p_build, label: "volbt.build: pricing build", sublabel: "Reads and writes through volbt.data, calls volbt.pricing; de-Americanises quotes (ADR-0001, ADR-0008)", type: process, lane: core}
   - {id: st_derived, label: "Derived tables: quote_iv, expiry_forwards, smile_fits", type: store, lane: core}
-  - {id: p_signals, label: "volbt.signals: RV, HAR/GARCH, IV30, VRP spread", type: process, lane: core, note: "Causal: called each session with the MarketView; monthly refits on data up to t (ADR-0001)"}
-  - {id: p_view, label: "MarketView as_of t", type: process, lane: sim, note: "Protocol in volbt.view, implemented in volbt.data; LookAheadError after t, SplitError past the split end"}
+  - {id: p_signals, label: "volbt.signals: RV, HAR/GARCH, IV30, VRP spread", sublabel: "Causal: called each session with the MarketView; monthly refits on data up to t (ADR-0001)", type: process, lane: core}
+  - {id: p_view, label: "MarketView as_of t", sublabel: "Protocol in volbt.view, implemented in volbt.data; LookAheadError after t, SplitError past the split end", type: process, lane: sim}
   - {id: p_strat, label: "volbt.strategies: structures, entry and exit rules", type: process, lane: sim}
-  - {id: p_risk, label: "volbt.risk: greek and stress budgets, sizing, margin", type: process, lane: sim, note: "ADR-0006 (greeks, stress grid cells), ADR-0007 (net margin requirement)"}
-  - {id: p_engine, label: "volbt.engine: daily loop, fills, marks, expiry, hedge", type: process, lane: sim, note: "ADR-0002 to ADR-0005"}
+  - {id: p_risk, label: "volbt.risk: greek and stress budgets, sizing, margin", sublabel: "ADR-0006 (greeks, stress grid cells), ADR-0007 (net margin requirement)", type: process, lane: sim}
+  - {id: p_engine, label: "volbt.engine: daily loop, fills, marks, expiry, hedge", sublabel: "ADR-0002 to ADR-0005", type: process, lane: sim}
   - {id: st_ledger, label: "Run ledger parquet under runs/run_id", type: store, lane: sim}
-  - {id: p_analytics, label: "volbt.analytics: metrics, attribution, regimes, stress grid", type: process, lane: results, note: "Reads ledger tables only (ADR-0010)"}
-  - {id: p_export, label: "volbt.export + tools/export_app_data.py", type: process, lane: results, note: "JSON Schema validation before write"}
-  - {id: a_json, label: "app/public/data JSON: manifest + datasets", type: artifact, lane: results, note: "Envelope: schema_version, generated_at, source_commit"}
-  - {id: ui_app, label: "Vite + React 19 + three.js viewer", type: ui, lane: app, note: "Parses, validates and renders; never computes a result"}
+  - {id: p_analytics, label: "volbt.analytics: metrics, attribution, regimes, stress grid", sublabel: "Reads ledger tables only (ADR-0010)", type: process, lane: results}
+  - {id: p_export, label: "volbt.export + tools/export_app_data.py", sublabel: "JSON Schema validation before write", type: process, lane: results}
+  - {id: a_json, label: "app/public/data JSON: manifest + datasets", sublabel: "Envelope: schema_version, generated_at, source_commit", type: output, lane: results}
+  - {id: ui_app, label: "Vite + React 19 + three.js viewer", sublabel: "Parses, validates and renders; never computes a result", type: ui, lane: app}
 edges:
-  - {from: src_optionsdx, to: st_raw, label: "copy as delivered"}
-  - {from: src_dolthub, to: st_raw, label: "read-only SQL"}
+  - {from: src_optionsdx, to: st_vendor, label: "read in place"}
+  - {from: src_dolthub, to: st_vendor, label: "private mirror, not the clone"}
+  - {from: st_vendor, to: st_raw, label: "DoltHub SPY rows, exported once"}
   - {from: src_yf, to: st_raw, label: "fetch"}
   - {from: src_fred, to: st_raw, label: "fetch"}
   - {from: src_cboe, to: st_raw, label: "fetch"}
-  - {from: st_raw, to: p_data, label: "raw rows"}
+  - {from: st_vendor, to: p_data, label: "OptionsDX parquet"}
+  - {from: st_raw, to: p_data, label: "downloads, DoltHub export"}
   - {from: p_data, to: st_clean, label: "flagged long quotes + reference data"}
   - {from: st_clean, to: p_build, label: "mids, SPY close, r, dividends"}
   - {from: p_pricing, to: p_build, label: "pure functions"}
