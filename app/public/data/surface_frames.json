@@ -1,7 +1,7 @@
 {
   "schema_version": "0.3.0",
-  "generated_at": "2026-10-30T06:12:16Z",
-  "source_commit": "35cb68269034d995e39f17d63bc907f5779ed5b4-dirty",
+  "generated_at": "2026-10-30T06:27:15Z",
+  "source_commit": "86d9d5ae2a7885ca4f163e66b715bc6b4357fae1",
   "run": {
     "run_id": "pricing-a4b22664c957",
     "config_hash": "a4b22664c9573d31e965046179b15e6ff64065d440181d35f39c3930bf6bab03",
