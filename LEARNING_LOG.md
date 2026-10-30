@@ -16,7 +16,7 @@ Learning mode: queued
 |---|---|---|---|---|---|---|---|
 | 00 | Foundations: scaffold, contract, design, decisions | [00-foundations](docs/milestones/00-foundations.md) | [00-background](docs/concepts/00-background.md), [01-ssvi-surface](docs/concepts/01-ssvi-surface.md) | queued, 0 of 16 answered | | | |
 | 01 | Option-chain data layer and quality filters | [01-data-layer](docs/milestones/01-data-layer.md) | [02-quality-flags-bitmask](docs/concepts/02-quality-flags-bitmask.md), [03-put-call-parity-forward-and-spot](docs/concepts/03-put-call-parity-forward-and-spot.md), [04-osi-symbol](docs/concepts/04-osi-symbol.md), [05-sampling-mask](docs/concepts/05-sampling-mask.md), [06-private-dolt-mirror](docs/concepts/06-private-dolt-mirror.md) | queued, 0 of 14 answered | | | |
-| 02 | Pricing core: Black-76 on a parity forward, greeks, IV solver, de-Americanisation | [02-pricing-core](docs/milestones/02-pricing-core.md) | [07-black-76-on-the-forward](docs/concepts/07-black-76-on-the-forward.md), [08-greeks-and-their-usd-units](docs/concepts/08-greeks-and-their-usd-units.md), [09-implied-vol-solving](docs/concepts/09-implied-vol-solving.md), [10-crr-lattice-and-de-americanisation](docs/concepts/10-crr-lattice-and-de-americanisation.md), [11-smile-in-total-variance](docs/concepts/11-smile-in-total-variance.md) | not started | | | |
+| 02 | Pricing core: Black-76 on a parity forward, greeks, IV solver, de-Americanisation | [02-pricing-core](docs/milestones/02-pricing-core.md) | [07-black-76-on-the-forward](docs/concepts/07-black-76-on-the-forward.md), [08-greeks-and-their-usd-units](docs/concepts/08-greeks-and-their-usd-units.md), [09-implied-vol-solving](docs/concepts/09-implied-vol-solving.md), [10-crr-lattice-and-de-americanisation](docs/concepts/10-crr-lattice-and-de-americanisation.md), [11-smile-in-total-variance](docs/concepts/11-smile-in-total-variance.md) | queued, 0 of 14 answered | | | |
 | 03 | Event-driven engine: marks, fills, expiry, hedging | — | — | not started | | | |
 | 04 | Strategies and the VRP signal | — | — | not started | | | |
 | 05 | Risk: greek budgets and sizing | — | — | not started | | | |
@@ -33,6 +33,7 @@ Answers are recorded as they arrive in `.learning/milestones/NN-checkpoint.md`. 
 
 - Milestone 00 (queued, 0 of 16 answered). Answer in its quiz widget, or say "quiz me on milestone 0" to resume it.
 - Milestone 01 (queued, 0 of 14 answered). Answer in its quiz widget, or say "quiz me on milestone 1" to resume it.
+- Milestone 02 (queued, 0 of 14 answered). Answer in its quiz widget, or say "quiz me on milestone 2" to resume it.
 
 ## Owed checkpoints
 
