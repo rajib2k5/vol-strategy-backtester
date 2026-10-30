@@ -226,19 +226,19 @@ def test_a_failing_gate_is_reported_with_its_failures(tmp_path):
     assert gate["failures"] == ["optionsdx 2010: BID_NULL on 6.00% of rows (limit 5%)"]
 
 
-def test_the_same_store_gives_the_same_body_and_the_same_bytes(tmp_path):
+def test_the_same_store_gives_the_same_body_and_the_same_bytes(tmp_path, frames_body):
     first = export_app_data.data_quality_body(make_store(tmp_path / "a"))
     second = export_app_data.data_quality_body(make_store(tmp_path / "b"))
     assert first == second
     for name, directory in (("a", tmp_path / "out_a"), ("b", tmp_path / "out_b")):
         store = Store(tmp_path / name)
         export_app_data.build_payloads(directory, lambda: (SHA, False), FIXED_NOW,
-                                       quality_body=export_app_data.data_quality_body(store))
+                                       quality_body=export_app_data.data_quality_body(store), frames_body=frames_body)
     assert (tmp_path / "out_a" / "data_quality.json").read_bytes() == (tmp_path / "out_b" / "data_quality.json").read_bytes()
 
 
-def test_every_number_in_the_file_is_finite_and_has_at_most_six_decimals(tmp_path, body):
-    export_app_data.build_payloads(tmp_path, lambda: (SHA, False), FIXED_NOW, quality_body=body)
+def test_every_number_in_the_file_is_finite_and_has_at_most_six_decimals(tmp_path, body, frames_body):
+    export_app_data.build_payloads(tmp_path, lambda: (SHA, False), FIXED_NOW, quality_body=body, frames_body=frames_body)
     written = read_json(tmp_path / "data_quality.json")          # read_json refuses NaN and Infinity
 
     def numbers(node):
@@ -258,8 +258,8 @@ def test_every_number_in_the_file_is_finite_and_has_at_most_six_decimals(tmp_pat
     assert all(value == round(value, 6) for value in found)
 
 
-def test_whole_numbers_are_written_without_a_decimal_point(tmp_path, body):
-    export_app_data.build_payloads(tmp_path, lambda: (SHA, False), FIXED_NOW, quality_body=body)
+def test_whole_numbers_are_written_without_a_decimal_point(tmp_path, body, frames_body):
+    export_app_data.build_payloads(tmp_path, lambda: (SHA, False), FIXED_NOW, quality_body=body, frames_body=frames_body)
     tokens = []
 
     def note_float(token):
@@ -271,16 +271,16 @@ def test_whole_numbers_are_written_without_a_decimal_point(tmp_path, body):
     assert [t for t in tokens if float(t).is_integer()] == []  # 1500, never 1500.0
 
 
-def test_the_file_is_the_envelope_then_the_body(tmp_path, body):
-    export_app_data.build_payloads(tmp_path, lambda: (SHA, False), FIXED_NOW, quality_body=body)
+def test_the_file_is_the_envelope_then_the_body(tmp_path, body, frames_body):
+    export_app_data.build_payloads(tmp_path, lambda: (SHA, False), FIXED_NOW, quality_body=body, frames_body=frames_body)
     written = read_json(tmp_path / "data_quality.json")
     assert {key: written[key] for key in ENVELOPE} == ENVELOPE
     assert list(written)[:3] == ["schema_version", "generated_at", "source_commit"]
     assert {key: written[key] for key in SECTIONS} == body
 
 
-def test_the_manifest_lists_data_quality_with_the_current_schema_version(tmp_path, body):
-    export_app_data.build_payloads(tmp_path, lambda: (SHA, False), FIXED_NOW, quality_body=body)
+def test_the_manifest_lists_data_quality_with_the_current_schema_version(tmp_path, body, frames_body):
+    export_app_data.build_payloads(tmp_path, lambda: (SHA, False), FIXED_NOW, quality_body=body, frames_body=frames_body)
     entries = {entry["name"]: entry for entry in read_json(tmp_path / "manifest.json")["datasets"]}
     assert entries["data_quality"]["path"] == "data_quality.json"
     assert entries["data_quality"]["schema_version"] == contract.SCHEMA_VERSION
@@ -396,13 +396,15 @@ def real_store():
 
 
 @pytest.mark.real_data
-@pytest.mark.parametrize("name", ["manifest.json", "illustrative_surface.json", "data_quality.json"])
+@pytest.mark.parametrize("name", ["manifest.json", "illustrative_surface.json", "data_quality.json",
+                                  "surface_frames.json"])
 def test_the_committed_files_equal_a_fresh_export_from_the_real_store(tmp_path, real_store, name):
     # Catches "rebuilt the store or changed the report, forgot to re-run the exporter".
     stamp = read_json(COMMITTED_DIR / "manifest.json")
     now = datetime.strptime(stamp["generated_at"], "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=timezone.utc)
     export_app_data.build_payloads(tmp_path, lookup_for(stamp["source_commit"]), now,
-                                   quality_body=export_app_data.data_quality_body(real_store))
+                                   quality_body=export_app_data.data_quality_body(real_store),
+                                   frames_body=export_app_data.surface_frames_body(real_store))
     assert (tmp_path / name).read_bytes() == (COMMITTED_DIR / name).read_bytes(), (
         f"app/public/data/{name} is stale; run: uv run python tools/export_app_data.py")
 

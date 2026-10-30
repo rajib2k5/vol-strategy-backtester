@@ -13,11 +13,13 @@ REPO = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(REPO / "tools"))
 
 import export_app_data  # noqa: E402
+import pricing_store  # noqa: E402
 from data_quality_store import make_store  # noqa: E402
+from volbt import build  # noqa: E402
 
 SHA = "0123456789abcdef0123456789abcdef01234567"
 FIXED_NOW = datetime(2026, 10, 27, 12, 0, 0, tzinfo=timezone.utc)
-ENVELOPE = {"schema_version": "0.2.0", "generated_at": "2026-10-27T12:00:00Z", "source_commit": SHA}
+ENVELOPE = {"schema_version": "0.3.0", "generated_at": "2026-10-27T12:00:00Z", "source_commit": SHA}
 
 
 def reject_non_finite(token):
@@ -50,13 +52,15 @@ def quality_body(tmp_path_factory):
 
 
 @pytest.fixture
-def exported(tmp_path, quality_body):
-    export_app_data.build_payloads(tmp_path, lambda: (SHA, False), FIXED_NOW, quality_body=quality_body)
+def exported(tmp_path, quality_body, frames_body):
+    export_app_data.build_payloads(tmp_path, lambda: (SHA, False), FIXED_NOW, quality_body=quality_body,
+                                   frames_body=frames_body)
     return tmp_path
 
 
-def test_writes_exactly_the_three_files(exported):
-    assert sorted(p.name for p in exported.iterdir()) == ["data_quality.json", "illustrative_surface.json", "manifest.json"]
+def test_writes_exactly_the_four_files(exported):
+    assert sorted(p.name for p in exported.iterdir()) == ["data_quality.json", "illustrative_surface.json", "manifest.json",
+                                                          "surface_frames.json"]
 
 
 def test_manifest_content(exported):
@@ -66,7 +70,7 @@ def test_manifest_content(exported):
             {
                 "name": "illustrative_surface",
                 "path": "illustrative_surface.json",
-                "schema_version": "0.2.0",
+                "schema_version": "0.3.0",
                 "description": (
                     "Illustrative SSVI implied-vol surface for the milestone-0 3D hero. "
                     "Not market data."
@@ -75,11 +79,20 @@ def test_manifest_content(exported):
             {
                 "name": "data_quality",
                 "path": "data_quality.json",
-                "schema_version": "0.2.0",
+                "schema_version": "0.3.0",
                 "description": (
                     "Milestone-1 data-quality aggregates: quote flags per source and year, rows per "
                     "source, the calendar fixes, the cross-vendor agreement and the quality-gate "
                     "result. Counts and quantiles only; no quotes."
+                ),
+            },
+            {
+                "name": "surface_frames",
+                "path": "surface_frames.json",
+                "schema_version": "0.3.0",
+                "description": (
+                    "Milestone-2 SPY implied-vol surfaces on a fixed grid for a few labelled dates, "
+                    "from the de-Americanised OTM smiles of the pricing build. Market data."
                 ),
             },
         ],
@@ -191,22 +204,26 @@ def test_every_file_ends_with_exactly_one_newline_and_has_no_carriage_returns(ex
         assert b"\r" not in data, path.name
 
 
-def test_files_are_written_with_lf_even_where_text_mode_would_write_crlf(tmp_path, windows_text_mode, quality_body):
+def test_files_are_written_with_lf_even_where_text_mode_would_write_crlf(tmp_path, windows_text_mode, quality_body,
+                                                                          frames_body):
     # On Windows the default text mode would turn each "\n" into "\r\n": same export, different
     # bytes, a spurious git diff. The fixture applies that rule on any OS.
-    export_app_data.build_payloads(tmp_path, lambda: (SHA, False), FIXED_NOW, quality_body=quality_body)
+    export_app_data.build_payloads(tmp_path, lambda: (SHA, False), FIXED_NOW, quality_body=quality_body,
+                                   frames_body=frames_body)
     for path in tmp_path.iterdir():
         assert b"\r" not in path.read_bytes(), path.name
 
 
-def test_output_directory_is_created(tmp_path, quality_body):
+def test_output_directory_is_created(tmp_path, quality_body, frames_body):
     target = tmp_path / "a" / "b"
-    export_app_data.build_payloads(target, lambda: (SHA, False), FIXED_NOW, quality_body=quality_body)
+    export_app_data.build_payloads(target, lambda: (SHA, False), FIXED_NOW, quality_body=quality_body,
+                                   frames_body=frames_body)
     assert (target / "manifest.json").is_file()
 
 
-def test_no_head_gives_uncommitted(tmp_path, quality_body):
-    export_app_data.build_payloads(tmp_path, lambda: (None, False), FIXED_NOW, quality_body=quality_body)
+def test_no_head_gives_uncommitted(tmp_path, quality_body, frames_body):
+    export_app_data.build_payloads(tmp_path, lambda: (None, False), FIXED_NOW, quality_body=quality_body,
+                                   frames_body=frames_body)
     assert read_json(tmp_path / "manifest.json")["source_commit"] == "uncommitted"
 
 
@@ -225,14 +242,19 @@ def test_script_runs_as_a_plain_script_from_another_directory(tmp_path):
     out = tmp_path / "out"
     elsewhere = tmp_path / "elsewhere"
     elsewhere.mkdir()
-    store = make_store(tmp_path / "store")
+    # One store with both builds in it: the data-quality report tables and the pricing tables.
+    store = pricing_store.make_store(tmp_path / "store")
+    build.build_pricing(store)
+    make_store(tmp_path / "store")
     script = REPO / "tools" / "export_app_data.py"
     result = subprocess.run(
-        [sys.executable, str(script), "--out-dir", str(out), "--store", str(store.root)],
+        [sys.executable, str(script), "--out-dir", str(out), "--store", str(store.root), "--frame", "2023-06-15=made up"],
         cwd=elsewhere, capture_output=True, text=True,
     )
     assert result.returncode == 0, result.stderr
-    assert sorted(p.name for p in out.iterdir()) == ["data_quality.json", "illustrative_surface.json", "manifest.json"]
+    assert sorted(p.name for p in out.iterdir()) == ["data_quality.json", "illustrative_surface.json", "manifest.json",
+                                                     "surface_frames.json"]
+    assert read_json(out / "surface_frames.json")["frames"][0]["label"] == "made up"
     # --out-dir was absolute, so nothing may land next to the (different) working directory.
     assert list(elsewhere.iterdir()) == []
 
@@ -262,6 +284,12 @@ def lookup_for(source_commit):
 COMMITTED_DIR = REPO / "app" / "public" / "data"
 
 
+def committed_frames_body(committed_dir):
+    """surface_frames.json's content after the envelope, as committed (the store's numbers are not rebuilt here)."""
+    written = read_json(committed_dir / "surface_frames.json")
+    return {key: value for key, value in written.items() if key not in ENVELOPE}
+
+
 def committed_quality_body(committed_dir):
     """data_quality.json's content after the envelope, as committed. The default run has no store to
     rebuild it from; tests/test_export_data_quality.py (marked real_data) does that comparison."""
@@ -281,12 +309,14 @@ def assert_matches_a_fresh_export(committed_dir, fresh_dir, name):
     stamp = read_json(committed_dir / "manifest.json")
     now = datetime.strptime(stamp["generated_at"], "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=timezone.utc)
     export_app_data.build_payloads(fresh_dir, lookup_for(stamp["source_commit"]), now,
-                                   quality_body=committed_quality_body(committed_dir))
+                                   quality_body=committed_quality_body(committed_dir),
+                                   frames_body=committed_frames_body(committed_dir))
     assert (fresh_dir / name).read_bytes() == (committed_dir / name).read_bytes(), (
         f"app/public/data/{name} is stale; run: uv run python tools/export_app_data.py")
 
 
-@pytest.mark.parametrize("name", ["manifest.json", "illustrative_surface.json", "data_quality.json"])
+@pytest.mark.parametrize("name", ["manifest.json", "illustrative_surface.json", "data_quality.json",
+                                  "surface_frames.json"])
 def test_committed_app_data_matches_a_fresh_export_byte_for_byte(tmp_path, name):
     # Catches "changed the model, forgot to re-run the exporter".
     if not (COMMITTED_DIR / name).exists():

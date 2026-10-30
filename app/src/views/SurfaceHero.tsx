@@ -1,5 +1,6 @@
 /**
- * The 3D hero: the illustrative implied-vol surface as a rotatable mesh.
+ * The 3D hero: an implied-vol surface as a rotatable mesh. The About page draws the illustrative
+ * SSVI surface with it; the Surface page draws the real SPY surfaces of surface_frames.json.
  *
  *   x = log-moneyness, y = implied vol (also the colour), z = days to expiry.
  *
@@ -167,7 +168,10 @@ class SceneBoundary extends Component<{ fallback: ReactNode; children: ReactNode
   }
 }
 
-function HeatmapFallback({ surface }: { surface: IllustrativeSurface }) {
+/** What the hero draws: any grid of IVs, iv[i_dte][j_moneyness]; an IllustrativeSurface is one. */
+export type SurfaceGrid = Pick<IllustrativeSurface, 'moneyness' | 'dte' | 'iv'>
+
+function HeatmapFallback({ surface }: { surface: SurfaceGrid }) {
   return (
     <div className="hero-fallback">
       <p className="sub">3D view unavailable: this browser could not start WebGL. The same grid is shown as a heatmap instead.</p>
@@ -176,7 +180,19 @@ function HeatmapFallback({ surface }: { surface: IllustrativeSurface }) {
   )
 }
 
-export function SurfaceHero({ surface, webglAvailable = detectWebGL }: { surface: IllustrativeSurface; webglAvailable?: () => boolean }) {
+/**
+ * `label` is the badge over the surface. It comes from the caller, never from the dataset, so the
+ * illustrative hero keeps its "not market data" label whatever the file's own label says.
+ */
+export function SurfaceHero({
+  surface,
+  label = SURFACE_LABEL,
+  webglAvailable = detectWebGL,
+}: {
+  surface: SurfaceGrid
+  label?: string
+  webglAvailable?: () => boolean
+}) {
   const geo = useMemo(() => buildSurfaceGeometry(surface.moneyness, surface.dte, surface.iv), [surface])
   // Probed once per mount: creating a throwaway WebGL context on every render would be wasteful.
   const [hasWebGL] = useState(webglAvailable)
@@ -184,7 +200,7 @@ export function SurfaceHero({ surface, webglAvailable = detectWebGL }: { surface
 
   return (
     <figure className="hero">
-      <span className="hero-label badge">{SURFACE_LABEL}</span>
+      <span className="hero-label badge">{label}</span>
       <div className="hero-stage">
         {hasWebGL ? (
           <SceneBoundary fallback={<HeatmapFallback surface={surface} />}>

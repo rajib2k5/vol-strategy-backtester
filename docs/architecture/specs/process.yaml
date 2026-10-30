@@ -1,6 +1,7 @@
 # The research and backtest process, including quality gates and adversarial review.
 # Sample splits and trial counting follow ADR-0010. Diagram-kit schema (see ../README.md).
 # Revised after the M0 review: one cap rule of record, capped validation re-runs, N_eff for the DSR, semi-blind holdout.
+# Refreshed after M2 (2026-10-29): the M2 pricing step is built.
 kind: flow
 title: "Research and backtest process with gates"
 direction: TB
@@ -14,7 +15,7 @@ nodes:
   - {id: o_adr, label: "ADR or config change committed", type: output, lane: owner}
   - {id: p_ingest, label: "M1 ingest and quality flags", type: process, lane: pipeline}
   - {id: g_quality, label: "Quality gate", sublabel: "Schema pinned, flag report reviewed, cross-vendor overlap within tolerance", type: process, lane: gates}  # was type: decision
-  - {id: p_pricing, label: "M2 forwards, IV, smiles", type: process, lane: pipeline}
+  - {id: p_pricing, label: "M2 forwards, IV, smiles", sublabel: "Built: tools/build_pricing.py writes expiry_forwards, quote_iv, smile_fits and pricing_summary.json", type: process, lane: pipeline}
   - {id: g_pricing, label: "Pricing gate", sublabel: "IV round-trip property test, parity dispersion, vendor reconciliation report", type: process, lane: gates}  # was type: decision
   - {id: p_dev, label: "Development runs 2010-2019", sublabel: "Each distinct config_hash is a trial", type: process, lane: pipeline}
   - {id: s_trials, label: "runs table: trial log", type: store, lane: pipeline}

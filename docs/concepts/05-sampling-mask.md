@@ -1,5 +1,7 @@
 # The sampling mask
 
+> **Data notice.** The DoltHub figures in this document (counts, dates, quantiles and summaries, in its text and in its tables) are derived from the DoltHub database `post-no-preference/options` (<https://www.dolthub.com/repositories/post-no-preference/options>), licensed [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/), and are shared under the same licence. Changes: we aggregated it into counts, shares and quantiles, compared it with OptionsDX and ran our pricing build on it; no quote row is reproduced. The rest of this repository is MIT. See [DATA.md](../../DATA.md).
+
 ## First principles
 
 A backtest result depends on the data it ran on, not only on the strategy. Our out-of-sample data (DoltHub, 2024-26) is much thinner than our in-sample data (OptionsDX, 2010-23):

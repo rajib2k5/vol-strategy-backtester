@@ -1,19 +1,25 @@
 {
-  "schema_version": "0.2.0",
+  "schema_version": "0.3.0",
   "generated_at": "2026-10-27T23:30:00Z",
   "source_commit": "a1b2c3d4e5f6",
   "datasets": [
     {
       "name": "illustrative_surface",
       "path": "illustrative_surface.json",
-      "schema_version": "0.2.0",
+      "schema_version": "0.3.0",
       "description": "Test fixture: small SSVI-style grid"
     },
     {
       "name": "data_quality",
       "path": "data_quality.json",
-      "schema_version": "0.2.0",
+      "schema_version": "0.3.0",
       "description": "Test fixture: small data-quality aggregates"
+    },
+    {
+      "name": "surface_frames",
+      "path": "surface_frames.json",
+      "schema_version": "0.3.0",
+      "description": "Test fixture: two made-up surfaces"
     }
   ]
 }

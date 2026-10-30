@@ -1,5 +1,7 @@
 # Validation ledger 00: milestone-0 design and research
 
+> **Data notice.** The DoltHub figures in this document (counts, dates, quantiles and summaries, in its text and in its tables) are derived from the DoltHub database `post-no-preference/options` (<https://www.dolthub.com/repositories/post-no-preference/options>), licensed [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/), and are shared under the same licence. Changes: we aggregated it into counts, shares and quantiles, compared it with OptionsDX and ran our pricing build on it; no quote row is reproduced. The rest of this repository is MIT. See [DATA.md](../../DATA.md).
+
 **What was attacked:** `docs/adr/0001–0010`, `docs/concepts/00-background.md`, `docs/prfaq.md`, `docs/architecture/README.md`, `docs/architecture/specs/data-model.erd.yaml` (skimmed) and `docs/architecture/engine-daily-loop.sequence.mmd` (now `docs/architecture/out/engine_daily_loop_sequence.mmd`).
 **Date:** 2026-10-28. **Reviewer:** adversarial reviewer (Opus), following the `evidence-gated-validation` skill.
 **Default verdict:** REFUTED. A claim was conceded only on evidence produced in this review.
@@ -124,8 +126,6 @@
 ---
 
 ## Claim 3: the data facts are right (PARTIALLY REFUTED)
-
-> **Data notice.** The counts, dates and summaries of DoltHub rows in the tables below are derived from the DoltHub database `post-no-preference/options` (<https://www.dolthub.com/repositories/post-no-preference/options>), licensed [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/), and are shared under the same licence. The rest of this repository is MIT. See [DATA.md](../../DATA.md).
 
 | Sub-claim | Measured (probe) | Verdict |
 |---|---|---|

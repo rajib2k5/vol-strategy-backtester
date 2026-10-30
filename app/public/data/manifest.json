@@ -1,19 +1,25 @@
 {
-  "schema_version": "0.2.0",
-  "generated_at": "2026-10-29T17:07:29Z",
-  "source_commit": "5782703ff9fa893313b2d6801b8e4c18027966a3",
+  "schema_version": "0.3.0",
+  "generated_at": "2026-10-30T06:12:16Z",
+  "source_commit": "35cb68269034d995e39f17d63bc907f5779ed5b4-dirty",
   "datasets": [
     {
       "name": "illustrative_surface",
       "path": "illustrative_surface.json",
-      "schema_version": "0.2.0",
+      "schema_version": "0.3.0",
       "description": "Illustrative SSVI implied-vol surface for the milestone-0 3D hero. Not market data."
     },
     {
       "name": "data_quality",
       "path": "data_quality.json",
-      "schema_version": "0.2.0",
+      "schema_version": "0.3.0",
       "description": "Milestone-1 data-quality aggregates: quote flags per source and year, rows per source, the calendar fixes, the cross-vendor agreement and the quality-gate result. Counts and quantiles only; no quotes."
+    },
+    {
+      "name": "surface_frames",
+      "path": "surface_frames.json",
+      "schema_version": "0.3.0",
+      "description": "Milestone-2 SPY implied-vol surfaces on a fixed grid for a few labelled dates, from the de-Americanised OTM smiles of the pricing build. Market data."
     }
   ]
 }

@@ -1,15 +1,17 @@
 import { describe, expect, it, vi } from 'vitest'
 import { act, renderHook, waitFor } from '@testing-library/react'
 import { useAppData } from './useAppData'
-import { parseDataQuality, parseIllustrativeSurface, parseManifest } from '../lib/contract'
+import { parseDataQuality, parseIllustrativeSurface, parseManifest, parseSurfaceFrames } from '../lib/contract'
 import manifestFixture from '../test/fixtures/manifest.json'
 import surfaceFixture from '../test/fixtures/illustrative_surface.json'
 import dataQualityFixture from '../test/fixtures/data_quality.json'
+import surfaceFramesFixture from '../test/fixtures/surface_frames.json'
 
 const DATA = {
   manifest: parseManifest(manifestFixture),
   surface: parseIllustrativeSurface(surfaceFixture),
   dataQuality: parseDataQuality(dataQualityFixture),
+  surfaceFrames: parseSurfaceFrames(surfaceFramesFixture),
 }
 
 describe('useAppData', () => {

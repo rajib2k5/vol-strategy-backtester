@@ -52,6 +52,30 @@ def test_data_layer_notebook_runs_top_to_bottom_without_volbt():
     assert list(namespace["date_map"]["action"]) == ["session", "drop", "session", "session", "drop"]
 
 
+PRICING_CORE = REPO / "notebooks" / "02_pricing_core.ipynb"
+
+
+def test_committed_pricing_core_notebook_equals_a_fresh_build():
+    assert PRICING_CORE.exists(), "run: uv run python tools/build_notebooks.py"
+    fresh = build_notebooks.render_notebooks()["02_pricing_core.ipynb"]
+    assert PRICING_CORE.read_bytes() == fresh.encode("utf-8"), (
+        "notebooks/02_pricing_core.ipynb is stale; run: uv run python tools/build_notebooks.py")
+
+
+def test_pricing_core_notebook_runs_top_to_bottom_without_volbt_and_shows_the_adr_numbers(capsys):
+    nb = json.loads(PRICING_CORE.read_text(encoding="utf-8"))
+    sources = ["".join(c["source"]) for c in nb["cells"] if c["cell_type"] == "code"]
+    assert not any("import volbt" in s or "from volbt" in s for s in sources)
+    namespace = {}
+    for source in sources:
+        exec(source, namespace)
+    printed = capsys.readouterr().out
+    assert "'vega_1vol_usd': 45.73" in printed and "6.9574 6.8162" in printed and "442.2419" in printed
+    assert round(float(namespace["american"]), 4) == 6.9574
+    assert abs(namespace["one_pass"]["forward"] / namespace["truth_F"] - 1) < 1e-5      # within 0.1 bp
+    assert abs(namespace["raw"]["forward"] / namespace["truth_F"] - 1) > 4e-4           # raw: 4.3 bp low
+
+
 def test_the_prefix_keeps_ids_of_two_modules_apart(tmp_path):
     path = write_module(tmp_path, """
         import os
@@ -121,7 +145,8 @@ def test_check_names_a_notebook_that_changed_by_one_character(tmp_path):
 
 
 def test_check_names_a_missing_notebook(tmp_path):
-    assert build_notebooks.drifted_notebooks(tmp_path) == ["00_scaffold_tour.ipynb", "01_data_layer.ipynb"]
+    assert build_notebooks.drifted_notebooks(tmp_path) == ["00_scaffold_tour.ipynb", "01_data_layer.ipynb",
+                                                           "02_pricing_core.ipynb"]
 
 
 def test_check_cli_exits_nonzero_and_names_the_notebook_on_drift(tmp_path, monkeypatch, capsys):

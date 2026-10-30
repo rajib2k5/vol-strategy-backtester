@@ -10,7 +10,7 @@ flowchart TB
     end
     subgraph pipeline["Automated pipeline"]
         p_ingest["M1 ingest and quality flags"]
-        p_pricing["M2 forwards, IV, smiles"]
+        p_pricing["M2 forwards, IV, smiles\nBuilt#58; tools/build_pricing.py writes expiry_forwards, quote_iv, smile_fits and pricing_summary.json"]
         p_dev["Development runs 2010-2019\nEach distinct config_hash is a trial"]
         s_trials[("runs table#58; trial log")]
         p_val["Validation run 2020-2023, quote mode, hard cap of record\nDiagnostics#58; volume cap 2021-2023, surface runs S, M (DoltHub-masked), M-prime (ADR-0009, ADR-0010)"]

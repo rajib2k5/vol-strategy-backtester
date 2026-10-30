@@ -132,7 +132,13 @@ def parity_spot(points: pd.DataFrame, as_of: date, r_cc: float, dividends: pd.Da
 
 
 def rate_on(rates: pd.DataFrame, day: date) -> float:
-    """The last DGS3MO continuous rate published on or before `day`."""
+    """The last DGS3MO continuous rate DATED on or before `day` (M1's rule, kept for this check).
+
+    A value dated t is not public at the 16:00 ET snapshot of t (H.15 posts it at 16:15 ET on t + 1),
+    so the M2 pricing build uses the value dated strictly before (volbt.build.rate_on, M2 review
+    amendment, default taken 2026-10-29). This diagnostic compares two vendors on one date with one
+    rate for both, and changing its rule means rebuilding M1, which the M2 fix did not do.
+    """
     known = rates[rates["date"] <= day]
     return float(known["r_cc"].iloc[-1]) if len(known) else math.nan
 

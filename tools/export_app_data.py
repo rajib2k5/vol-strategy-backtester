@@ -7,13 +7,17 @@ the contract described in src/volbt/contract.py: an envelope (schema_version,
 generated_at, source_commit) followed by the file's own fields. Change a field
 name here and the app breaks, so bump SCHEMA_VERSION when you do.
 
-Two datasets:
+Three datasets:
   illustrative_surface.json  an ILLUSTRATIVE SSVI surface (not market data), milestone 0.
   data_quality.json          aggregates of the built option-chain store (milestone 1): flag counts per
                              source and year, rows per source, the calendar fixes, the cross-vendor
                              agreement (measurements, no verdict) and the quality-gate result. Counts,
                              shares and quantiles only, never a quote. It is read from data/store/, so run tools/build_data.py first; pass
                              --store to read another store.
+  surface_frames.json        REAL SPY implied-vol surfaces (milestone 2) on a fixed grid, for a few
+                             labelled dates: read from the pricing build's smile_fits, so run
+                             tools/build_pricing.py first. Each grid cell is an IV off the de-Americanised
+                             OTM smiles (ADR-0004's interpolation rules), never a quote.
 """
 
 from __future__ import annotations
@@ -24,13 +28,17 @@ import math
 import sys
 from pathlib import Path
 
+from datetime import date
+
+import numpy as np
 import pandas as pd
 
-from volbt import illustrative
+from volbt import build, illustrative
 from volbt.contract import GitLookup, SCHEMA_VERSION, build_envelope, git_state
 from volbt.data import flags, quality
 from volbt.data.mask import WINDOW
-from volbt.data.store import Store
+from volbt.data.store import Store, data_fingerprint
+from volbt.pricing import smile
 
 # Resolved from this file's location, never from the current directory, so the script
 # writes to the same place wherever it is run from. (`volbt` itself comes from the editable
@@ -40,6 +48,7 @@ DEFAULT_OUT_DIR = REPO_ROOT / "app" / "public" / "data"
 
 SURFACE_FILE = "illustrative_surface.json"
 DATA_QUALITY_FILE = "data_quality.json"
+SURFACE_FRAMES_FILE = "surface_frames.json"
 MANIFEST_FILE = "manifest.json"
 SURFACE_LABEL = "Illustrative SSVI surface — not market data"
 # Six decimals is far more than the 3D plot can show and keeps the files small.
@@ -88,6 +97,170 @@ THRESHOLD_BASIS = (
 # The per-year columns of build_summary.json's cross_vendor.by_year, in the order the file lists them.
 BY_YEAR_COLUMNS = ("iv30_share_within", "spot_dolthub_share_within",
                    "spot_dolthub_vs_close_median_bp", "spot_optionsdx_vs_close_median_bp")
+
+
+# The name of each vendor as the app shows it (app/src/lib/contract.ts DATA_SOURCE_NAMES); the app refuses a file
+# whose label does not name the vendor of its run.data_source (M2 round 3, N4: the label once said OptionsDX always).
+DATA_SOURCE_NAMES = {"optionsdx": "OptionsDX", "dolthub": "DoltHub"}
+
+
+def surface_frames_label(source: str) -> str:
+    """surface_frames.json's label, naming the vendor of the quotes."""
+    if source not in DATA_SOURCE_NAMES:
+        raise ValueError(f"{source!r} is not a data source the app knows ({', '.join(DATA_SOURCE_NAMES)})")
+    return (f"SPY implied-vol surfaces from de-Americanised out-of-the-money quotes ({DATA_SOURCE_NAMES[source]}), "
+            "read on a fixed grid of log-moneyness and days to expiry")
+
+
+# The labelled dates of surface_frames.json: one calm, two stressed, and the high-rate date the ADRs
+# measure on. A few dates, not ADR-0001's weekly series: enough to compare regimes, and small.
+SURFACE_FRAME_DATES = (
+    (date(2017, 11, 3), "calm: VIX near its 2017 low"),
+    (date(2018, 2, 5), "shock: the February 2018 volatility spike"),
+    (date(2020, 3, 16), "stress: the March 2020 crash"),
+    (date(2023, 6, 15), "high rates: the reference date of ADR-0008"),
+)
+SURFACE_FRAMES_SOURCE = "optionsdx"
+# ADR-0001 §5: a results file says the unit of every number it holds; the app never guesses.
+SURFACE_UNITS = {
+    "grid_moneyness": "log-moneyness ln(K/F), F the de-Americanised parity forward of each tenor",
+    "grid_dte": "calendar days to expiry",
+    "iv": "implied volatility, decimal (0.20 = 20%)",
+    "atm_iv_30d": "implied volatility at k = 0 and 30 days, decimal",
+    "spot": "USD, the SPY close",
+    "vix_close": "index points, the Cboe VIX close",
+    "quoted_share": "fraction of grid cells read without strike or tenor extrapolation",
+    "cell_flags": ("bitmask of SURFACE_EXTRAP_STRIKE (1), SURFACE_CROSS_EXPIRY (2), SURFACE_EXTRAP_TENOR (4), "
+                   "SURFACE_CALENDAR_ADJUSTED (8)"),
+    "expiries_used": "listed expiries with a usable smile (5 or more valid OTM quotes)",
+}
+
+
+# The app's IV ceilings (app/src/lib/contract.ts MAX_IV, MAX_EXTRAPOLATED_IV and ivCeiling). The method does not
+# bound a wing (Lee's slope from a node that can sit far from the grid), so the exporter checks each frame against
+# them and refuses one the app would refuse, rather than write it (M2 round 3, X1 and T1).
+MAX_IV = 5.0
+MAX_EXTRAPOLATED_IV = 10.0
+
+
+def iv_ceilings(cell_flags) -> np.ndarray:
+    """Per cell, the highest IV the app accepts, the rule of contract.ts ivCeiling.
+
+    MAX_EXTRAPOLATED_IV beyond the quoted strikes (SURFACE_EXTRAP_STRIKE), and past the back expiry where the calendar
+    adjustment moved the value (SURFACE_CALENDAR_ADJUSTED on a row after the last row inside the listed expiries; on
+    any row when none is inside): there smile.surface_iv's running maximum can read the back smile beyond its last
+    node while the cell's own reading is inside it, so the cell carries no strike bit. MAX_IV everywhere else: the
+    value is read inside some smile's quoted strikes, so a solved IV bounds it.
+    """
+    cells = np.asarray(cell_flags, dtype=int)
+    inside = np.flatnonzero((cells[:, 0] & smile.SURFACE_EXTRAP_TENOR) == 0)   # the tenor bit is row-wide
+    past = np.arange(cells.shape[0]) > (inside[-1] if inside.size else -1)
+    high = ((cells & smile.SURFACE_EXTRAP_STRIKE) != 0) | (past[:, None] & ((cells & smile.SURFACE_CALENDAR_ADJUSTED) != 0))
+    return np.where(high, MAX_EXTRAPOLATED_IV, MAX_IV)
+
+
+def check_frame_ivs(frame: dict, grid_k, grid_dte) -> None:
+    """ValueError naming the first cell whose IV is not in (0, its ceiling], and how many there are: the app would
+    refuse the file. atm_iv_30d is the 30-day k = 0 cell itself, so it is checked with it."""
+    iv = np.asarray(frame["iv"], dtype=float)
+    ceiling = iv_ceilings(frame["cell_flags"])
+    bad = np.argwhere(~((iv > 0) & (iv <= ceiling)))
+    if bad.size:
+        i, j = bad[0]
+        raise ValueError(
+            f"the {frame['date']} frame reads IV {iv[i, j]} at {grid_dte[i]} days, k = {grid_k[j]} (cell flags "
+            f"{frame['cell_flags'][i][j]}), outside (0, {ceiling[i, j]:g}], the app's ceiling for that cell "
+            f"({len(bad)} such cell(s)); the app would refuse the file, so it is not written")
+
+
+def frame_dates(texts: list[str]) -> tuple[tuple[date, str], ...]:
+    """The --frame values (YYYY-MM-DD=LABEL) as (date, label), sorted by date, as the app needs them (M2 round 3, N1).
+
+    ValueError for a date given twice (the exporter does not choose between its labels), a value without "=", a
+    date that is not one, or an empty label (the app refuses one).
+    """
+    chosen: dict[date, str] = {}
+    for text in texts:
+        day_text, sep, label = text.partition("=")
+        if not sep or not label.strip():
+            raise ValueError(f"--frame {text!r}: expected YYYY-MM-DD=LABEL with a non-empty label")
+        try:
+            day = date.fromisoformat(day_text)
+        except ValueError:
+            raise ValueError(f"--frame {text!r}: {day_text!r} is not a date YYYY-MM-DD") from None
+        if day in chosen:
+            raise ValueError(f"--frame {day.isoformat()} is given twice ({chosen[day]!r} and {label!r}): give each date once")
+        chosen[day] = label
+    return tuple(sorted(chosen.items()))
+
+
+def frame_input_files(store: Store, frames, source: str) -> list[Path]:
+    """The input files the frames depend on: the option_quotes partition of each frame's year, and
+    the tables the pricing build and this export read beside them (rates, dividends, spy_bars, vix).
+
+    Each of those tables must be its one part-0.parquet (Store.checked_table_file raises InconsistentStore
+    otherwise): the export reads every parquet in a table's folder, so a second one would change what it
+    ships and not the data_fingerprint (M2 round 4, decision G1)."""
+    years = sorted({str(day.year) for day, _ in frames})
+    files = [store.partition_file("option_quotes", {"source": source, "year": year}) for year in years]
+    return files + [store.checked_table_file(name) for name in (*build.REFERENCE_TABLES, "vix")]
+
+
+def surface_frames_body(store: Store, frames=SURFACE_FRAME_DATES, source: str = SURFACE_FRAMES_SOURCE) -> dict:
+    """surface_frames.json after the envelope: run, units, illustrative (ADR-0001 §5), then the frames.
+
+    `run` names what made the frames. config_hash is the pricing build's code fingerprint (every
+    volbt module it imports, the library versions and the store's write settings,
+    volbt.build.code_fingerprint). data_fingerprint is ADR-0001 §7's: the SHA-256 over the sorted
+    (path, size, SHA-256) list of the input files (frame_input_files; paths relative to the store
+    root), and nothing else. data_last_date is the last quote date the source has, so no frame can
+    claim a date after its data. The execution fields belong to a backtest and are null here.
+    """
+    days = [day for day, _ in frames]
+    if any(later <= earlier for earlier, later in zip(days, days[1:])):
+        raise ValueError(f"frames must be in strictly increasing date order, as the app needs them: got "
+                         f"{', '.join(day.isoformat() for day in days)} (main() sorts --frame dates)")
+    label = surface_frames_label(source)
+    read_store_json(store, build.INPUTS_FILE)       # the build ran: its fingerprints are on disk
+    # config_hash must name the code that priced EVERY partition (M2 round 2, decision E5): a filtered
+    # build after a code change leaves partitions priced by older code, and the summary of a build
+    # before it would name code that did not price the rest.
+    code = build.code_fingerprint()
+    build.require_current(store, code)
+    summary = read_store_json(store, build.SUMMARY_FILE)
+    if summary.get("code_fingerprint") != code:
+        raise build.PricingNotCurrent(f"{build.SUMMARY_FILE} names code {summary.get('code_fingerprint')!r}, not the "
+                                      f"current {code}: partitions priced by older code: run a full build")
+    # The export is a reader that checks before and after (M2 round 4, decision G2; ADR-0001 amendment 4). It
+    # checked, then read: a quotes rewrite landing in between shipped the old IVs under the new quotes'
+    # data_fingerprint. So the fingerprint is taken before the frames are read, and after them the store must
+    # still be current and the fingerprint the same.
+    fingerprint = data_fingerprint(frame_input_files(store, frames, source), store.root)
+    body = build.surface_frames_body(store, list(frames), source=source)
+    for frame in body["frames"]:
+        check_frame_ivs(frame, body["grid_moneyness"], body["grid_dte"])
+    last = store.query("SELECT max(quote_date) AS d FROM option_quotes WHERE source = ?", [source])["d"].iloc[0]
+    build.require_current(store, code)
+    after = data_fingerprint(frame_input_files(store, frames, source), store.root)
+    if after != fingerprint:
+        raise build.PricingNotCurrent(f"the frames' input files changed while the export read them (data_fingerprint "
+                                      f"{fingerprint[:12]} before, {after[:12]} after): one writer at a time "
+                                      "(ADR-0001); export again")
+    dates = [day.isoformat() for day, _ in frames]
+    run = {"run_id": f"pricing-{summary['code_fingerprint'][:12]}", "config_hash": summary["code_fingerprint"],
+           "data_fingerprint": fingerprint,
+           "data_source": source, "data_last_date": pd.Timestamp(last).date().isoformat(), "execution_mode": None,
+           "fill_timing": None, "cap_mode": None, "chain_mask": "none", "sample_start": min(dates),
+           "sample_end": max(dates)}
+    return {"run": run, "units": SURFACE_UNITS, "illustrative": False, "label": label, **body}
+
+
+def read_store_json(store: Store, name: str) -> dict:
+    """A JSON file the pricing build wrote next to its tables; FileNotFoundError naming the fix if absent."""
+    path = store.root / name
+    if not path.is_file():
+        raise FileNotFoundError(f"{store.root} has no {name}; run the pricing build first: uv run python tools/build_pricing.py")
+    return json.loads(path.read_text(encoding="utf-8"))
 
 
 def surface_payload(
@@ -146,6 +319,15 @@ def manifest_payload(envelope: dict) -> dict:
                     "Milestone-1 data-quality aggregates: quote flags per source and year, rows per "
                     "source, the calendar fixes, the cross-vendor agreement and the quality-gate "
                     "result. Counts and quantiles only; no quotes."
+                ),
+            },
+            {
+                "name": "surface_frames",
+                "path": SURFACE_FRAMES_FILE,
+                "schema_version": SCHEMA_VERSION,
+                "description": (
+                    "Milestone-2 SPY implied-vol surfaces on a fixed grid for a few labelled dates, "
+                    "from the de-Americanised OTM smiles of the pricing build. Market data."
                 ),
             },
         ],
@@ -339,12 +521,14 @@ def write_json(path: Path, payload: dict) -> None:
 
 
 def build_payloads(
-    out_dir: Path = DEFAULT_OUT_DIR, git_lookup: GitLookup = git_state, now=None, *, quality_body: dict
+    out_dir: Path = DEFAULT_OUT_DIR, git_lookup: GitLookup = git_state, now=None, *, quality_body: dict,
+    frames_body: dict,
 ) -> dict[str, dict]:
     """Write every JSON file into out_dir; return {file name: content}.
 
-    quality_body is data_quality.json's content after the envelope (see data_quality_body). It is a
-    parameter so that a test, which cannot assume a built store, can pass one.
+    quality_body and frames_body are data_quality.json's and surface_frames.json's content after
+    the envelope (see data_quality_body and surface_frames_body). They are parameters so that a
+    test, which cannot assume a built store, can pass them.
     """
     # One envelope for all files, so every file in a run has the same timestamp.
     envelope = build_envelope(git_lookup, now)
@@ -352,6 +536,7 @@ def build_payloads(
         MANIFEST_FILE: manifest_payload(envelope),
         SURFACE_FILE: surface_payload(envelope),
         DATA_QUALITY_FILE: {**envelope, **quality_body},
+        SURFACE_FRAMES_FILE: {**envelope, **frames_body},
     }
     out_dir.mkdir(parents=True, exist_ok=True)
     for name, payload in payloads.items():
@@ -362,15 +547,26 @@ def build_payloads(
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--out-dir", type=Path, default=DEFAULT_OUT_DIR)
+    parser.add_argument("--frame", action="append", default=None, metavar="YYYY-MM-DD=LABEL",
+                        help="a date and label for surface_frames.json (repeatable, in any order: the frames are "
+                             "written by date, and a date given twice is refused; default: the four dates of "
+                             "SURFACE_FRAME_DATES)")
     parser.add_argument("--store", type=Path, default=None,
-                        help="the built store to read data_quality.json from (default: the store under work_dir())")
+                        help="the built store to read data_quality.json and surface_frames.json from "
+                             "(default: the store under work_dir())")
     args = parser.parse_args(argv)
     try:
-        body = data_quality_body(Store(args.store))
+        dates = SURFACE_FRAME_DATES if not args.frame else frame_dates(args.frame)
+    except ValueError as error:
+        parser.error(str(error))                     # exits 2 with the usage line, before any store is read
+    store = Store(args.store)
+    try:
+        body = data_quality_body(store)
+        frames = surface_frames_body(store, dates)
     except FileNotFoundError as error:
         print(f"error: {error}", file=sys.stderr)
         return 1
-    for name in build_payloads(args.out_dir, quality_body=body):
+    for name in build_payloads(args.out_dir, quality_body=body, frames_body=frames):
         print("wrote", args.out_dir / name)
     return 0
 

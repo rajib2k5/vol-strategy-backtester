@@ -1,5 +1,7 @@
 # Milestone 0: round-2 adversarial review — evidence-gated validation ledger
 
+> **Data notice.** The DoltHub figures in this document (counts, dates, quantiles and summaries, in its text and in its tables) are derived from the DoltHub database `post-no-preference/options` (<https://www.dolthub.com/repositories/post-no-preference/options>), licensed [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/), and are shared under the same licence. Changes: we aggregated it into counts, shares and quantiles, compared it with OptionsDX and ran our pricing build on it; no quote row is reproduced. The rest of this repository is MIT. See [DATA.md](../../DATA.md).
+
 **Reviewer:** `adversarial-reviewer` (Opus), `evidence-gated-validation` skill, Tier 2 on numerics,
 finance maths, statistics and version-sensitive APIs; Tier 1 elsewhere. Single-context fallback
 mode: Channel A read primary sources (library source in `node_modules`, the Cboe Margin Manual,
@@ -16,8 +18,6 @@ the 2020–23 and 2024–26 DoltHub structure is "the same"; and `src/volbt/` ho
 **Scope:** the fixes made after round 1 (`00-code-ledger.md`, `00-design-research-ledger.md`).
 
 ## Verdicts
-
-> **Data notice.** The counts, dates and summaries of DoltHub rows in the tables below are derived from the DoltHub database `post-no-preference/options` (<https://www.dolthub.com/repositories/post-no-preference/options>), licensed [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/), and are shared under the same licence. The rest of this repository is MIT. See [DATA.md](../../DATA.md).
 
 | # | Claim (the fix) | Verdict | Key evidence |
 |---|---|---|---|

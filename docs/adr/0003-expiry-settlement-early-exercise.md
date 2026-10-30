@@ -1,5 +1,7 @@
 # ADR-0003: Expiry, settlement, pin risk and early exercise
 
+> **Data notice.** The DoltHub figures in this document (counts, dates, quantiles and summaries, in its text and in its tables) are derived from the DoltHub database `post-no-preference/options` (<https://www.dolthub.com/repositories/post-no-preference/options>), licensed [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/), and are shared under the same licence. Changes: we aggregated it into counts, shares and quantiles, compared it with OptionsDX and ran our pricing build on it; no quote row is reproduced. The rest of this repository is MIT. See [DATA.md](../../DATA.md).
+
 **Status:** Accepted, milestone 0. Implemented in M3; the default exit DTE is revisited in M4.
 
 ## Revised after M0 review (2026-10-28)
@@ -86,9 +88,9 @@ These are the SPY contract facts the decision relies on. Sources are listed at t
 5. **Early assignment and early exercise.** Checked at step 10 of day *t*; takes effect at the start of *t+1*.
    - **Common inputs, the same in quote and surface mode.**
      - `S_t`, the SPY close.
-     - `r_t`, the DGS3MO continuous rate.
+     - `r_t`, the DGS3MO continuous rate *(M2 review amendment, default taken 2026-10-29, owner can override: the value dated strictly before t, ADR-0008 amendment 3)*.
      - σ = the day's surface IV at the contract's log-moneyness for its expiry (ADR-0004 rule 3, built from de-Americanised OTM quotes, ADR-0008). For an ITM put (K > F) that node comes from the OTM call at the same strike.
-     - Dividends: each projected ex-date before expiry, at the **last paid** amount, so there is no look-ahead. The actual D is what gets booked on the ex-date.
+     - Dividends: each projected ex-date before expiry, at the **last paid** amount, so there is no look-ahead. The actual D is what gets booked on the ex-date. *(M2 review amendment, default taken 2026-10-29, owner can override: at the projected amount of ADR-0008 amendment 4, the same quarter a year earlier times the trailing year's growth, still from dividends paid by t only. The last paid amount overstated every March since 2009 by 10.9–47.3%, and the call rule fires on exactly those ex-date eves.)*
      - **Market mids are not used.** In surface mode a put price is a model price. Beyond |k| ≤ 0.15 it is the European Black-76 price, for which "time value ≤ 0" is algebraically the refuted European rule. Inside that band a model mark is the CRR American price at the surface IV (ADR-0008 §8), and a time-value test on it would only repeat the lattice rule below.
    - **Who is affected.** If we are short, we are assigned on **every** contract for which exercise is optimal. If we are long, we exercise it ourselves.
    - **Calls, when *t+1* is an ex-date with dividend D.** Each ITM call is exercised if `D > P_E(K) + K·(1 − e^{−r_t·τ})`.
@@ -114,7 +116,7 @@ These are the SPY contract facts the decision relies on. Sources are listed at t
 - **Probability-weighted or random partial assignment.** Rejected: we have no data to calibrate the share of long holders who exercise, and a random draw adds noise without adding information. Assuming 100% assignment of qualifying contracts is an explicit worst case.
 - **For puts, the European comparison `K(1−e^{−rτ}) > C + PV(D)`** (the M0 rule). Rejected after the M0 review. It fires 3–5 points of moneyness too early at 2–5% rates, and before an ex-date it fires when exercise is never optimal. Each false assignment gifts a short put its time value. It is kept only as a pre-filter.
 - **For puts, the market's own time value, `P_mid − (K − S) ≤ ε` with ε about half the spread.** Rejected as the rule of record.
-  - In surface mode (DoltHub, and most held contracts there) the put price is a model price: the European Black-76 price beyond |k| ≤ 0.15, where the test reduces to the refuted rule, and the lattice price at the surface IV inside that band (ADR-0008 §8), where it would only repeat the lattice rule.
+  - In surface mode (DoltHub, and most held contracts there) the put price is a model price. ~~The European Black-76 price beyond |k| ≤ 0.15, where the test reduces to the refuted rule, and the lattice price at the surface IV inside that band (ADR-0008 §8), where it would only repeat the lattice rule.~~ *(M2 round 3, docs reviewer: the band is gone. From milestone 3 a model mark is the CRR American price at the surface IV at every |k| (ADR-0004 rule 3, ADR-0008 §8, round-2 decision E8), so in surface mode the test would only repeat the lattice rule.)*
   - So quote and surface mode would run different rules, and ADR-0010 needs one rule across splits.
   - Its error is bounded by the deep-ITM put's quoted spread, not by a $0.005 tolerance.
   - It would win if every split had American quotes for every held contract.

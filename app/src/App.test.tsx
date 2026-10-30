@@ -6,6 +6,7 @@ import { fakeFetch } from './test/fakeFetch'
 import manifestFixture from './test/fixtures/manifest.json'
 import surfaceFixture from './test/fixtures/illustrative_surface.json'
 import dataQualityFixture from './test/fixtures/data_quality.json'
+import surfaceFramesFixture from './test/fixtures/surface_frames.json'
 
 vi.mock('@react-three/fiber', () => import('./test/mockFiber'))
 vi.mock('@react-three/drei', () => ({ OrbitControls: () => null }))
@@ -14,6 +15,7 @@ const FILES = {
   './data/manifest.json': manifestFixture,
   './data/illustrative_surface.json': surfaceFixture,
   './data/data_quality.json': dataQualityFixture,
+  './data/surface_frames.json': surfaceFramesFixture,
 }
 const STORE = safeStorage()
 
@@ -44,7 +46,7 @@ describe('App (integration)', () => {
     const requested = serve(FILES)
     render(<App />)
     expect(await screen.findByText('Illustrative SSVI surface — not market data')).toBeInTheDocument()
-    expect(requested).toEqual(['./data/manifest.json', './data/illustrative_surface.json', './data/data_quality.json'])
+    expect(requested).toEqual(['./data/manifest.json', './data/illustrative_surface.json', './data/data_quality.json', './data/surface_frames.json'])
     // contract metadata straight from the fixture manifest
     expect(screen.getByText('a1b2c3d4e5f6')).toBeInTheDocument()
     expect(screen.getByText('2026-10-27T23:30:00Z')).toBeInTheDocument()
@@ -88,11 +90,11 @@ describe('App (integration)', () => {
     expect(screen.getByRole('img', { name: 'Sequence diagram' })).toBeInTheDocument()
     expect(screen.getByRole('img', { name: 'Activity diagram' })).toBeInTheDocument()
     expect(screen.queryByText('Illustrative SSVI surface — not market data')).not.toBeInTheDocument()
-    expect(requested).toHaveLength(3)
+    expect(requested).toHaveLength(4)
     // and back again: the loaded data is still there
     fireEvent.click(screen.getByRole('link', { name: 'About' }))
     expect(screen.getByText('Illustrative SSVI surface — not market data')).toBeInTheDocument()
-    expect(requested).toHaveLength(3)
+    expect(requested).toHaveLength(4)
   })
 
   it('navigates to the Data quality tab, which shows the exported aggregates without refetching', async () => {
@@ -105,7 +107,27 @@ describe('App (integration)', () => {
     expect(screen.getByRole('table', { name: 'Quality-gate limits' })).toBeInTheDocument()
     expect(screen.getByText('Passed')).toBeInTheDocument()
     expect(screen.queryByText('Illustrative SSVI surface — not market data')).not.toBeInTheDocument()
-    expect(requested).toHaveLength(3)
+    expect(requested).toHaveLength(4)
+  })
+
+  it('navigates to the Surface tab, which draws the real surfaces without refetching', async () => {
+    const requested = serve(FILES)
+    render(<App />)
+    await screen.findByText('Illustrative SSVI surface — not market data')
+    fireEvent.click(screen.getByRole('link', { name: 'Surface' }))
+    expect(window.location.hash).toBe('#/surface')
+    expect(screen.getByRole('heading', { level: 2, name: 'Surface' })).toBeInTheDocument()
+    expect(screen.getByText('SPY implied-vol surface, 2020-01-03: market data (OptionsDX)')).toBeInTheDocument()
+    expect(screen.getByTestId('r3f-canvas')).toBeInTheDocument()
+    expect(screen.queryByText('Illustrative SSVI surface — not market data')).not.toBeInTheDocument()
+    expect(requested).toHaveLength(4)
+  })
+
+  it('opens straight on the Surface tab from its hash', async () => {
+    window.location.hash = '#/surface'
+    serve(FILES)
+    render(<App />)
+    expect(await screen.findByRole('group', { name: 'Surface date' })).toBeInTheDocument()
   })
 
   it('opens straight on the Data quality tab from its hash', async () => {
@@ -115,12 +137,12 @@ describe('App (integration)', () => {
     expect(await screen.findByRole('table', { name: 'Quality-gate limits' })).toBeInTheDocument()
   })
 
-  it('has exactly the About, Data quality and Architecture tabs, and a working theme toggle', async () => {
+  it('has exactly the About, Surface, Data quality and Architecture tabs, and a working theme toggle', async () => {
     serve(FILES)
     render(<App />)
     await screen.findByText('Illustrative SSVI surface — not market data')
     const nav = screen.getByRole('navigation', { name: 'Primary' })
-    expect(within(nav).getAllByRole('link').map((a) => a.textContent)).toEqual(['About', 'Data quality', 'Architecture'])
+    expect(within(nav).getAllByRole('link').map((a) => a.textContent)).toEqual(['About', 'Surface', 'Data quality', 'Architecture'])
     fireEvent.click(screen.getByRole('button', { name: 'Switch to light theme' }))
     expect(document.documentElement.getAttribute('data-theme')).toBe('light')
     expect(STORE.getItem('vol-strategy-backtester:theme')).toBe('light')

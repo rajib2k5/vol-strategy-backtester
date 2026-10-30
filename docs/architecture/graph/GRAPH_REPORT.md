@@ -1,5 +1,7 @@
 # Graph Report - vol-strategy-backtester  (2026-10-29)
 
+> **Data notice.** This report, `graph.html`, `graph.json` and `graph.svg` index the repository's documents and quote DoltHub-derived figures from them (counts, dates, quantiles and summaries). They are derived from the DoltHub database `post-no-preference/options` (<https://www.dolthub.com/repositories/post-no-preference/options>), licensed [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/), and are shared under the same licence. Changes: we aggregated it into counts, shares and quantiles, compared it with OptionsDX and ran our pricing build on it; no quote row is reproduced. Only this file carries the notice in text: `graph.html`, `graph.json` and `graph.svg` hold none in-file, and are listed in [DATA.md](../../../DATA.md). `graphify` writes this report: a regeneration drops the notice, so add it again. The rest of this repository is MIT.
+
 ## Corpus Check
 - 181 files · ~883,867 words
 - Verdict: corpus is large enough that graph structure adds value.

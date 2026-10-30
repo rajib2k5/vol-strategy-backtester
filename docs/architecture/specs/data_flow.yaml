@@ -3,8 +3,11 @@
 # Revised after the M0 review: signals are computed in the loop from the MarketView; quotes are de-Americanised; DoltHub mask for the surface-gap runs.
 # Refreshed after M1 (2026-10-29) against src/volbt/data/pipeline.py and tools/export_app_data.py. The "Ingest and clean (M1, built)" lane is what
 # the build does today, in its order: reference tables, clean, the quality report written to the store, the gate, option_quotes and calendar_actions,
-# chain_mask, the cross-vendor check, build_summary.json. Lanes marked planned are not built: volbt.pricing, signals, strategies, risk, engine and
+# chain_mask, the cross-vendor check, build_summary.json. Lanes marked planned are not built: volbt.signals, strategies, risk, engine and
 # export are empty packages. Only the MarketView is built beyond M1's lane, and it does not yet serve chain_mask.
+# Refreshed after M2 (2026-10-29) against src/volbt/build.py and src/volbt/pricing: the "Pricing build (M2, built)" lane is tools/build_pricing.py,
+# one (source, year) partition of option_quotes per process, skipped when its input fingerprint is unchanged, then pricing_summary.json read back
+# from the stored tables. Every OTM quote is de-Americanised (no |k| band); the exporter adds surface_frames.json.
 # Where data lives (2026-10-29, volbt.config): vendor sources are only read, from $VOL_DATA_DIR; DoltHub is queried through a private mirror under it
 # ($VOL_DATA_DIR/vol-strategy-backtester/cache/dolt_mirror/options), never the shared clone. Downloads and built tables are written to the repo's
 # git-ignored data/ (work_dir()): data/raw/ and data/store/.
@@ -14,7 +17,7 @@ direction: TB
 lanes:
   - {id: vendors, label: "Vendors"}
   - {id: ingest, label: "Ingest and clean (M1, built)"}
-  - {id: features, label: "Pricing build (M2, planned)"}
+  - {id: features, label: "Pricing build (M2, built)"}
   - {id: simulation, label: "Simulation (M3 to M5, planned)"}
   - {id: results, label: "Results (M6, planned)"}
   - {id: presentation, label: "Presentation (app built in M0)"}
@@ -37,10 +40,13 @@ nodes:
   - {id: s_xvendor, label: "cross_vendor_overlap, cross_vendor_previous_session", type: store, lane: ingest}
   - {id: s_summary, label: "build_summary.json", sublabel: "Counts, quantiles, shares inside the cross-vendor thresholds and the gate result; no clock time", type: store, lane: ingest}
   - {id: i_export_dq, label: "tools/export_app_data.py: data_quality.json", sublabel: "Aggregates only: flag counts per year, rows per source, calendar fixes, cross-vendor quantiles, gate limits", type: process, lane: ingest}
-  - {id: f_forward, label: "Parity forward per expiry, de-Americanised", sublabel: "CRR early-exercise premium removed from 10 near-K* pairs, then median F_K over 5 strikes near K* (ADR-0008)", type: process, lane: features}
-  - {id: f_iv, label: "IV solve on de-Americanised OTM mids", sublabel: "Premium removed within |k| 0.15; Newton then bisection", type: process, lane: features}
-  - {id: f_smile, label: "Smile nodes in total variance", sublabel: "Wing, cross-expiry and tenor rules applied at mark time (ADR-0004)", type: process, lane: features}
-  - {id: s_iv, label: "expiry_forwards, quote_iv, smile_fits", type: store, lane: features}
+  - {id: f_build, label: "tools/build_pricing.py: one partition per process", sublabel: "Each (source, year) of option_quotes priced on its own, in parallel; skipped when its quotes, reference tables and code are unchanged", type: process, lane: features}
+  - {id: f_forward, label: "Parity forward per expiry, de-Americanised", sublabel: "Each near-K* quote solved for its American IV on the CRR lattice and its premium A - E there removed, one pass, then median F_K over 5 strikes near K* (ADR-0008)", type: process, lane: features}
+  - {id: f_iv, label: "IV solve on de-Americanised OTM mids", sublabel: "Every OTM quote's premium at its American IV removed, no |k| band; Black-76 Newton then bisection; IV_FAIL, PARITY_OUTLIER, FORWARD_FALLBACK", type: process, lane: features}
+  - {id: f_smile, label: "Smile nodes in total variance", sublabel: "Piecewise linear; wing, cross-expiry and tenor rules applied when a surface IV is read (ADR-0004)", type: process, lane: features}
+  - {id: s_iv, label: "expiry_forwards, quote_iv, smile_fits", sublabel: "Partitioned by source and year in the repo's data/store/", type: store, lane: features}
+  - {id: s_pricing_summary, label: "pricing_summary.json", sublabel: "Headline numbers by source, year and tenor, read back from the stored tables; no clock time", type: store, lane: features}
+  - {id: f_export_sf, label: "tools/export_app_data.py: surface_frames.json", sublabel: "IVs of a few labelled dates on a fixed grid, read off the smiles", type: process, lane: features}
   - {id: e_view, label: "MarketView as_of t", sublabel: "Built in M1 (StoreView): LookAheadError after t; SplitError past the split end", type: process, lane: simulation}
   - {id: e_sig, label: "Signals from the view: RV, HAR/GARCH, IV30 minus RV forecast", sublabel: "Causal; expanding window from 2000, refit monthly on data up to t (ADR-0001)", type: process, lane: simulation}
   - {id: e_loop, label: "Daily loop: fills, expiry, marks, hedge, risk, orders", sublabel: "Order of steps in engine_daily_loop_sequence.mmd", type: process, lane: simulation}
@@ -49,7 +55,7 @@ nodes:
   - {id: r_attr, label: "Greek P&L attribution", type: process, lane: results}
   - {id: r_grid, label: "Spot x vol stress grid", sublabel: "Full revaluation", type: process, lane: results}
   - {id: r_export, label: "Export + JSON Schema validation", type: process, lane: results}
-  - {id: a_json, label: "manifest.json + dataset JSON files", sublabel: "Written today: manifest, illustrative_surface (M0), data_quality (M1). The M2 to M6 datasets are planned", type: output, lane: presentation}
+  - {id: a_json, label: "manifest.json + dataset JSON files", sublabel: "Written today: manifest, illustrative_surface (M0), data_quality (M1), surface_frames (M2). The M3 to M6 datasets are planned", type: output, lane: presentation}
   - {id: u_app, label: "React app renders", type: ui, lane: presentation}
 edges:
   - {from: v_yf, to: i_ref, label: "OHLC, dividends"}
@@ -67,13 +73,17 @@ edges:
   - {from: g_quality, to: s_quotes, label: "pass: write"}
   - {from: g_quality, to: i_load, label: "fail: stop, fix loader"}
   - {from: g_quality, to: s_summary, label: "gate result"}
-  - {from: s_quotes, to: f_forward, label: "call and put mids"}
-  - {from: s_ref, to: f_forward, label: "r_cc, dividends"}
+  - {from: s_quotes, to: f_build, label: "one partition"}
+  - {from: s_ref, to: f_build, label: "r_cc, dividends, sessions"}
+  - {from: f_build, to: f_forward, label: "one snapshot at a time"}
   - {from: f_forward, to: f_iv, label: "F, DF, tau"}
-  - {from: s_quotes, to: f_iv, label: "OTM mids"}
+  - {from: f_build, to: f_iv, label: "OTM mids"}
   - {from: f_iv, to: f_smile, label: "IV by strike"}
   - {from: f_smile, to: s_iv, label: "derived tables"}
   - {from: f_forward, to: s_iv, label: "forwards"}
+  - {from: s_iv, to: s_pricing_summary, label: "aggregates"}
+  - {from: s_iv, to: f_export_sf, label: "smile nodes"}
+  - {from: f_export_sf, to: a_json, label: "write surface_frames.json"}
   - {from: s_quotes, to: e_view, label: "quotes for t"}
   - {from: s_quotes, to: i_mask, label: "DoltHub's listed pairs"}
   - {from: s_quotes, to: i_xvendor, label: "both vendors' rows, 2020-2023"}
@@ -96,7 +106,6 @@ edges:
   - {from: r_metrics, to: r_export, label: "metrics"}
   - {from: r_attr, to: r_export, label: "pnl_attribution"}
   - {from: r_grid, to: r_export, label: "stress_grid"}
-  - {from: s_iv, to: r_export, label: "surface_frames"}
   - {from: s_ledger, to: r_export, label: "blotter, positions, greeks"}
   - {from: r_export, to: a_json, label: "write"}
   - {from: a_json, to: u_app, label: "fetch"}

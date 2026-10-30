@@ -3,7 +3,9 @@
 # Column names and enums match ADR-0002..0010. Diagram-kit schema (see ../README.md).
 # Revised after the M0 review: order-date volume cap, integer-cent prices, net margin, stress budget, de-Americanised forwards, causal signals, trial accounting.
 # Refreshed after M1 (2026-10-29): data_quality.json (implemented, written by tools/export_app_data.py) is added, with partial copies of the four built
-# tables it is read from. Every other dataset below is still planned. schema_version is 0.2.0: a new file is a MINOR bump.
+# tables it is read from. Refreshed after M2 (2026-10-29): surface_frames.json and the json_run block it carries are built (tools/export_app_data.py,
+# surface_frames_body), and smile_fits, which it is read from, is a built table. Every other dataset below is still planned. schema_version is 0.3.0:
+# each new file (data_quality in M1, surface_frames in M2) is a MINOR bump.
 # Every entity not built carries "(planned, Mn)" in its label, as in the reference spec; the milestone is the ADR-0001 dataset table's. json_run takes the
 # earliest results dataset that carries it (surface_frames, M2). A partial copy of an unbuilt table is marked with that table's milestone (the
 # ledger tables: see data_model_ledger_erd.yaml); partial copies of built tables are not.
@@ -16,7 +18,7 @@
 # columns that a relation in this diagram joins; its full column list is in the spec that owns it.
 kind: erd
 title: "vol-strategy-backtester data model: Python to app JSON contract"
-subtitle: "Built: manifest.json, illustrative_surface.json, data_quality.json. Planned: json_run (M2) and 7 datasets, M2 to M6."
+subtitle: "Built: manifest.json, illustrative_surface.json, data_quality.json, surface_frames.json and json_run. Planned: 6 datasets, M3 to M6."
 entities:
   # app/public/data/manifest.json (M0, implemented).
   - id: json_manifest
@@ -59,33 +61,38 @@ entities:
       - {name: calendar, type: object}  # source[], action[], dates[], rows[]; action is session or drop
       - {name: cross_vendor, type: object}  # label, overlap_dates, basis, distributions{}, within_thresholds{key[], label[], threshold[], unit[], dates[], share_within[]}, by_year{year[], dates[], iv30_share_within[], spot_dolthub_share_within[], spot_dolthub_vs_close_median_bp[], spot_optionsdx_vs_close_median_bp[]}; measurements, no verdict
       - {name: gate, type: object}  # passed, failures[], thresholds{rule[], source[], what[], bound[], limit[], worst[], unit[]}
-  # Provenance block every results dataset carries after the envelope (planned, MINOR bump).
+  # Provenance block every results dataset carries after the envelope (built in M2 with surface_frames.json, a MINOR bump). In surface_frames it
+  # names the pricing build: run_id 'pricing-' plus 12 hex of config_hash, the pricing build's code fingerprint (volbt modules, library versions,
+  # store settings); data_fingerprint is ADR-0001 §7's SHA-256 over the (path, size, SHA-256) list of the frames' input files.
+  # A backtest's run_id (from M3) is the ledger's runs.run_id.
   - id: json_run
-    label: "json_run (planned, M2)"
     columns:
       - {name: run_id, type: string, pk: true, fk: runs.run_id}
       - {name: config_hash, type: string}
       - {name: data_fingerprint, type: string}
-      - {name: data_source, type: string}
-      - {name: execution_mode, type: string}
-      - {name: fill_timing, type: string}
-      - {name: cap_mode, type: string}
-      - {name: chain_mask, type: string}
-      - {name: sample_start, type: string}
-      - {name: sample_end, type: string}
-  # surface_frames.json (M2): weekly IV surfaces on a fixed grid.
+      - {name: data_source, type: string}  # 'optionsdx' in surface_frames
+      - {name: data_last_date, type: string, nullable: true}  # ISO date: the source's last quote date (surface_frames)
+      - {name: execution_mode, type: string, nullable: true}  # null in surface_frames: not a backtest
+      - {name: fill_timing, type: string, nullable: true}  # null in surface_frames
+      - {name: cap_mode, type: string, nullable: true}  # null in surface_frames
+      - {name: chain_mask, type: string}  # 'none' in surface_frames
+      - {name: sample_start, type: string}  # ISO date
+      - {name: sample_end, type: string}  # ISO date
+  # surface_frames.json (M2, implemented): real SPY IV surfaces on a fixed grid for a few labelled dates (not ADR-0001's weekly series), read
+  # off the de-Americanised OTM smiles of smile_fits with ADR-0004's rules. Key order: envelope, run, units, illustrative, then the rest.
   - id: json_surface_frames
-    label: "json_surface_frames (planned, M2)"
     columns:
       - {name: schema_version, type: string}
       - {name: generated_at, type: string}
       - {name: source_commit, type: string}
       - {name: run, type: json_run, fk: json_run.run_id}  # run_id names the pricing build; execution fields are null
+      - {name: units, type: object}  # a unit string for every numeric field
       - {name: illustrative, type: boolean}  # false
-      - {name: units, type: object}
-      - {name: grid_moneyness, type: "number[]"}  # type array<number>
-      - {name: grid_dte, type: "number[]"}  # type array<number>
-      - {name: frames, type: "object[]"}  # type array<object>; {date, spot, atm_iv_30d, iv[dte][k], quoted_share}
+      - {name: label, type: string}
+      - {name: grid_moneyness, type: "number[]"}  # type array<number>; log-moneyness -0.30 to 0.20 in steps of 0.02 (26)
+      - {name: grid_dte, type: "number[]"}  # type array<number>; calendar days 7, 14, 21, 30, 45, 60, 90, 120, 180, 270, 365
+      - {name: cell_flag_names, type: "string[]"}  # type array<string>; SURFACE_EXTRAP_STRIKE, SURFACE_CROSS_EXPIRY, SURFACE_EXTRAP_TENOR, SURFACE_CALENDAR_ADJUSTED in bit order
+      - {name: frames, type: "object[]"}  # type array<object>; {date, label, spot, vix_close, expiries_used, iv[dte][k], cell_flags[dte][k], quoted_share, atm_iv_30d}
   # blotter.json (M3): every fill.
   - id: json_blotter
     label: "json_blotter (planned, M3)"
@@ -200,7 +207,7 @@ entities:
       - {name: run_id, type: VARCHAR, pk: true}
   # Partial copy of smile_fits, defined in the other data-model spec: only the columns joined from this diagram.
   - id: smile_fits
-    label: "smile_fits (partial, planned, M2)"
+    label: "smile_fits (partial)"
     columns:
       - {name: atm_iv, type: DOUBLE}
   # Partial copy of fills, defined in the other data-model spec: only the columns joined from this diagram.

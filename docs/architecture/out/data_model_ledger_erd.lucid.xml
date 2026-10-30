@@ -623,11 +623,11 @@
         <mxCell id="row-option_quotes-bid" value="bid : DOUBLE?" style="rounded=0;whiteSpace=wrap;html=0;fillColor=#FFFFFF;strokeColor=#E2E8F0;fontColor=#0F172A;fontSize=12;fontStyle=0;fontFamily=Helvetica;align=left;spacingLeft=10;" vertex="1" parent="1">
           <mxGeometry x="1282" y="2006" width="226" height="28" as="geometry"/>
         </mxCell>
-        <mxCell id="entity_smile_fits" value="smile_fits (partial, planned, M2)" style="rounded=0;whiteSpace=wrap;html=0;fillColor=#EEF2FF;strokeColor=#CBD5E1;fontColor=#1E1B4B;fontSize=13;fontStyle=1;fontFamily=Helvetica;align=left;spacingLeft=12;" vertex="1" parent="1">
-          <mxGeometry x="1251" y="2074" width="288" height="40" as="geometry"/>
+        <mxCell id="entity_smile_fits" value="smile_fits (partial)" style="rounded=0;whiteSpace=wrap;html=0;fillColor=#EEF2FF;strokeColor=#CBD5E1;fontColor=#1E1B4B;fontSize=13;fontStyle=1;fontFamily=Helvetica;align=left;spacingLeft=12;" vertex="1" parent="1">
+          <mxGeometry x="1285" y="2074" width="220" height="40" as="geometry"/>
         </mxCell>
         <mxCell id="row-smile_fits-total_var_nodes" value="total_var_nodes : DOUBLE[]" style="rounded=0;whiteSpace=wrap;html=0;fillColor=#FFFFFF;strokeColor=#E2E8F0;fontColor=#0F172A;fontSize=12;fontStyle=0;fontFamily=Helvetica;align=left;spacingLeft=10;" vertex="1" parent="1">
-          <mxGeometry x="1251" y="2114" width="288" height="28" as="geometry"/>
+          <mxGeometry x="1285" y="2114" width="220" height="28" as="geometry"/>
         </mxCell>
         <mxCell id="relation_0" value="session of (1 : 0..*)" style="edgeStyle=none;rounded=0;html=0;strokeColor=#64748B;strokeWidth=1.6;fontSize=11;fontColor=#475569;fontFamily=Helvetica;startArrow=none;endArrow=none;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="row-spy_bars-date" target="row-daily_pnl-session_date">
           <mxGeometry x="0.5828" relative="1" as="geometry">
@@ -784,7 +784,7 @@
           </mxGeometry>
         </mxCell>
         <mxCell id="relation_18" value="model mark source (0..1 : 0..*)" style="edgeStyle=none;rounded=0;html=0;strokeColor=#64748B;strokeWidth=1.6;fontSize=11;fontColor=#475569;fontFamily=Helvetica;startArrow=none;endArrow=none;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="row-smile_fits-total_var_nodes" target="row-position_marks-mark_iv">
-          <mxGeometry x="0.3187" relative="1" as="geometry">
+          <mxGeometry x="0.3803" relative="1" as="geometry">
             <Array as="points">
               <mxPoint x="1617" y="2128"/>
               <mxPoint x="1617" y="2072"/>

@@ -42,3 +42,11 @@ export const CHART_FLAGS: { flag: string; color: string }[] = [
   { flag: 'VENDOR_IV_INVALID', color: 'var(--down)' },
   { flag: 'UNDERLYING_MISMATCH', color: 'var(--blue)' },
 ]
+
+/** The data notice of this page: the two vendors whose quotes the figures are aggregated from. */
+export const DATA_QUALITY_NOTICE =
+  "The figures here are counts, shares and quantiles of two vendors' option quotes. The OptionsDX quotes are end-of-day files obtained through the Kaggle dataset dudesurfin/spy-options-eod-volatility-surface-2010-2023 (listed there under MIT, but the numbers are OptionsDX's, so we treat them as vendor data and publish only aggregates). The other vendor is the DoltHub database post-no-preference/options."
+
+/** What this page did to the DoltHub data: the close of its CC BY-SA 4.0 attribution (DOLTHUB_ATTRIBUTION, content/dataNotice.ts). */
+export const DOLTHUB_CHANGES =
+  '. Changes: aggregated into counts, shares and quantiles and compared with OptionsDX; no quote row is reproduced. The DoltHub-derived figures on this page are shared under the same licence.'
