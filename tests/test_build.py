@@ -1,9 +1,8 @@
-"""The volbt.build skeleton: steps read through the store and write through the store."""
+"""The volbt.build step runner: steps read through the store and write through the store."""
 
 from datetime import date
 
 import pandas as pd
-import pytest
 
 from volbt import build
 from volbt.data.store import Store
@@ -34,7 +33,6 @@ def test_a_later_step_can_read_an_earlier_step_s_table(tmp_path):
     assert store.read_table("c", order_by="s")["s"].tolist() == [6]
 
 
-def test_the_m2_steps_are_declared_but_not_built_yet(tmp_path):
-    assert [s.output for s in build.M2_STEPS] == ["expiry_forwards", "quote_iv", "smile_fits"]
-    with pytest.raises(NotImplementedError, match="milestone 2"):
-        build.M2_STEPS[0].compute({})
+def test_the_m2_pricing_build_writes_the_three_tables_adr_0001_names():
+    # ADR-0001 §4: volbt.build owns the pricing build of these three tables (tests/test_pricing_build.py).
+    assert build.PRICING_TABLES == ("expiry_forwards", "quote_iv", "smile_fits")

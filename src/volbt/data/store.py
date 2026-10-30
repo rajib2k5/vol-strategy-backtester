@@ -37,6 +37,17 @@ from volbt.view import LookAheadError, SplitError
 COMPRESSION = "zstd"
 COMPRESSION_LEVEL = 3
 ROW_GROUP_ROWS = 1_000_000
+WRITE_STATISTICS = True
+
+
+def write_settings() -> dict:
+    """The parquet writer's options, read when called: the bytes of every file depend on them.
+
+    The pricing build fingerprints them (volbt.build.code_fingerprint), so changing one re-prices
+    every partition instead of leaving files written under the old settings beside new ones.
+    """
+    return {"compression": COMPRESSION, "compression_level": COMPRESSION_LEVEL, "row_group_rows": ROW_GROUP_ROWS,
+            "write_statistics": WRITE_STATISTICS}
 
 
 def write_parquet(table: pa.Table, path: Path) -> None:
@@ -46,8 +57,9 @@ def write_parquet(table: pa.Table, path: Path) -> None:
     table = table.replace_schema_metadata(None)
     path.parent.mkdir(parents=True, exist_ok=True)
     tmp = path.with_name(path.name + ".tmp")
-    pq.write_table(table, tmp, compression=COMPRESSION, compression_level=COMPRESSION_LEVEL,
-                   row_group_size=ROW_GROUP_ROWS, write_statistics=True)
+    settings = write_settings()
+    pq.write_table(table, tmp, compression=settings["compression"], compression_level=settings["compression_level"],
+                   row_group_size=settings["row_group_rows"], write_statistics=settings["write_statistics"])
     os.replace(tmp, path)
 
 
@@ -56,6 +68,14 @@ def write_json(obj, path: Path) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     text = json.dumps(obj, indent=1, sort_keys=True, allow_nan=False, default=str) + "\n"
     path.write_text(text, encoding="utf-8", newline="\n")
+
+
+def read_json(path: Path):
+    """The JSON object in `path`, or None when there is no such file."""
+    path = Path(path)
+    if not path.is_file():
+        return None
+    return json.loads(path.read_text(encoding="utf-8"))
 
 
 def file_sha256(path: Path) -> str:
@@ -79,6 +99,10 @@ def data_fingerprint(paths: list[Path], root: Path) -> str:
         for path in paths
     )
     return hashlib.sha256("\n".join(lines).encode("utf-8")).hexdigest()
+
+
+class InconsistentStore(ValueError):
+    """The store's folders are not what its writer leaves: a symlink, a stray file, a half-written partition."""
 
 
 def _as_arrow(table) -> pa.Table:
@@ -107,6 +131,89 @@ class Store:
     def files(self) -> list[Path]:
         """Every parquet file in the store, sorted, for hashing."""
         return sorted(self.root.rglob("*.parquet"))
+
+    def partitions(self, name: str) -> list[dict[str, str]]:
+        """The hive partitions of table `name`, sorted: [{"source": "dolthub", "year": "2020"}, ...]."""
+        found = []
+        for path in sorted(self.table_dir(name).rglob("*.parquet")):
+            folders = path.parent.relative_to(self.table_dir(name)).parts
+            found.append(dict(part.split("=", 1) for part in folders))
+        return found
+
+    def checked_partitions(self, name: str, columns: tuple[str, ...] = ("source", "year")) -> list[dict[str, str]]:
+        """The hive partitions of table `name`, sorted, after checking the folder is exactly what
+        write_partition leaves: <columns[0]>=<v>/<columns[1]>=<v>/part-0.parquet and nothing else.
+
+        Raises InconsistentStore, reading only, on: a symlink anywhere in the table (the table folder
+        itself included), a path that resolves outside the store root, a file or folder at any other
+        place or with any other name, and a partition folder without its part-0.parquet (a crashed
+        write leaves part-0.parquet.tmp). Used before the pricing build deletes anything (M2 round 2,
+        code claim 1): a deletion planned on a store that is not what the writer left could delete
+        live data. A table that does not exist has no partitions.
+        """
+        table = self.table_dir(name)
+        root = self.root.resolve()
+        if table.is_symlink():
+            raise InconsistentStore(f"{table} is a symlink: the store's tables must be real folders")
+        if not table.exists():
+            return []
+        found = []
+        for dirpath, dirnames, filenames in os.walk(table, followlinks=False):
+            here = Path(dirpath)
+            depth = len(here.relative_to(table).parts)
+            for entry in [*dirnames, *filenames]:
+                path = here / entry
+                if path.is_symlink():
+                    raise InconsistentStore(f"{path} is a symlink: the store's tables must be real folders and files")
+                if not path.resolve().is_relative_to(root):
+                    raise InconsistentStore(f"{path} resolves outside the store root {root}")
+            if depth < len(columns):
+                column = columns[depth]
+                if filenames:
+                    raise InconsistentStore(f"{here / filenames[0]}: a file where only {column}=<value> folders belong")
+                for folder in dirnames:
+                    if not (folder.startswith(f"{column}=") and len(folder) > len(column) + 1):
+                        raise InconsistentStore(f"{here / folder}: expected a {column}=<value> folder")
+            else:
+                if dirnames:
+                    raise InconsistentStore(f"{here / dirnames[0]}: a folder inside the partition {here}")
+                if filenames != ["part-0.parquet"]:
+                    raise InconsistentStore(f"{here}: a partition folder must hold exactly part-0.parquet, "
+                                            f"it holds {sorted(filenames)} (a crashed write leaves part-0.parquet.tmp)")
+                found.append(dict(part.split("=", 1) for part in here.relative_to(table).parts))
+        return sorted(found, key=lambda p: tuple(p[c] for c in columns))
+
+    def checked_table_file(self, name: str) -> Path:
+        """The one file of the unpartitioned table `name`, <root>/<name>/part-0.parquet, after checking the
+        folder is exactly what write_table leaves: that file and nothing else.
+
+        Raises InconsistentStore, reading only, on: a symlink (the table folder or anything in it), any
+        other file (a second parquet, a part-0.parquet.tmp a crashed write leaves, a note), a folder inside
+        it, or no part-0.parquet. connect() reads every <name>/**/*.parquet, so a second parquet changes
+        what a query of the table returns while a hash of part-0.parquet alone does not change: the M2
+        round-4 reviewer's rates/part-1.parquet moved the rate the pricing build used from 0.0522 to 0.0722
+        with the summary and the export accepting the store (decision G1). Refused, not hashed: such a
+        store is not what the writer left (the rule of checked_partitions).
+        """
+        table = self.table_dir(name)
+        if table.is_symlink():
+            raise InconsistentStore(f"{table} is a symlink: the store's tables must be real folders")
+        if not table.is_dir():
+            raise InconsistentStore(f"{table}: no such table folder (expected {table / 'part-0.parquet'})")
+        entries = sorted(table.iterdir())
+        for path in entries:
+            if path.is_symlink():
+                raise InconsistentStore(f"{path} is a symlink: the store's tables must be real folders and files")
+        names = [path.name for path in entries]
+        path = table / "part-0.parquet"
+        if names != ["part-0.parquet"] or not path.is_file():
+            raise InconsistentStore(f"{table}: an unpartitioned table's folder must hold exactly the file part-0.parquet, "
+                                    f"it holds {names} (a crashed write leaves part-0.parquet.tmp)")
+        return path
+
+    def partition_file(self, name: str, partition: dict[str, object]) -> Path:
+        """The one parquet file of a partition (it need not exist)."""
+        return self.table_dir(name).joinpath(*(f"{c}={v}" for c, v in partition.items()), "part-0.parquet")
 
     def write_table(self, name: str, table, sort_by: tuple[str, ...],
                     partition_by: tuple[str, ...] = ()) -> list[Path]:
@@ -140,6 +247,48 @@ class Store:
             write_parquet(arrow.filter(mask).select(data_columns), path)
             written.append(path)
         return written
+
+    def write_partition(self, name: str, table, partition: dict[str, object], sort_by: tuple[str, ...]) -> Path:
+        """Replace ONE partition of table `name` (e.g. {"source": "optionsdx", "year": 2023}).
+
+        The other partitions are left as they are, so a build can redo one year without the rest
+        (the M2 pricing build runs one partition per process). The same rules as write_table: the
+        old folder goes first, rows are sorted by `sort_by`, partition columns live in the folder
+        names only. An empty table still writes its (empty) file, so the partition reads as built.
+        """
+        arrow = _as_arrow(table)
+        folder = self.table_dir(name).joinpath(*(f"{column}={value}" for column, value in partition.items()))
+        if folder.exists():
+            shutil.rmtree(folder)
+        if arrow.num_rows:
+            arrow = arrow.sort_by([(column, "ascending") for column in sort_by])
+        path = folder / "part-0.parquet"
+        write_parquet(arrow.select([c for c in arrow.column_names if c not in partition]), path)
+        return path
+
+    def delete_partition(self, name: str, partition: dict[str, object]) -> None:
+        """Remove ONE partition folder of table `name`, and any folder it leaves empty above it.
+
+        The pricing build uses it for a derived partition whose input partition no longer exists,
+        so the tables and their summary describe only the quotes that are there. It refuses
+        (InconsistentStore, deleting nothing) a target that is a symlink, lies under one, or resolves
+        outside the table's folder in the store root.
+        """
+        folder = self.table_dir(name).joinpath(*(f"{column}={value}" for column, value in partition.items()))
+        for path in (folder, *folder.parents):          # up to the store root, which may itself be a link
+            if path == self.root:
+                break
+            if path.is_symlink():
+                raise InconsistentStore(f"refusing to delete {folder}: {path} is a symlink")
+        if not folder.resolve().is_relative_to(self.table_dir(name).resolve()) or \
+                not self.table_dir(name).resolve().is_relative_to(self.root.resolve()):
+            raise InconsistentStore(f"refusing to delete {folder}: it resolves outside {self.table_dir(name)}")
+        if folder.exists():
+            shutil.rmtree(folder)
+        parent = folder.parent
+        while parent != self.table_dir(name) and parent.exists() and not any(parent.iterdir()):
+            parent.rmdir()
+            parent = parent.parent
 
     def connect(self) -> duckdb.DuckDBPyConnection:
         """An in-memory DuckDB with one view per stored table."""

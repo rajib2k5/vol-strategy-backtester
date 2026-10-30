@@ -24,3 +24,19 @@ def windows_text_mode(monkeypatch):
         return real_write_text(self, data, encoding=encoding, errors=errors, newline="")
 
     monkeypatch.setattr(Path, "write_text", write_text)
+
+
+@pytest.fixture(scope="session")
+def frames_body(tmp_path_factory):
+    """surface_frames.json's content after the envelope, from tests/pricing_store.py's made-up store."""
+    import sys
+    from datetime import date
+
+    sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "tools"))
+    import export_app_data
+    import pricing_store
+    from volbt import build
+
+    store = pricing_store.make_store(tmp_path_factory.mktemp("frames_store"))
+    build.build_pricing(store)
+    return export_app_data.surface_frames_body(store, frames=((date(2023, 6, 15), "made-up date"),))

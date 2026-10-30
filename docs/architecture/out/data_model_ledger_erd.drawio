@@ -2306,20 +2306,20 @@
         <mxCell id="row-option_quotes-bid-type" value="DOUBLE?" style="shape=partialRectangle;connectable=0;fillColor=none;top=0;left=0;bottom=0;right=0;overflow=hidden;html=1;whiteSpace=wrap;fontFamily=Helvetica;align=right;spacingRight=14;fontSize=11;fontColor=#64748B;" vertex="1" parent="row-option_quotes-bid">
           <mxGeometry x="138" y="0" width="88" height="28" as="geometry"/>
         </mxCell>
-        <mxCell id="entity_smile_fits" value="smile_fits (partial, planned, M2)" style="shape=table;startSize=40;container=1;collapsible=0;childLayout=tableLayout;fixedRows=1;rowLines=1;fontStyle=1;align=left;spacingLeft=12;resizeLast=1;html=1;whiteSpace=wrap;fillColor=#EEF2FF;strokeColor=#CBD5E1;fontColor=#1E1B4B;fontSize=13;fontFamily=Helvetica;shadow=1;" vertex="1" parent="1">
-          <mxGeometry x="1251" y="2074" width="288" height="68" as="geometry"/>
+        <mxCell id="entity_smile_fits" value="smile_fits (partial)" style="shape=table;startSize=40;container=1;collapsible=0;childLayout=tableLayout;fixedRows=1;rowLines=1;fontStyle=1;align=left;spacingLeft=12;resizeLast=1;html=1;whiteSpace=wrap;fillColor=#EEF2FF;strokeColor=#CBD5E1;fontColor=#1E1B4B;fontSize=13;fontFamily=Helvetica;shadow=1;" vertex="1" parent="1">
+          <mxGeometry x="1285" y="2074" width="220" height="68" as="geometry"/>
         </mxCell>
         <mxCell id="row-smile_fits-total_var_nodes" value="" style="shape=tableRow;horizontal=0;startSize=0;swimlaneHead=0;swimlaneBody=0;fillColor=#FFFFFF;collapsible=0;dropTarget=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;top=0;left=0;right=0;bottom=0;html=1;" vertex="1" parent="entity_smile_fits">
-          <mxGeometry x="0" y="40" width="288" height="28" as="geometry"/>
+          <mxGeometry x="0" y="40" width="220" height="28" as="geometry"/>
         </mxCell>
         <mxCell id="row-smile_fits-total_var_nodes-key" value="" style="shape=partialRectangle;connectable=0;fillColor=none;top=0;left=0;bottom=0;right=0;overflow=hidden;html=1;whiteSpace=wrap;fontFamily=Helvetica;fontStyle=1;fontSize=9;fontColor=#0369A1;" vertex="1" parent="row-smile_fits-total_var_nodes">
           <mxGeometry x="0" y="0" width="12" height="28" as="geometry"/>
         </mxCell>
         <mxCell id="row-smile_fits-total_var_nodes-name" value="total_var_nodes" style="shape=partialRectangle;connectable=0;fillColor=none;top=0;left=0;bottom=0;right=0;overflow=hidden;html=1;whiteSpace=wrap;fontFamily=Helvetica;align=left;spacingLeft=4;fontStyle=0;fontSize=12;fontColor=#0F172A;" vertex="1" parent="row-smile_fits-total_var_nodes">
-          <mxGeometry x="12" y="0" width="188" height="28" as="geometry"/>
+          <mxGeometry x="12" y="0" width="120" height="28" as="geometry"/>
         </mxCell>
         <mxCell id="row-smile_fits-total_var_nodes-type" value="DOUBLE[]" style="shape=partialRectangle;connectable=0;fillColor=none;top=0;left=0;bottom=0;right=0;overflow=hidden;html=1;whiteSpace=wrap;fontFamily=Helvetica;align=right;spacingRight=14;fontSize=11;fontColor=#64748B;" vertex="1" parent="row-smile_fits-total_var_nodes">
-          <mxGeometry x="200" y="0" width="88" height="28" as="geometry"/>
+          <mxGeometry x="132" y="0" width="88" height="28" as="geometry"/>
         </mxCell>
         <mxCell id="relation_0" value="session of" style="edgeStyle=none;rounded=1;html=1;strokeColor=#64748B;strokeWidth=1.6;fontSize=11;fontColor=#475569;fontFamily=Helvetica;startArrow=ERmandOne;endArrow=ERzeroToMany;startFill=0;endFill=0;startSize=10;endSize=10;labelBackgroundColor=#FFFFFF;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="row-spy_bars-date" target="row-daily_pnl-session_date">
           <mxGeometry x="0.5828" relative="1" as="geometry">
@@ -2476,7 +2476,7 @@
           </mxGeometry>
         </mxCell>
         <mxCell id="relation_18" value="model mark source" style="edgeStyle=none;rounded=1;html=1;strokeColor=#64748B;strokeWidth=1.6;fontSize=11;fontColor=#475569;fontFamily=Helvetica;startArrow=ERzeroToOne;endArrow=ERzeroToMany;startFill=0;endFill=0;startSize=10;endSize=10;labelBackgroundColor=#FFFFFF;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="row-smile_fits-total_var_nodes" target="row-position_marks-mark_iv">
-          <mxGeometry x="0.3187" relative="1" as="geometry">
+          <mxGeometry x="0.3803" relative="1" as="geometry">
             <Array as="points">
               <mxPoint x="1617" y="2128"/>
               <mxPoint x="1617" y="2072"/>

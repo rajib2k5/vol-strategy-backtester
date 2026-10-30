@@ -24,11 +24,14 @@ flowchart TB
         s_summary[("build_summary.json\nCounts, quantiles, shares inside the cross-vendor thresholds and the gate result; no clock time")]
         i_export_dq["tools/export_app_data.py#58; data_quality.json\nAggregates only#58; flag counts per year, rows per source, calendar fixes, cross-vendor quantiles, gate limits"]
     end
-    subgraph features["Pricing build (M2, planned)"]
-        f_forward["Parity forward per expiry, de-Americanised\nCRR early-exercise premium removed from 10 near-K* pairs, then median F_K over 5 strikes near K* (ADR-0008)"]
-        f_iv["IV solve on de-Americanised OTM mids\nPremium removed within |k| 0.15; Newton then bisection"]
-        f_smile["Smile nodes in total variance\nWing, cross-expiry and tenor rules applied at mark time (ADR-0004)"]
-        s_iv[("expiry_forwards, quote_iv, smile_fits")]
+    subgraph features["Pricing build (M2, built)"]
+        f_build["tools/build_pricing.py#58; one partition per process\nEach (source, year) of option_quotes priced on its own, in parallel; skipped when its quotes, reference tables and code are unchanged"]
+        f_forward["Parity forward per expiry, de-Americanised\nEach near-K* quote solved for its American IV on the CRR lattice and its premium A - E there removed, one pass, then median F_K over 5 strikes near K* (ADR-0008)"]
+        f_iv["IV solve on de-Americanised OTM mids\nEvery OTM quote's premium at its American IV removed, no |k| band; Black-76 Newton then bisection; IV_FAIL, PARITY_OUTLIER, FORWARD_FALLBACK"]
+        f_smile["Smile nodes in total variance\nPiecewise linear; wing, cross-expiry and tenor rules applied when a surface IV is read (ADR-0004)"]
+        s_iv[("expiry_forwards, quote_iv, smile_fits\nPartitioned by source and year in the repo's data/store/")]
+        s_pricing_summary[("pricing_summary.json\nHeadline numbers by source, year and tenor, read back from the stored tables; no clock time")]
+        f_export_sf["tools/export_app_data.py#58; surface_frames.json\nIVs of a few labelled dates on a fixed grid, read off the smiles"]
     end
     subgraph simulation["Simulation (M3 to M5, planned)"]
         e_view["MarketView as_of t\nBuilt in M1 (StoreView)#58; LookAheadError after t; SplitError past the split end"]
@@ -43,7 +46,7 @@ flowchart TB
         r_export["Export + JSON Schema validation"]
     end
     subgraph presentation["Presentation (app built in M0)"]
-        a_json[/"manifest.json + dataset JSON files\nWritten today#58; manifest, illustrative_surface (M0), data_quality (M1). The M2 to M6 datasets are planned"/]
+        a_json[/"manifest.json + dataset JSON files\nWritten today#58; manifest, illustrative_surface (M0), data_quality (M1), surface_frames (M2). The M3 to M6 datasets are planned"/]
         u_app("React app renders")
     end
     v_yf -->|"OHLC, dividends"| i_ref
@@ -61,13 +64,17 @@ flowchart TB
     g_quality -->|"pass#58; write"| s_quotes
     g_quality -->|"fail#58; stop, fix loader"| i_load
     g_quality -->|"gate result"| s_summary
-    s_quotes -->|"call and put mids"| f_forward
-    s_ref -->|"r_cc, dividends"| f_forward
+    s_quotes -->|"one partition"| f_build
+    s_ref -->|"r_cc, dividends, sessions"| f_build
+    f_build -->|"one snapshot at a time"| f_forward
     f_forward -->|"F, DF, tau"| f_iv
-    s_quotes -->|"OTM mids"| f_iv
+    f_build -->|"OTM mids"| f_iv
     f_iv -->|"IV by strike"| f_smile
     f_smile -->|"derived tables"| s_iv
     f_forward -->|"forwards"| s_iv
+    s_iv -->|"aggregates"| s_pricing_summary
+    s_iv -->|"smile nodes"| f_export_sf
+    f_export_sf -->|"write surface_frames.json"| a_json
     s_quotes -->|"quotes for t"| e_view
     s_quotes -->|"DoltHub's listed pairs"| i_mask
     s_quotes -->|"both vendors' rows, 2020-2023"| i_xvendor
@@ -90,16 +97,15 @@ flowchart TB
     r_metrics -->|"metrics"| r_export
     r_attr -->|"pnl_attribution"| r_export
     r_grid -->|"stress_grid"| r_export
-    s_iv -->|"surface_frames"| r_export
     s_ledger -->|"blotter, positions, greeks"| r_export
     r_export -->|"write"| a_json
     a_json -->|"fetch"| u_app
     classDef source fill:#E0F2FE,stroke:#0284C7,color:#0F172A
     class v_optionsdx,v_dolthub source
     classDef store fill:#FEF3C7,stroke:#D97706,color:#0F172A
-    class s_ref,s_quality,s_quotes,s_xvendor,s_summary,s_iv,s_ledger store
+    class s_ref,s_quality,s_quotes,s_xvendor,s_summary,s_iv,s_pricing_summary,s_ledger store
     classDef process fill:#E0E7FF,stroke:#4F46E5,color:#0F172A
-    class i_ref,i_cal,i_load,i_flags,g_quality,i_mask,i_xvendor,i_export_dq,f_forward,f_iv,f_smile,e_view,e_sig,e_loop,r_metrics,r_attr,r_grid,r_export process
+    class i_ref,i_cal,i_load,i_flags,g_quality,i_mask,i_xvendor,i_export_dq,f_build,f_forward,f_iv,f_smile,f_export_sf,e_view,e_sig,e_loop,r_metrics,r_attr,r_grid,r_export process
     classDef output fill:#D1FAE5,stroke:#059669,color:#0F172A
     class a_json output
     classDef external fill:#F1F5F9,stroke:#475569,color:#0F172A

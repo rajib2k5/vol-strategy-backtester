@@ -3,13 +3,15 @@
 # Revised after the M0 review: volbt.build owns the pricing build; signals are computed from the MarketView.
 # Where data lives (2026-10-29, volbt.config): vendor sources are only read, from $VOL_DATA_DIR; DoltHub is queried through a private mirror
 # under it, never the shared clone. Downloads and built tables are written to the repo's git-ignored data/ (work_dir()): data/raw/, data/store/.
+# Refreshed after M2 (2026-10-29): volbt.pricing and volbt.build's pricing build are built (tools/build_pricing.py), and so are their three
+# derived tables; the exporter writes surface_frames.json from them. Signals stay planned (M4).
 kind: flow
 title: "vol-strategy-backtester: components"
 direction: TB
 lanes:
   - {id: sources, label: "Vendor sources (outside the repo)"}
   - {id: store, label: "Chain store (M1)"}
-  - {id: core, label: "Pricing and signals (M2, M4)"}
+  - {id: core, label: "Pricing (M2, built) and signals (M4)"}
   - {id: sim, label: "Simulation (M3 to M5)"}
   - {id: results, label: "Analytics and export (M6)"}
   - {id: app, label: "App (visualises only)"}
@@ -23,9 +25,9 @@ nodes:
   - {id: st_raw, label: "Downloads in repo data/raw/", sublabel: "work_dir(), git-ignored, never committed", type: store, lane: store}
   - {id: p_data, label: "volbt.data: load, calendar, quality flags", sublabel: "Schema pin; long format; OSI symbols; flag rather than drop", type: process, lane: store}
   - {id: st_clean, label: "Clean parquet + DuckDB", sublabel: "Built in M1, in repo data/store/: option_quotes, calendar_actions, spy_bars, rates, dividends, vix, vix3m, chain_mask and the quality and cross-vendor tables", type: store, lane: store}
-  - {id: p_pricing, label: "volbt.pricing: Black-76, IV, parity forward, CRR lattice, smile", sublabel: "Pure functions, no I/O; imports no volbt module (ADR-0001, ADR-0008)", type: process, lane: core}
-  - {id: p_build, label: "volbt.build: pricing build", sublabel: "Reads and writes through volbt.data, calls volbt.pricing; de-Americanises quotes (ADR-0001, ADR-0008)", type: process, lane: core}
-  - {id: st_derived, label: "Derived tables: quote_iv, expiry_forwards, smile_fits", type: store, lane: core}
+  - {id: p_pricing, label: "volbt.pricing: Black-76, IV, parity forward, CRR lattice, American IV, smile", sublabel: "Built in M2. Pure functions, no I/O; imports numpy and scipy only, no other volbt module (ADR-0001, ADR-0008)", type: process, lane: core}
+  - {id: p_build, label: "volbt.build: pricing build", sublabel: "Built in M2 (tools/build_pricing.py). One source-year partition per process, through volbt.data; de-Americanises every OTM quote (ADR-0001, ADR-0008)", type: process, lane: core}
+  - {id: st_derived, label: "Derived tables: quote_iv, expiry_forwards, smile_fits", sublabel: "Built in M2, partitioned by source and year in data/store/, with pricing_summary.json", type: store, lane: core}
   - {id: p_signals, label: "volbt.signals: RV, HAR/GARCH, IV30, VRP spread", sublabel: "Causal: called each session with the MarketView; monthly refits on data up to t (ADR-0001)", type: process, lane: core}
   - {id: p_view, label: "MarketView as_of t", sublabel: "Protocol in volbt.view, implemented in volbt.data; LookAheadError after t, SplitError past the split end", type: process, lane: sim}
   - {id: p_strat, label: "volbt.strategies: structures, entry and exit rules", type: process, lane: sim}

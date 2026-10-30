@@ -207,45 +207,57 @@ erDiagram
         DOUBLE spot_vs_close_next_bp "nullable"
         DOUBLE iv30_diff_next_pts "nullable"
     }
-    expiry_forwards["expiry#95;forwards (planned, M2)"] {
-        VARCHAR source PK
+    expiry_forwards {
         DATE quote_date PK
         DATE expiry PK
         DOUBLE tau_years
         DOUBLE r_cc
         DOUBLE discount_factor
+        DOUBLE spot
         DOUBLE forward
         DOUBLE forward_raw "nullable"
-        DOUBLE k_star
+        DOUBLE forward_carry
+        DOUBLE k_star "nullable"
+        INTEGER n_pairs_valid
         INTEGER n_pairs_used
         INTEGER n_deamericanised
         DOUBLE fk_slope_per_strike "nullable"
-        DOUBLE forward_mad_rel
+        DOUBLE forward_mad_rel "nullable"
         VARCHAR method
         INTEGER flags
+        VARCHAR source PK
+        VARCHAR year
     }
-    quote_iv["quote#95;iv (planned, M2)"] {
-        VARCHAR source PK, FK
+    quote_iv {
         DATE quote_date PK, FK
         VARCHAR osi_symbol PK, FK
         DATE expiry FK
-        DOUBLE log_moneyness
+        DOUBLE log_moneyness "nullable"
         BOOLEAN is_otm
+        BOOLEAN in_smile
         DOUBLE iv "nullable"
+        DOUBLE iv_raw "nullable"
+        DOUBLE iv_american "nullable"
         DOUBLE eep "nullable"
+        DOUBLE eep_partner "nullable"
         INTEGER iv_flags
         VARCHAR solver "nullable"
-        INTEGER iterations "nullable"
-    }
-    smile_fits["smile#95;fits (planned, M2)"] {
+        SMALLINT iterations "nullable"
+        VARCHAR iv_fail_reason "nullable"
         VARCHAR source PK, FK
+        VARCHAR year
+    }
+    smile_fits {
         DATE quote_date PK, FK
         DATE expiry PK, FK
+        DOUBLE tau_years
         DOUBLE[] k_nodes
         DOUBLE[] total_var_nodes
         INTEGER n_points
-        DOUBLE atm_iv
+        DOUBLE atm_iv "nullable"
         INTEGER fit_flags
+        VARCHAR source PK, FK
+        VARCHAR year
     }
     raw_optionsdx_eod ||--o{ option_quotes : "reshaped#58; one wide row to call and put rows"
     raw_dolthub_option_chain ||--|| option_quotes : "cleaned"

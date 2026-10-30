@@ -3,7 +3,9 @@
 # Column names and enums match ADR-0002..0010. Diagram-kit schema (see ../README.md).
 # Revised after the M0 review: order-date volume cap, integer-cent prices, net margin, stress budget, de-Americanised forwards, causal signals, trial accounting.
 # Refreshed after M1 (2026-10-29) against what src/volbt/data builds (data/store/, DESCRIBE of every table). BUILT entities carry the
-# built table's columns and types exactly; the three entities labelled "(planned, M2)" are not built: volbt.pricing is empty. M1 builds no
+# built table's columns and types exactly. Refreshed after M2 (2026-10-29): expiry_forwards, quote_iv and smile_fits are BUILT by
+# volbt.build's pricing build (tools/build_pricing.py), with the columns and types of FORWARD_SCHEMA, QUOTE_IV_SCHEMA and SMILE_SCHEMA in
+# src/volbt/build.py, hive-partitioned by source and year like option_quotes. M1 builds no
 # trading_calendar table: a session is a date with a row in spy_bars (ADR-0009 section 1), and calendar_actions records what happened to
 # every vendor date. spy_bars replaces the earlier underlying_bars, vix replaces vix_daily (VIX3M is its own table, vix3m).
 # The kit's erd schema has no entity description or column note field, so the interim notes are kept as comments.
@@ -15,7 +17,7 @@
 # columns that a relation in this diagram joins; its full column list is in the spec that owns it.
 kind: erd
 title: "vol-strategy-backtester data model: vendor and reference tables"
-subtitle: "Built in M1: 2 vendor sources and 14 stored tables. Planned, not built: expiry_forwards, quote_iv, smile_fits (M2)."
+subtitle: "Built: 2 vendor sources, 14 stored tables in M1 and 3 in M2 (expiry_forwards, quote_iv, smile_fits)."
 entities:
   # Kaggle OptionsDX parquet exactly as delivered, one wide row per (date, expiry, strike). Column names contain literal square brackets. Measured 2026-10-28.
   - id: raw_optionsdx_eod
@@ -240,52 +242,64 @@ entities:
       - {name: iv30_diff_prev_pts, type: DOUBLE, nullable: true}
       - {name: spot_vs_close_next_bp, type: DOUBLE, nullable: true}
       - {name: iv30_diff_next_pts, type: DOUBLE, nullable: true}
-  # PLANNED (M2), NOT BUILT. Put-call-parity forward per source, session and expiry (ADR-0008). volbt.pricing is an empty package.
+  # BUILT (M2). One row per source, session and listed expiry: the put-call-parity forward (ADR-0008 §3), de-Americanised in one pass at
+  # each near-K* quote's own American IV (§3a, M2 review amendment 1), with the raw forward and the carry forward beside it. Hive-partitioned like option_quotes: source=<s>/year=<y>, read back as VARCHAR.
   - id: expiry_forwards
-    label: "expiry_forwards (planned, M2)"
     columns:
-      - {name: source, type: VARCHAR, pk: true}
       - {name: quote_date, type: DATE, pk: true}
       - {name: expiry, type: DATE, pk: true}
-      - {name: tau_years, type: DOUBLE}  # calendar days / 365
-      - {name: r_cc, type: DOUBLE}
-      - {name: discount_factor, type: DOUBLE}
-      - {name: forward, type: DOUBLE}  # after de-Americanisation (ADR-0008 3a)
-      - {name: forward_raw, type: DOUBLE, nullable: true}  # parity forward from raw mids, before de-Americanisation
-      - {name: k_star, type: DOUBLE}  # strike with min |C_mid - P_mid|
-      - {name: n_pairs_used, type: INTEGER}
-      - {name: n_deamericanised, type: INTEGER}  # near-K* quotes corrected for the early-exercise premium
-      - {name: fk_slope_per_strike, type: DOUBLE, nullable: true}  # slope of raw F_K against K; about -0.036 on 2023-06-15
-      - {name: forward_mad_rel, type: DOUBLE}
-      - {name: method, type: VARCHAR}  # 'parity_median5_deam' or 'dividend_fallback'
-      - {name: flags, type: INTEGER}
-  # PLANNED (M2), NOT BUILT. Recomputed implied vol per quote, Black-76 on the parity forward.
+      - {name: tau_years, type: DOUBLE}  # calendar days / 365; 0 on the expiry date
+      - {name: r_cc, type: DOUBLE}  # the last DGS3MO continuous rate dated strictly before quote_date (M2 review amendment 3)
+      - {name: discount_factor, type: DOUBLE}  # exp(-r_cc tau)
+      - {name: spot, type: DOUBLE}  # the SPY close
+      - {name: forward, type: DOUBLE}  # de-Americanised parity forward; the carry forward on a fallback; the spot on the expiry date
+      - {name: forward_raw, type: DOUBLE, nullable: true}  # parity forward from raw mids, before de-Americanisation; null on a fallback
+      - {name: forward_carry, type: DOUBLE}  # S e^(r tau) minus the projected dividends carried to expiry (the fallback formula)
+      - {name: k_star, type: DOUBLE, nullable: true}  # strike with min |C_mid - P_mid|
+      - {name: n_pairs_valid, type: INTEGER}  # strikes with a valid call and put
+      - {name: n_pairs_used, type: INTEGER}  # F_K values in the median (at most 5)
+      - {name: n_deamericanised, type: INTEGER}  # near-K* quotes with an American IV, so a premium (at most 20)
+      - {name: fk_slope_per_strike, type: DOUBLE, nullable: true}  # least-squares slope of raw F_K against K over the 10 strikes nearest K*
+      - {name: forward_mad_rel, type: DOUBLE, nullable: true}  # median |F_K - F| / F over the median strikes
+      - {name: method, type: VARCHAR}  # 'parity_median5_deam', 'parity_median5_raw' (could not be de-Americanised), 'dividend_fallback' or 'expiry_day'
+      - {name: flags, type: INTEGER}  # FORWARD_FALLBACK (4) on a fallback
+      - {name: source, type: VARCHAR, pk: true}  # partition folder: 'optionsdx' or 'dolthub'
+      - {name: year, type: VARCHAR}  # partition folder
+  # BUILT (M2). One row per row of option_quotes. Out-of-the-money quotes with a mid (puts K < F, calls K >= F) get the Black-76 IV of
+  # their de-Americanised mid; ITM rows carry no IV. Every OTM quote is de-Americanised: there is no |k| band.
   - id: quote_iv
-    label: "quote_iv (planned, M2)"
     columns:
-      - {name: source, type: VARCHAR, pk: true, fk: option_quotes.source}
       - {name: quote_date, type: DATE, pk: true, fk: option_quotes.quote_date}
       - {name: osi_symbol, type: VARCHAR, pk: true, fk: option_quotes.osi_symbol}
       - {name: expiry, type: DATE, fk: expiry_forwards.expiry}
-      - {name: log_moneyness, type: DOUBLE}  # ln(K/F)
+      - {name: log_moneyness, type: DOUBLE, nullable: true}  # ln(K/F)
       - {name: is_otm, type: BOOLEAN}
-      - {name: iv, type: DOUBLE, nullable: true}  # Black-76 IV of the de-Americanised mid
-      - {name: eep, type: DOUBLE, nullable: true}  # early-exercise premium removed from the mid (CRR); null outside |k| <= 0.15
-      - {name: iv_flags, type: INTEGER}  # IV_FAIL, PARITY_OUTLIER, FORWARD_FALLBACK: reserved bits in flags.py, never set in M1
+      - {name: in_smile, type: BOOLEAN}  # valid (bid > 0, not STALE), OTM and solved: a node of its expiry's smile
+      - {name: iv, type: DOUBLE, nullable: true}  # Black-76 IV of mid - eep on F; null for ITM, IV_FAIL and expiry-day rows
+      - {name: iv_raw, type: DOUBLE, nullable: true}  # Black-76 IV of the raw mid on the final F, to measure the correction only
+      - {name: iv_american, type: DOUBLE, nullable: true}  # the quote's American IV on the CRR lattice, A(sigma) = mid (N = 200)
+      - {name: eep, type: DOUBLE, nullable: true}  # the quote's own premium A - E at its American IV: OTM quotes and the near-K* quotes
+      - {name: eep_partner, type: DOUBLE, nullable: true}  # an ITM quote's premium at its partner's OTM IV: PARITY_OUTLIER only
+      - {name: iv_flags, type: INTEGER}  # IV_FAIL (1), PARITY_OUTLIER (2), FORWARD_FALLBACK (4): the bits flags.py reserved in M1
       - {name: solver, type: VARCHAR, nullable: true}  # 'newton' or 'bisection'
-      - {name: iterations, type: INTEGER, nullable: true}
-  # PLANNED (M2), NOT BUILT. Per-expiry smile nodes in total variance over log-moneyness, used for model marks (ADR-0004).
+      - {name: iterations, type: SMALLINT, nullable: true}
+      - {name: iv_fail_reason, type: VARCHAR, nullable: true}  # 'below_lower_bound', 'above_upper_bound', 'no_root', 'unresolved' or 'american_*'
+      - {name: source, type: VARCHAR, pk: true, fk: option_quotes.source}  # partition folder
+      - {name: year, type: VARCHAR}  # partition folder
+  # BUILT (M2). One row per source, session and listed expiry: the smile's nodes in total variance over log-moneyness (ADR-0004), the
+  # piecewise-linear smile model; model marks and surface_frames.json read IVs off them.
   - id: smile_fits
-    label: "smile_fits (planned, M2)"
     columns:
-      - {name: source, type: VARCHAR, pk: true, fk: expiry_forwards.source}
       - {name: quote_date, type: DATE, pk: true, fk: expiry_forwards.quote_date}
       - {name: expiry, type: DATE, pk: true, fk: expiry_forwards.expiry}
-      - {name: k_nodes, type: "DOUBLE[]"}
-      - {name: total_var_nodes, type: "DOUBLE[]"}
+      - {name: tau_years, type: DOUBLE}
+      - {name: k_nodes, type: "DOUBLE[]"}  # ascending log-moneyness of the valid OTM quotes
+      - {name: total_var_nodes, type: "DOUBLE[]"}  # iv^2 tau at each node
       - {name: n_points, type: INTEGER}
-      - {name: atm_iv, type: DOUBLE}
-      - {name: fit_flags, type: INTEGER}
+      - {name: atm_iv, type: DOUBLE, nullable: true}  # read at k = 0; null with fewer than 2 nodes
+      - {name: fit_flags, type: INTEGER}  # SMILE_THIN (1, fewer than 5 nodes), SMILE_ATM_OUTSIDE (2), SMILE_FORWARD_FALLBACK (4), SMILE_FORWARD_RAW (8)
+      - {name: source, type: VARCHAR, pk: true, fk: expiry_forwards.source}  # partition folder
+      - {name: year, type: VARCHAR}  # partition folder
 relations:
   - {from: option_quotes.vendor_quote_date, to: raw_optionsdx_eod.QUOTE_DATE, cardinality: "0..*", label: "reshaped: one wide row to call and put rows"}  # no foreign key: representative column
   - {from: option_quotes.expiry, to: raw_dolthub_option_chain.expiration, cardinality: "1..1", label: "cleaned"}  # no foreign key: representative column

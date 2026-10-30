@@ -15,12 +15,14 @@ import { describe, expect, it } from 'vitest'
 import {
   DATA_QUALITY_DATASET,
   SURFACE_DATASET,
+  SURFACE_FRAMES_DATASET,
   assertDatasetMatchesEntry,
   commitState,
   findDataset,
   parseDataQuality,
   parseIllustrativeSurface,
   parseManifest,
+  parseSurfaceFrames,
 } from '../lib/contract'
 import { loadAppData } from '../data/loadAppData'
 import { fakeFetch } from './fakeFetch'
@@ -40,18 +42,19 @@ function committedJson(fileName: string): unknown {
 }
 
 describe('the committed app/public/data files', () => {
-  it('include the manifest, the illustrative surface and the data-quality aggregates', () => {
+  it('include the manifest, the illustrative surface, the data-quality aggregates and the real surfaces', () => {
     // Guards the guard: an empty glob would make every test below pass vacuously.
     expect(Object.keys(committed).map((k) => k.split('/').pop()).sort()).toEqual([
       'data_quality.json',
       'illustrative_surface.json',
       'manifest.json',
+      'surface_frames.json',
     ])
   })
 
-  it('pass the manifest parser, which lists both datasets', () => {
+  it('pass the manifest parser, which lists the three datasets', () => {
     const manifest = parseManifest(committedJson('manifest.json'))
-    expect(manifest.datasets.map((d) => d.name)).toEqual([SURFACE_DATASET, DATA_QUALITY_DATASET])
+    expect(manifest.datasets.map((d) => d.name)).toEqual([SURFACE_DATASET, DATA_QUALITY_DATASET, SURFACE_FRAMES_DATASET])
   })
 
   it('list only files that exist next to the manifest', () => {
@@ -88,11 +91,26 @@ describe('the committed app/public/data files', () => {
     expect(dq.cross_vendor.by_year.dates.reduce((a, b) => a + b, 0)).toBe(dq.cross_vendor.overlap_dates)
   })
 
+  it('pass the surface-frames parser: real surfaces on four labelled dates, on one fixed grid', () => {
+    const file = parseSurfaceFrames(committedJson('surface_frames.json'))
+    expect(file.illustrative).toBe(false)
+    expect(file.frames.map((f) => f.date)).toEqual(['2017-11-03', '2018-02-05', '2020-03-16', '2023-06-15'])
+    expect(file.grid_moneyness).toHaveLength(26)
+    expect(file.grid_dte).toEqual([7, 14, 21, 30, 45, 60, 90, 120, 180, 270, 365])
+    expect(file.run.data_source).toBe('optionsdx')
+    expect([file.run.sample_start, file.run.sample_end]).toEqual(['2017-11-03', '2023-06-15'])
+    for (const frame of file.frames) {
+      expect(frame.iv).toHaveLength(file.grid_dte.length)
+      expect(frame.iv[0]).toHaveLength(file.grid_moneyness.length)
+    }
+  })
+
   it('agree with each other: same schema_version in each manifest entry and in its file', () => {
     const manifest = parseManifest(committedJson('manifest.json'))
     const files = {
       [SURFACE_DATASET]: parseIllustrativeSurface(committedJson('illustrative_surface.json')),
       [DATA_QUALITY_DATASET]: parseDataQuality(committedJson('data_quality.json')),
+      [SURFACE_FRAMES_DATASET]: parseSurfaceFrames(committedJson('surface_frames.json')),
     }
     for (const [name, file] of Object.entries(files)) {
       const entry = findDataset(manifest, name)
@@ -115,10 +133,17 @@ describe('the committed app/public/data files', () => {
       './data/manifest.json': committedJson('manifest.json'),
       './data/illustrative_surface.json': committedJson('illustrative_surface.json'),
       './data/data_quality.json': committedJson('data_quality.json'),
+      './data/surface_frames.json': committedJson('surface_frames.json'),
     }
     const data = await loadAppData(fakeFetch(files, requested))
-    expect(requested).toEqual(['./data/manifest.json', './data/illustrative_surface.json', './data/data_quality.json'])
+    expect(requested).toEqual([
+      './data/manifest.json',
+      './data/illustrative_surface.json',
+      './data/data_quality.json',
+      './data/surface_frames.json',
+    ])
     expect(data.surface.params).toMatchObject({ model: 'SSVI' })
     expect(data.dataQuality.gate.passed).toBe(true)
+    expect(data.surfaceFrames.frames).toHaveLength(4)
   })
 })

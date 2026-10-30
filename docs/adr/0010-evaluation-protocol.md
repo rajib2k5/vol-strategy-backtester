@@ -1,5 +1,7 @@
 # ADR-0010: Evaluation protocol: sample splits, trial counting, regimes, stress windows and the stress grid
 
+> **Data notice.** The DoltHub figures in this document (counts, dates, quantiles and summaries, in its text and in its tables) are derived from the DoltHub database `post-no-preference/options` (<https://www.dolthub.com/repositories/post-no-preference/options>), licensed [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/), and are shared under the same licence. Changes: we aggregated it into counts, shares and quantiles, compared it with OptionsDX and ran our pricing build on it; no quote row is reproduced. The rest of this repository is MIT. See [DATA.md](../../DATA.md).
+
 **Status:** Accepted at milestone 0. Implemented in M6; the M4 signal work must respect the splits from its first run.
 
 ## Revised after M0 review (2026-10-28)

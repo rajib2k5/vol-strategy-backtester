@@ -9,6 +9,7 @@ import {
   DOES,
   DOES_NOT,
   PITCH,
+  REAL_SURFACE_POINTER,
   STATUS,
 } from '../content/about'
 import { DataProblem } from './DataProblem'
@@ -71,6 +72,9 @@ export function AboutPage({ state }: { state: AppDataState }) {
         {state.status === 'loading' && <p>Loading the exported surface…</p>}
         {state.status === 'error' && <DataProblem error={state.error} />}
         {state.status === 'ready' && <SurfaceHero surface={state.data.surface} />}
+        <p className="sub">
+          <a href="#/surface">{REAL_SURFACE_POINTER}</a>
+        </p>
       </div>
 
       <div className="grid">

@@ -26,8 +26,8 @@ def test_envelope_has_exactly_the_three_keys():
 
 
 def test_schema_version_is_pinned():
-    assert contract.SCHEMA_VERSION == "0.2.0"
-    assert contract.build_envelope(lambda: (SHA, False), FIXED_NOW)["schema_version"] == "0.2.0"
+    assert contract.SCHEMA_VERSION == "0.3.0"
+    assert contract.build_envelope(lambda: (SHA, False), FIXED_NOW)["schema_version"] == "0.3.0"
 
 
 def test_generated_at_is_utc_iso_with_z():

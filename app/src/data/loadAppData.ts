@@ -12,14 +12,17 @@ import {
   ContractError,
   DATA_QUALITY_DATASET,
   SURFACE_DATASET,
+  SURFACE_FRAMES_DATASET,
   assertDatasetMatchesEntry,
   findDataset,
   parseDataQuality,
   parseIllustrativeSurface,
   parseManifest,
+  parseSurfaceFrames,
   type DataQuality,
   type IllustrativeSurface,
   type Manifest,
+  type SurfaceFrames,
 } from '../lib/contract'
 
 export const DATA_DIR = './data'
@@ -29,6 +32,8 @@ export interface AppData {
   manifest: Manifest
   surface: IllustrativeSurface
   dataQuality: DataQuality
+  /** The real SPY surfaces of the Surface page (milestone 2). */
+  surfaceFrames: SurfaceFrames
 }
 
 /** `fetch` = the request itself failed or returned junk; `contract` = valid JSON that breaks the contract. */
@@ -95,7 +100,8 @@ export async function loadAppData(fetchFn: FetchLike = (url) => fetch(url)): Pro
   // One after the other, so the order of requests (and of the first failure) is always the same.
   const surface = await loadDataset(manifest, SURFACE_DATASET, parseIllustrativeSurface, fetchFn)
   const dataQuality = await loadDataset(manifest, DATA_QUALITY_DATASET, parseDataQuality, fetchFn)
-  return { manifest, surface, dataQuality }
+  const surfaceFrames = await loadDataset(manifest, SURFACE_FRAMES_DATASET, parseSurfaceFrames, fetchFn)
+  return { manifest, surface, dataQuality, surfaceFrames }
 }
 
 /** Plain-language explanation for the UI, always ending with how to regenerate the files. */

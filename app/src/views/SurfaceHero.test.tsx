@@ -2,7 +2,7 @@ import type { ReactElement } from 'react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { render, screen, within } from '@testing-library/react'
 import { SceneContents, SurfaceHero } from './SurfaceHero'
-import { parseIllustrativeSurface } from '../lib/contract'
+import { parseIllustrativeSurface, type IllustrativeSurface } from '../lib/contract'
 import { SURFACE_LABEL } from '../content/about'
 import { canvasControl } from '../test/mockFiberControl'
 import surfaceFixture from '../test/fixtures/illustrative_surface.json'
@@ -51,9 +51,16 @@ describe('SurfaceHero with WebGL', () => {
   })
 
   it('shows the label from the component, not from the dataset, so a changed dataset label cannot hide it', () => {
-    render(<SurfaceHero surface={{ ...surface, label: 'something else' }} webglAvailable={() => true} />)
+    const relabelled: IllustrativeSurface = { ...surface, label: 'something else' }
+    render(<SurfaceHero surface={relabelled} webglAvailable={() => true} />)
     expect(screen.getByText('Illustrative SSVI surface — not market data')).toBeInTheDocument()
     expect(screen.queryByText('something else')).not.toBeInTheDocument()
+  })
+
+  it("shows the caller's label when one is given (the Surface page's real surfaces)", () => {
+    render(<SurfaceHero surface={surface} label="SPY implied-vol surface, 2020-03-16" webglAvailable={() => true} />)
+    expect(screen.getByText('SPY implied-vol surface, 2020-03-16')).toBeInTheDocument()
+    expect(screen.queryByText('Illustrative SSVI surface — not market data')).not.toBeInTheDocument()
   })
 
   it('describes the axes with the data ranges and shows a colour legend', () => {

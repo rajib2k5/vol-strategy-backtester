@@ -1,0 +1,58 @@
+{
+  "schema_version": "0.3.0",
+  "generated_at": "2026-10-27T23:30:00Z",
+  "source_commit": "a1b2c3d4e5f6",
+  "run": {
+    "run_id": "pricing-9fc92382fa7c",
+    "config_hash": "9fc92382fa7c1899027d2799e5e4d7354e23da15f013f5b4b297f3b84fc63339",
+    "data_fingerprint": "9d2fc52b1564be493f6ec0d69349f29822738da5b72176afd84d4da0163bacee",
+    "data_source": "optionsdx",
+    "data_last_date": "2020-04-30",
+    "execution_mode": null,
+    "fill_timing": null,
+    "cap_mode": null,
+    "chain_mask": "none",
+    "sample_start": "2020-01-03",
+    "sample_end": "2020-03-16"
+  },
+  "units": {
+    "grid_moneyness": "log-moneyness ln(K/F), F the de-Americanised parity forward of each tenor",
+    "grid_dte": "calendar days to expiry",
+    "iv": "implied volatility, decimal (0.20 = 20%)",
+    "atm_iv_30d": "implied volatility at k = 0 and 30 days, decimal",
+    "spot": "USD, the SPY close",
+    "vix_close": "index points, the Cboe VIX close",
+    "quoted_share": "fraction of grid cells read without strike or tenor extrapolation",
+    "cell_flags": "bitmask of SURFACE_EXTRAP_STRIKE (1), SURFACE_CROSS_EXPIRY (2), SURFACE_EXTRAP_TENOR (4), SURFACE_CALENDAR_ADJUSTED (8)",
+    "expiries_used": "listed expiries with a usable smile (5 or more valid OTM quotes)"
+  },
+  "illustrative": false,
+  "label": "Test fixture (OptionsDX): two made-up surfaces on a 2 x 3 grid",
+  "grid_moneyness": [-0.1, 0, 0.1],
+  "grid_dte": [7, 30],
+  "cell_flag_names": ["SURFACE_EXTRAP_STRIKE", "SURFACE_CROSS_EXPIRY", "SURFACE_EXTRAP_TENOR", "SURFACE_CALENDAR_ADJUSTED"],
+  "frames": [
+    {
+      "date": "2020-01-03",
+      "label": "calm: a made-up quiet day",
+      "spot": 320.5,
+      "vix_close": 12.47,
+      "expiries_used": 4,
+      "iv": [[0.25, 0.2, 0.18], [0.12076147288491199, 0.19, 0.18]],
+      "cell_flags": [[4, 4, 4], [10, 2, 3]],
+      "quoted_share": 0.333333,
+      "atm_iv_30d": 0.19
+    },
+    {
+      "date": "2020-03-16",
+      "label": "stress: a made-up crash",
+      "spot": 239.85,
+      "vix_close": 82.69,
+      "expiries_used": 5,
+      "iv": [[1.2, 0.95, 0.8], [0.9, 0.75, 0.65]],
+      "cell_flags": [[0, 0, 0], [2, 2, 3]],
+      "quoted_share": 0.833333,
+      "atm_iv_30d": 0.75
+    }
+  ]
+}

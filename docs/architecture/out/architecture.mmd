@@ -15,10 +15,10 @@ flowchart TB
         p_data["volbt.data#58; load, calendar, quality flags\nSchema pin; long format; OSI symbols; flag rather than drop"]
         st_clean[("Clean parquet + DuckDB\nBuilt in M1, in repo data/store/#58; option_quotes, calendar_actions, spy_bars, rates, dividends, vix, vix3m, chain_mask and the quality and cross-vendor tables")]
     end
-    subgraph core["Pricing and signals (M2, M4)"]
-        p_pricing["volbt.pricing#58; Black-76, IV, parity forward, CRR lattice, smile\nPure functions, no I/O; imports no volbt module (ADR-0001, ADR-0008)"]
-        p_build["volbt.build#58; pricing build\nReads and writes through volbt.data, calls volbt.pricing; de-Americanises quotes (ADR-0001, ADR-0008)"]
-        st_derived[("Derived tables#58; quote_iv, expiry_forwards, smile_fits")]
+    subgraph core["Pricing (M2, built) and signals (M4)"]
+        p_pricing["volbt.pricing#58; Black-76, IV, parity forward, CRR lattice, American IV, smile\nBuilt in M2. Pure functions, no I/O; imports numpy and scipy only, no other volbt module (ADR-0001, ADR-0008)"]
+        p_build["volbt.build#58; pricing build\nBuilt in M2 (tools/build_pricing.py). One source-year partition per process, through volbt.data; de-Americanises every OTM quote (ADR-0001, ADR-0008)"]
+        st_derived[("Derived tables#58; quote_iv, expiry_forwards, smile_fits\nBuilt in M2, partitioned by source and year in data/store/, with pricing_summary.json")]
         p_signals["volbt.signals#58; RV, HAR/GARCH, IV30, VRP spread\nCausal#58; called each session with the MarketView; monthly refits on data up to t (ADR-0001)"]
     end
     subgraph sim["Simulation (M3 to M5)"]

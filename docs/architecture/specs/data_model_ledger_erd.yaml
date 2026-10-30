@@ -15,6 +15,7 @@
 # unbuilt table is marked too; partial copies of built tables are not.
 # After M1 (2026-10-29) the partial copies follow the built reference tables: spy_bars (was underlying_bars), vix (was vix_daily); there is no
 # trading_calendar table (a session is a spy_bars row); option_quotes stores no mid, so the quote mark source is drawn on bid.
+# After M2 (2026-10-29) smile_fits is built (volbt.build's pricing build), so its partial copy carries no milestone.
 kind: erd
 title: "vol-strategy-backtester data model: per-run ledger"
 subtitle: "Planned, not built: all 13 tables. Written by the daily engine from M3, except signals (M4) and greeks_snapshots (M5)."
@@ -276,7 +277,7 @@ entities:
       - {name: bid, type: DOUBLE, nullable: true}
   # Partial copy of smile_fits, defined in the other data-model spec: only the columns joined from this diagram.
   - id: smile_fits
-    label: "smile_fits (partial, planned, M2)"
+    label: "smile_fits (partial)"
     columns:
       - {name: total_var_nodes, type: "DOUBLE[]"}
 relations:

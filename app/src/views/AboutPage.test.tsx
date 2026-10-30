@@ -2,11 +2,12 @@ import { describe, expect, it, vi } from 'vitest'
 import { render, screen, within } from '@testing-library/react'
 import { AboutPage } from './AboutPage'
 import { DataLoadError } from '../data/loadAppData'
-import { parseDataQuality, parseIllustrativeSurface, parseManifest } from '../lib/contract'
+import { parseDataQuality, parseIllustrativeSurface, parseManifest, parseSurfaceFrames } from '../lib/contract'
 import { DATA_SOURCES } from '../content/about'
 import manifestFixture from '../test/fixtures/manifest.json'
 import surfaceFixture from '../test/fixtures/illustrative_surface.json'
 import dataQualityFixture from '../test/fixtures/data_quality.json'
+import surfaceFramesFixture from '../test/fixtures/surface_frames.json'
 
 vi.mock('@react-three/fiber', () => import('../test/mockFiber'))
 vi.mock('@react-three/drei', () => ({ OrbitControls: () => null }))
@@ -14,7 +15,8 @@ vi.mock('@react-three/drei', () => ({ OrbitControls: () => null }))
 const manifest = parseManifest(manifestFixture)
 const surface = parseIllustrativeSurface(surfaceFixture)
 const dataQuality = parseDataQuality(dataQualityFixture)
-const ready = (m = manifest) => ({ status: 'ready' as const, data: { manifest: m, surface, dataQuality } })
+const surfaceFrames = parseSurfaceFrames(surfaceFramesFixture)
+const ready = (m = manifest) => ({ status: 'ready' as const, data: { manifest: m, surface, dataQuality, surfaceFrames } })
 
 describe('AboutPage: static content (independent of the data)', () => {
   it.each([
@@ -34,7 +36,7 @@ describe('AboutPage: static content (independent of the data)', () => {
     const doesNot = screen.getByRole('heading', { name: 'What it does not do' }).closest('.card') as HTMLElement
     expect(within(does).getAllByRole('listitem').length).toBeGreaterThanOrEqual(4)
     expect(doesNot).toHaveTextContent('Compute anything in the browser')
-    expect(doesNot).toHaveTextContent('Ship market data')
+    expect(doesNot).toHaveTextContent('Ship raw market data')
   })
 
   it('names the pricing model ADR-0008 chose: Black-76 on a put-call-parity forward, not Black-Scholes-Merton', () => {
@@ -73,17 +75,24 @@ describe('AboutPage: data states', () => {
     expect(screen.getByText(/No manifest loaded/)).toBeInTheDocument()
   })
 
+  it('points from the illustrative hero to the Surface page for real surfaces', () => {
+    render(<AboutPage state={ready()} />)
+    const link = screen.getByRole('link', { name: /Real SPY implied-vol surfaces are on the Surface page/ })
+    expect(link).toHaveAttribute('href', '#/surface')
+  })
+
   it('when ready, shows the labelled hero and the contract metadata from manifest.json', () => {
     render(<AboutPage state={ready()} />)
     expect(screen.getByText('Illustrative SSVI surface — not market data')).toBeInTheDocument()
     const section = screen.getByRole('heading', { name: 'Exported data' }).nextElementSibling as HTMLElement
-    expect(within(section).getByText('Schema version').nextElementSibling).toHaveTextContent('0.2.0')
+    expect(within(section).getByText('Schema version').nextElementSibling).toHaveTextContent('0.3.0')
     expect(within(section).getByText('Generated at').nextElementSibling).toHaveTextContent('2026-10-27T23:30:00Z')
     expect(within(section).getByText('Source commit').nextElementSibling).toHaveTextContent('a1b2c3d4e5f6')
     const row = within(section).getByText('illustrative_surface').closest('tr') as HTMLElement
     expect(row).toHaveTextContent('Test fixture: small SSVI-style grid')
     // every dataset the manifest lists is shown, the data-quality file too
     expect(within(section).getByText('data_quality').closest('tr')).toHaveTextContent('Test fixture: small data-quality aggregates')
+    expect(within(section).getByText('surface_frames').closest('tr')).toHaveTextContent('Test fixture: two made-up surfaces')
     expect(screen.queryByText('exported from a dirty working tree')).not.toBeInTheDocument()
     expect(screen.queryByText('no commit yet')).not.toBeInTheDocument()
   })

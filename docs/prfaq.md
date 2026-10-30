@@ -1,5 +1,7 @@
 # PR/FAQ: Vol Strategy Backtester
 
+> **Data notice.** The DoltHub figures in this document (counts, dates, quantiles and summaries, in its text and in its tables) are derived from the DoltHub database `post-no-preference/options` (<https://www.dolthub.com/repositories/post-no-preference/options>), licensed [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/), and are shared under the same licence. Changes: we aggregated it into counts, shares and quantiles, compared it with OptionsDX and ran our pricing build on it; no quote row is reproduced. The rest of this repository is MIT. See [DATA.md](../DATA.md).
+
 > **Status: working-backwards draft, milestone 0 (written 2026-10-27/28).** No strategy has been run
 > yet. The press release describes what the finished project must be able to show. Every *result*
 > in it is a placeholder in `[brackets]` until the final milestone replaces it with a measured,
@@ -82,7 +84,9 @@ It reports:
 
 **How it works.** Option chains come from a local Parquet/DuckDB store built from the OptionsDX SPY
 end-of-day dataset (via Kaggle, 2010–2023). Every quote is quality-flagged before any strategy sees
-it: zero bids, crossed or stale quotes, and put-call parity violations. DoltHub's free `options`
+it: zero bids, crossed or stale quotes, and put-call parity outliers. Beyond 180 days the parity
+flag (`PARITY_OUTLIER`) does not measure quote quality: it measures the gap between the lattice's
+carry forward and the market's parity forward (ADR-0008, amendment 8). DoltHub's free `options`
 database supplies 2024–2026. It is too sparse to trade quote by quote, so the holdout tests the
 signal and a fitted surface, not execution. The error that surface introduces is estimated by
 running 2020–2023 through it after thinning OptionsDX to DoltHub's own strikes, expiries and
@@ -115,8 +119,8 @@ net of costs, on past data, and makes no claim that any strategy will be profita
   Treasury yield from FRED (`DGS3MO`), and VIX history from Cboe.
 
 All are free to download. None of the raw files is committed: loaders read them from `VOL_DATA_DIR`
-(default `~/data/vol-projects`). Small derived DoltHub tables may be committed later. If so, they
-carry the attribution and the same CC BY-SA licence.
+(default `~/data/vol-projects`). Small derived DoltHub aggregates are committed now, not later:
+`DATA.md` lists the files, and each carries the attribution and the same CC BY-SA licence.
 
 **3. Why SPY and not SPX?**
 SPX options are European and cash-settled, which makes them cleaner to model. But the free dataset

@@ -2,11 +2,12 @@ import { describe, expect, it } from 'vitest'
 import { fireEvent, render, screen, within } from '@testing-library/react'
 import { DataQualityPage } from './DataQualityPage'
 import { DataLoadError } from '../data/loadAppData'
-import { CALENDAR_ACTION_NAMES, FLAG_NAMES, parseDataQuality, parseIllustrativeSurface, parseManifest } from '../lib/contract'
+import { CALENDAR_ACTION_NAMES, FLAG_NAMES, parseDataQuality, parseIllustrativeSurface, parseManifest, parseSurfaceFrames } from '../lib/contract'
 import { BY_YEAR_NOTE, CALENDAR_ACTIONS, CHART_FLAGS, CROSSVENDOR_NOTE } from '../content/dataQuality'
 import manifestFixture from '../test/fixtures/manifest.json'
 import surfaceFixture from '../test/fixtures/illustrative_surface.json'
 import dataQualityFixture from '../test/fixtures/data_quality.json'
+import surfaceFramesFixture from '../test/fixtures/surface_frames.json'
 
 const manifest = parseManifest(manifestFixture)
 const surface = parseIllustrativeSurface(surfaceFixture)
@@ -21,7 +22,8 @@ function dataQuality(edit: (d: Doc) => void = () => {}) {
   edit(d)
   return parseDataQuality(d)
 }
-const ready = (dq = dataQuality()) => ({ status: 'ready' as const, data: { manifest, surface, dataQuality: dq } })
+const surfaceFrames = parseSurfaceFrames(surfaceFramesFixture)
+const ready = (dq = dataQuality()) => ({ status: 'ready' as const, data: { manifest, surface, dataQuality: dq, surfaceFrames } })
 
 /** The rows of a table as arrays of cell texts, header row first (row-header cells included). */
 function cells(table: HTMLElement): string[][] {
@@ -331,7 +333,7 @@ describe('DataQualityPage: where the numbers come from', () => {
     render(<DataQualityPage state={ready()} />)
     const section = screen.getByRole('heading', { name: 'Where these numbers come from' }).nextElementSibling as HTMLElement
     expect(section).toHaveTextContent('Test fixture: small data-quality aggregates')
-    expect(within(section).getByText('Schema version').nextElementSibling).toHaveTextContent('0.2.0')
+    expect(within(section).getByText('Schema version').nextElementSibling).toHaveTextContent('0.3.0')
     expect(within(section).getByText('Generated at').nextElementSibling).toHaveTextContent('2026-10-27T23:30:00Z')
     expect(within(section).getByText('Source commit').nextElementSibling).toHaveTextContent('a1b2c3d4e5f6')
     expect(screen.queryByText('exported from a dirty working tree')).not.toBeInTheDocument()
@@ -344,5 +346,43 @@ describe('DataQualityPage: where the numbers come from', () => {
   ])('flags a non-reproducible export (source_commit %s)', (sha, warning) => {
     render(<DataQualityPage state={ready(dataQuality((d) => { d.source_commit = sha }))} />)
     expect(screen.getByText(warning)).toBeInTheDocument()
+  })
+})
+
+describe('DataQualityPage: the data notice', () => {
+  const notice = () => screen.getByRole('region', { name: 'Data sources and terms' })
+
+  it.each([
+    ['loading', { status: 'loading' as const }],
+    ['error', { status: 'error' as const, error: new DataLoadError('fetch', './data/data_quality.json answered HTTP 404') }],
+    ['ready', ready()],
+  ])('is shown while %s', (_name, state) => {
+    render(<DataQualityPage state={state} />)
+    expect(within(notice()).getByRole('heading', { level: 3, name: 'Data sources and terms' })).toBeInTheDocument()
+  })
+
+  it('names both vendors: OptionsDX via Kaggle, and DoltHub', () => {
+    render(<DataQualityPage state={ready()} />)
+    expect(notice()).toHaveTextContent(
+      "The figures here are counts, shares and quantiles of two vendors' option quotes. The OptionsDX quotes are end-of-day files obtained through the Kaggle dataset dudesurfin/spy-options-eod-volatility-surface-2010-2023 (listed there under MIT, but the numbers are OptionsDX's, so we treat them as vendor data and publish only aggregates). The other vendor is the DoltHub database post-no-preference/options.",
+    )
+    expect(notice()).toHaveTextContent("The data is not covered by this repository's MIT licence.")
+  })
+
+  it('carries the CC BY-SA 4.0 attribution for the DoltHub-derived figures, in full', () => {
+    render(<DataQualityPage state={ready()} />)
+    expect(notice()).toHaveTextContent(
+      'Contains information derived from the DoltHub database post-no-preference/options, licensed under CC BY-SA 4.0. Changes: aggregated into counts, shares and quantiles and compared with OptionsDX; no quote row is reproduced. The DoltHub-derived figures on this page are shared under the same licence.',
+    )
+  })
+
+  it('links the DoltHub database, the licence, DATA.md and the notice served next to the data', () => {
+    render(<DataQualityPage state={ready()} />)
+    const link = (name: string) => within(notice()).getByRole('link', { name })
+    expect(link('post-no-preference/options')).toHaveAttribute('href', 'https://www.dolthub.com/repositories/post-no-preference/options')
+    expect(link('CC BY-SA 4.0')).toHaveAttribute('href', 'https://creativecommons.org/licenses/by-sa/4.0/')
+    expect(link('DATA.md')).toHaveAttribute('href', 'https://github.com/rajib2k5/vol-strategy-backtester/blob/main/DATA.md')
+    expect(link('data/LICENSE-DATA.md')).toHaveAttribute('href', './data/LICENSE-DATA.md')
+    expect(within(notice()).getAllByRole('link')).toHaveLength(4)
   })
 })

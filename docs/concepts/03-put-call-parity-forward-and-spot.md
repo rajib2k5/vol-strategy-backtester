@@ -1,5 +1,7 @@
 # Put-call parity: the implied forward and the implied spot
 
+> **Data notice.** The DoltHub figures in this document (counts, dates, quantiles and summaries, in its text and in its tables) are derived from the DoltHub database `post-no-preference/options` (<https://www.dolthub.com/repositories/post-no-preference/options>), licensed [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/), and are shared under the same licence. Changes: we aggregated it into counts, shares and quantiles, compared it with OptionsDX and ran our pricing build on it; no quote row is reproduced. The rest of this repository is MIT. See [DATA.md](../../DATA.md).
+
 ## First principles
 
 Take a call and a put on the same stock, with the same strike *K* and the same expiry. Buy the call and sell the put. At expiry you hold exactly one share minus *K* dollars, whatever the price does:

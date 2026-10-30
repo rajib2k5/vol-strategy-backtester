@@ -1,5 +1,7 @@
 # Milestone 1: the option-chain data layer and quality filters
 
+> **Data notice.** The DoltHub figures in this document (counts, dates, quantiles and summaries, in its text and in its tables) are derived from the DoltHub database `post-no-preference/options` (<https://www.dolthub.com/repositories/post-no-preference/options>), licensed [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/), and are shared under the same licence. Changes: we aggregated it into counts, shares and quantiles, compared it with OptionsDX and ran our pricing build on it; no quote row is reproduced. The rest of this repository is MIT. See [DATA.md](../../DATA.md).
+
 Status: built and reviewed. Reviewed by: `adversarial-reviewer` (Opus) and `verifier` (Sonnet) on 2026-10-29 (`docs/validation/01-ledger.md`), then a second round that attacked the fixes. Every refutation of both rounds was fixed ("After the review", below), the store was rebuilt after round 2, and the numbers here were re-measured on that rebuild.
 
 Every number below was measured on 2026-10-29 and names the command that produced it. Two commands produce most of them:
@@ -109,8 +111,6 @@ One OptionsDX quote, followed from the vendor file to the store. The 2022-06-20 
 | A test reads its expectation from the code it tests | My first banned-word test iterated over `dolthub.BANNED_SQL`, so removing a word shrank the test with it; that mutant survived | The test now lists the words itself (`tests/test_dolthub_readonly.py`) |
 
 ## Measured results
-
-> **Data notice.** The counts, dates and summaries of DoltHub rows in the tables below are derived from the DoltHub database `post-no-preference/options` (<https://www.dolthub.com/repositories/post-no-preference/options>), licensed [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/), and are shared under the same licence. The rest of this repository is MIT. See [DATA.md](../../DATA.md).
 
 All on 2026-10-29. [build] and [report] are defined at the top. "Block" names the [report] block.
 

@@ -149,9 +149,9 @@
     <circle cx="1806" cy="2044" r="4" fill="#FFFFFF" stroke="#64748B" stroke-width="1.6"/>
   </g>
   <g id="relation_18">
-    <path d="M1539 2128L1609 2128Q1617 2128 1617 2120L1617 2080Q1617 2072 1625 2072L1825 2072" fill="none" stroke="#64748B" stroke-width="1.6" stroke-linejoin="round"/>
-    <path d="M1547 2122L1547 2134" fill="none" stroke="#64748B" stroke-width="1.6" stroke-linecap="round"/>
-    <circle cx="1558" cy="2128" r="4" fill="#FFFFFF" stroke="#64748B" stroke-width="1.6"/>
+    <path d="M1505 2128L1609 2128Q1617 2128 1617 2120L1617 2080Q1617 2072 1625 2072L1825 2072" fill="none" stroke="#64748B" stroke-width="1.6" stroke-linejoin="round"/>
+    <path d="M1513 2122L1513 2134" fill="none" stroke="#64748B" stroke-width="1.6" stroke-linecap="round"/>
+    <circle cx="1524" cy="2128" r="4" fill="#FFFFFF" stroke="#64748B" stroke-width="1.6"/>
     <path d="M1825 2079L1813 2072" fill="none" stroke="#64748B" stroke-width="1.6" stroke-linecap="round"/>
     <path d="M1825 2065L1813 2072" fill="none" stroke="#64748B" stroke-width="1.6" stroke-linecap="round"/>
     <circle cx="1806" cy="2072" r="4" fill="#FFFFFF" stroke="#64748B" stroke-width="1.6"/>
@@ -1108,21 +1108,21 @@
     <rect x="1282" y="1966" width="226" height="68" rx="10" fill="none" stroke="#E2E8F0" stroke-width="1"/>
   </g>
   <g id="entity_smile_fits">
-    <rect x="1251" y="2075" width="288" height="68" rx="10" fill="#0F172A" fill-opacity="0.05"/>
-    <rect x="1250" y="2076" width="290" height="69" rx="11" fill="#0F172A" fill-opacity="0.04"/>
-    <rect x="1249" y="2078" width="292" height="70" rx="12" fill="#0F172A" fill-opacity="0.03"/>
-    <rect x="1251" y="2074" width="288" height="68" rx="10" fill="#FFFFFF" stroke="none" stroke-width="1"/>
-    <path d="M1251 2114V2084Q1251 2074 1261 2074H1529Q1539 2074 1539 2084V2114Z" fill="#EEF2FF"/>
-    <path d="M1251 2114H1539" fill="none" stroke="#E2E8F0" stroke-width="1"/>
-    <rect x="1263" y="2082" width="24" height="24" rx="7" fill="#E0E7FF"/>
-    <g transform="translate(1267 2086)" fill="none" stroke="#4F46E5" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="1285" y="2075" width="220" height="68" rx="10" fill="#0F172A" fill-opacity="0.05"/>
+    <rect x="1284" y="2076" width="222" height="69" rx="11" fill="#0F172A" fill-opacity="0.04"/>
+    <rect x="1283" y="2078" width="224" height="70" rx="12" fill="#0F172A" fill-opacity="0.03"/>
+    <rect x="1285" y="2074" width="220" height="68" rx="10" fill="#FFFFFF" stroke="none" stroke-width="1"/>
+    <path d="M1285 2114V2084Q1285 2074 1295 2074H1495Q1505 2074 1505 2084V2114Z" fill="#EEF2FF"/>
+    <path d="M1285 2114H1505" fill="none" stroke="#E2E8F0" stroke-width="1"/>
+    <rect x="1297" y="2082" width="24" height="24" rx="7" fill="#E0E7FF"/>
+    <g transform="translate(1301 2086)" fill="none" stroke="#4F46E5" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
       <rect x="2" y="2.5" width="12" height="11" rx="1.5"/>
       <path d="M2 6.5h12M2 10h12M6.5 6.5v7"/>
     </g>
-    <text x="1295" y="2099" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="14" font-weight="700" fill="#1E1B4B">smile_fits (partial, planned, M2)</text>
-    <text x="1263" y="2132.4" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="12.5" font-weight="400" fill="#0F172A">total_var_nodes</text>
-    <text x="1525" y="2132.2" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="12" font-weight="400" text-anchor="end" fill="#64748B">DOUBLE[]</text>
-    <rect x="1251" y="2074" width="288" height="68" rx="10" fill="none" stroke="#E2E8F0" stroke-width="1"/>
+    <text x="1329" y="2099" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="14" font-weight="700" fill="#1E1B4B">smile_fits (partial)</text>
+    <text x="1297" y="2132.4" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="12.5" font-weight="400" fill="#0F172A">total_var_nodes</text>
+    <text x="1491" y="2132.2" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="12" font-weight="400" text-anchor="end" fill="#64748B">DOUBLE[]</text>
+    <rect x="1285" y="2074" width="220" height="68" rx="10" fill="none" stroke="#E2E8F0" stroke-width="1"/>
   </g>
   <rect x="490" y="1883" width="75" height="20" rx="10" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1"/>
   <text x="527.5" y="1897.14" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, 'Liberation Sans', sans-serif" font-size="11.5" font-weight="500" text-anchor="middle" fill="#475569">session of</text>

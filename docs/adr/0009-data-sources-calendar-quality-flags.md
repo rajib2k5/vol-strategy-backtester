@@ -1,5 +1,7 @@
 # ADR-0009: Data sources, trading calendar, quality flags and the out-of-sample execution mode
 
+> **Data notice.** The DoltHub figures in this document (counts, dates, quantiles and summaries, in its text and in its tables) are derived from the DoltHub database `post-no-preference/options` (<https://www.dolthub.com/repositories/post-no-preference/options>), licensed [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/), and are shared under the same licence. Changes: we aggregated it into counts, shares and quantiles, compared it with OptionsDX and ran our pricing build on it; no quote row is reproduced. The rest of this repository is MIT. See [DATA.md](../../DATA.md).
+
 **Status:** Accepted at milestone 0. To be implemented in M1, with the IV-related flags in M2. To be revisited in M1 after the full quality report.
 
 ## Revised after M0 review (2026-10-28)
@@ -83,8 +85,6 @@ The 2022-06-20 row (Juneteenth closure) shows an `[UNDERLYING_LAST]` that we bel
 
 ### Out-of-sample source: DoltHub `post-no-preference/options`
 
-> **Data notice.** Tables in this ADR that report DoltHub counts, dates or summaries are derived from this database, licensed [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/), and shared under the same licence; the rest of the repository is MIT. See [DATA.md](../../DATA.md).
-
 The clone is at `$VOL_DATA_DIR/dolthub/options`, licensed CC BY-SA 4.0, and is **read-only**: it is shared with other projects.
 
 **Updated in M1 (2026-10-29):** nothing of ours runs dolt in it. Every dolt call runs in a private mirror, a `cp -a` copy at `$VOL_DATA_DIR/vol-strategy-backtester/cache/dolt_mirror/options` (`config.dolthub_mirror_dir()`), under the project-wide rule of that day: two projects querying one clone contend for its files. The loader refuses a target, or a work folder, that resolves inside the shared clone (`docs/concepts/06-private-dolt-mirror.md`). Round 2 of the review found that "the shared clone" followed `VOL_DATA_DIR`: pointed elsewhere, the real clone passed as a mirror and as a work folder. Now the default clone, `~/data/vol-projects/dolthub/options` resolved (with `$HOME`, and with the account's home), is refused whatever the environment says, and dolt runs only in a folder under `$VOL_DATA_DIR/vol-strategy-backtester/cache/` (`config.shared_clones`, `dolthub.mirror_dir`).
@@ -153,7 +153,7 @@ Where M1 writes (default taken 2026-10-29, owner can override): every download g
    | 2 | `ZERO_BID` | bid = 0 |
    | 3 | `CROSSED` | bid > ask |
    | 4 | `LOCKED` | bid = ask > 0 |
-   | 5 | `WIDE` | ask − bid > mid, i.e. relative spread > 100% |
+   | 5 | `WIDE` | ask − bid > mid, i.e. relative spread > 100%. *(M2 round 3, decision F2, default taken 2026-10-29, owner can override: a `WIDE` quote is not a node of the pricing build's smile, `quote_iv.in_smile` false; it keeps its IV and may enter the parity forward. ADR-0004 amendment 3.)* |
    | 6 | `STALE` | bid and ask both unchanged from the contract's previous snapshot while \|ΔS/S\| ≥ 0.5% |
    | 7 | `NON_SESSION_DATE` | the date is not a SPY session |
    | 8 | `RELABELLED` | the date was moved by the point-1 rule. **Reserved and never set from M1, round 2:** the rule was removed |
@@ -164,7 +164,7 @@ Where M1 writes (default taken 2026-10-29, owner can override): every download g
 
    **Updated in M1 (2026-10-29):** bit 11 was `VENDOR_IV_NULL`, "the vendor gives no IV". The M1 review found vendor IVs that are present but unusable: OptionsDX has 216,700 rows with IV from −0.0005 to −0.00001 and 5,984 with IV = 0, and DoltHub has 70 rows with `vol` = 0, all on bid = ask = 0 quotes (216,665 and 5,983 OptionsDX rows in the store rebuilt after round 2, which dropped the 2022-06-20 rows). The bit keeps its number and now covers null or ≤ 0. It does not flag a tiny positive IV: 321,212 OptionsDX rows have 0 < IV ≤ 0.0005 and 482,104 have 0 < IV < 0.01, all unflagged; M2 recomputes IV from quotes, so the vendor's value is not used for pricing. An IV above 5 is not flagged; its count is reported as a measurement (`tools/report_m1.py`, block "vendor IV").
 
-   The pricing build (M2) writes `quote_iv.iv_flags` separately: `IV_FAIL`, `PARITY_OUTLIER` and `FORWARD_FALLBACK`.
+   The pricing build (M2) writes `quote_iv.iv_flags` separately: `IV_FAIL`, `PARITY_OUTLIER` and `FORWARD_FALLBACK`. *(M2 review amendment, default taken 2026-10-29, owner can override: `IV_FAIL` also covers a quote with no American IV on the de-Americanisation lattice and a price float64 cannot resolve; `quote_iv.iv_fail_reason` names which. A `STALE` or zero-bid quote may carry a descriptive IV, but `quote_iv.in_smile` is false for it, and ADR-0004 rule 3 marks a stale quote off the surface.)*
 4. **Execution mode per source, and how the holdout distortion is estimated.**
    - OptionsDX runs `execution_mode = quote`: fills and marks come from quotes.
    - DoltHub runs `execution_mode = surface`: fills and marks come from the day's surface plus a modelled half-spread (ADR-0002 §7, ADR-0004 rule 3).

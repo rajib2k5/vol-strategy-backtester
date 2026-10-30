@@ -9,10 +9,13 @@ import {
   CHART_FLAGS,
   CROSSVENDOR_NOTE,
   DATA_QUALITY_INTRO,
+  DATA_QUALITY_NOTICE,
+  DOLTHUB_CHANGES,
   FLAGS_NOTE,
   GATE_NOTE,
   SOURCES_NOTE,
 } from '../content/dataQuality'
+import { DataNotice, DoltHubAttribution } from './DataNotice'
 import { DataProblem } from './DataProblem'
 
 /** A number with its unit as the file gives it: "fraction" is a share, anything else a plain unit ("quotes", "bp"). */
@@ -367,6 +370,15 @@ function Provenance({ dq }: { dq: DataQuality }) {
   )
 }
 
+function Notice() {
+  return (
+    <DataNotice>
+      <p className="sub">{DATA_QUALITY_NOTICE}</p>
+      <DoltHubAttribution changes={DOLTHUB_CHANGES} />
+    </DataNotice>
+  )
+}
+
 export function DataQualityPage({ state }: { state: AppDataState }) {
   return (
     <section className="data-quality">
@@ -392,6 +404,7 @@ export function DataQualityPage({ state }: { state: AppDataState }) {
           <Provenance dq={state.data.dataQuality} />
         </>
       )}
+      <Notice />
     </section>
   )
 }

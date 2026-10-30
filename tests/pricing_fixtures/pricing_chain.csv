@@ -1,0 +1,19 @@
+expiry_days,strike,call_put,mid,valid,expected_iv_flags,why
+29,430,C,14.61,1,0,clean pair
+29,430,P,2.91,1,0,clean pair
+29,435,C,11.21,1,0,clean pair
+29,435,P,4.49,1,0,clean pair
+29,440,C,8.31,1,0,clean pair (K* is here)
+29,440,P,6.57,1,0,clean pair
+29,445,C,5.94,1,0,clean pair
+29,445,P,9.18,1,0,clean pair
+29,450,C,4.09,1,2,PARITY_OUTLIER: the put is 3.00 too dear so F_K = 438.745 is 0.68% below F
+29,450,P,15.30,1,2,PARITY_OUTLIER: the same strike
+29,400,P,300.00,1,1,IV_FAIL american_above_cap: above the lattice's American price at sigma = 5 (Black-76's is 197.23) though below DF K (398.41)
+29,470,C,445.00,1,1,IV_FAIL american_above_cap: above any American call (it is worth at most S = 440.00) and above DF F (440.00)
+64,430,C,19.09,1,4,FORWARD_FALLBACK: only 2 valid pairs in this expiry
+64,430,P,5.33,1,4,FORWARD_FALLBACK
+64,440,C,13.00,1,4,FORWARD_FALLBACK
+64,440,P,9.16,0,4,FORWARD_FALLBACK (this put is not valid: crossed in the quote table)
+64,450,C,8.33,1,4,FORWARD_FALLBACK
+64,450,P,14.40,1,4,FORWARD_FALLBACK

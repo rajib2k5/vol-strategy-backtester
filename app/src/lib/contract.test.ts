@@ -208,7 +208,7 @@ describe('parseManifest: rejects', () => {
   it('duplicate dataset names, naming the second occurrence', () => {
     const m = clone(manifestFixture) as { datasets: Obj[] }
     m.datasets.push(clone(m.datasets[0]))
-    rejects(parseManifest, m, 'manifest.datasets[2].name: duplicate dataset name "illustrative_surface"')
+    rejects(parseManifest, m, `manifest.datasets[${m.datasets.length - 1}].name: duplicate dataset name "illustrative_surface"`)
   })
   it.each([
     '../secrets.json',

@@ -1,5 +1,7 @@
 # Querying a shared database without touching it: the private mirror
 
+> **Data notice.** The DoltHub figures in this document (counts, dates, quantiles and summaries, in its text and in its tables) are derived from the DoltHub database `post-no-preference/options` (<https://www.dolthub.com/repositories/post-no-preference/options>), licensed [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/), and are shared under the same licence. Changes: we aggregated it into counts, shares and quantiles, compared it with OptionsDX and ran our pricing build on it; no quote row is reproduced. The rest of this repository is MIT. See [DATA.md](../../DATA.md).
+
 ## First principles
 
 The DoltHub clone at `$VOL_DATA_DIR/dolthub/options` is shared with other projects, so we must never change it. "Run only SELECT" sounds like enough. It is not: a database engine can write while it answers a read. It may take a lock file, update its statistics, or tidy its journal. Those writes change files that another program relies on.
