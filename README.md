@@ -75,10 +75,23 @@ uv run python tools/export_app_data.py          # write app/public/data/*.json
 `tools/build_data.py` and `tools/build_pricing.py` build under the work folder: the repository's
 `data/` folder, or `VOLBT_WORK_DIR` when it is set. A fresh clone has no store, so these tests skip.
 To run them, either build the store in the clone or set `VOLBT_WORK_DIR` to a folder that already
-holds one, then run `uv run pytest -q -m real_data`. To build it, run
+holds one, then run `uv run pytest -q -m real_data`. Prefer `VOLBT_WORK_DIR` to copying a work folder in: a test run
+creates `data/` in the clone (`data/cache`, and `data/dolt_root` when dolt runs), and `cp -a <other>/data data` into
+an existing `data/` lands in `data/data`, where the tests do not look. To build the store, run
 `uv run python tools/build_data.py --fetch --export-dolthub` (it downloads the reference series,
 exports DoltHub's SPY rows and reads the Kaggle files under `VOL_DATA_DIR`), then
 `uv run python tools/build_pricing.py`.
+
+Which tests run also depends on the machine. Two tests run dolt and skip when it is not on PATH: one in the default
+suite (in a throwaway repository under its temporary folder) and one real-data test (in this project's private copy
+of the DoltHub clone, which must exist). The gate counts in the commit messages were taken with dolt off PATH, so with
+dolt each suite shows one more test passed and one fewer skipped. Some real-data tests also need the recorded
+development run (`runs/app_run.json` in the work folder, written by `tools/run_backtest.py ... --for-app`) and skip
+without it. Run the tests in the clone's own environment (`uv sync` in the clone). With `PYTHONPATH` pointed at the
+clone from another checkout's environment, two tests fail by design:
+`tests/test_export.py::test_volbt_is_importable_from_an_install_not_from_a_path_hack` and
+`tests/test_prereg.py::test_the_scorer_run_as_a_script_passes_the_process_and_loading_checks`, whose subprocess drops
+`PYTHONPATH` and so loads the other checkout's code, which the scorer's loading check refuses.
 
 ```bash
 cd app

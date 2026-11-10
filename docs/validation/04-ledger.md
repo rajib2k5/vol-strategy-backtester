@@ -6,6 +6,12 @@ Every figure carries its source in brackets, described by role (a builder's repo
 
 **Scope.** Part A (interfaces, position P&L, signals, inference, the pre-registration tooling, the pre-registration of the forecast test) and part B1 (strategies, smoke, export code). The forecast test is **not scored**; nothing is committed [the part A builder's report; the fix pass 2 builder's report]. Fix passes 3 to 9 and review rounds 4 to 9 are covered below. Fix pass 9 (items K1-K3) is the last fix pass of part A's review cycle; there is no round 10 (see "The stopping decision"). Part B2 is open.
 
+**Status after the commit (added 2026-11-10).** This ledger and the pre-registration files were committed in
+`16513caffe40a394a6d0e9b9063d3e13d6f2213a`. Line 3 of `docs/validation/prereg/2026-11-09-forecast-har-vs-naive.md`
+still says "written, not committed, not scored": the file is pinned by its sha256 and is not edited. The forecast test
+is still not scored: `spent.jsonl` is empty, and the 9 lines of `runs_of_record.jsonl` are diagnostic runs with no
+`prereg_id` (8 smoke runs, 2020-01-02 to 2023-12-29, and 1 budget run, 2010-01-04 to 2023-12-29).
+
 **Data policy (D19).** No P&L, NAV, return, Sharpe, exit-reason count or signal value dated after 2019-12-31 is here; such figures read "[withheld: D19]". No mean, sign, t, p, CI or QLIKE of the real d is here; none was computed [review A's report; review D's report].
 
 ## Who built and who checked
