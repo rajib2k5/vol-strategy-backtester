@@ -1,12 +1,12 @@
 {
   "schema_version": "0.5.0",
-  "generated_at": "2026-11-10T14:42:48Z",
-  "source_commit": "8bd6e5e1d62ad2413d7cc1b6c0f84864651deac4-dirty",
+  "generated_at": "2026-11-10T15:08:08Z",
+  "source_commit": "16513caffe40a394a6d0e9b9063d3e13d6f2213a",
   "run": {
-    "run_id": "44dd4f7be51a91746a2bd91e75091590517e8b488bab5acb61bbd19f6f63cb93",
+    "run_id": "d63cfca65d1ef5ce7a52c44e9b1addd21caddd4625cd087095fff17de8644719",
     "config_hash": "9700548f21bfbcfa14d8eee263c0827284c61f9a63ee8f56c09d90e0447e9286",
     "data_fingerprint": "e9462197b8358236fa2a1ad7c89d19dc681ef47ffa6df74c6d54a3bdf5565f98",
-    "engine_commit": "3d95d708b250349c86841053746bfe4910f7f713",
+    "engine_commit": "16513caffe40a394a6d0e9b9063d3e13d6f2213a",
     "data_source": "optionsdx",
     "execution_mode": "quote",
     "fill_timing": "next_close",
