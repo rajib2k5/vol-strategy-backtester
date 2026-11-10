@@ -63,6 +63,8 @@ def test_iv30_equals_m2_s_exported_atm_iv_30d_on_the_frames_before_2020():
               if f["date"] <= "2019-12-31"]
     assert len(frames) == 2
     store = Store(config.store_dir())
+    if not store.has("smile_fits"):
+        pytest.skip("no built store: run tools/build_data.py and tools/build_pricing.py")
     for frame in frames:
         day = date.fromisoformat(frame["date"])
         sigma, _ = iv30(view(day, "development", store), day)

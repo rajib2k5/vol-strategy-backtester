@@ -71,6 +71,15 @@ uv run python tools/build_notebooks.py --check  # notebooks in sync with src/
 uv run python tools/export_app_data.py          # write app/public/data/*.json
 ```
 
+`uv run pytest -q` leaves out the tests marked `real_data`. They read the store that
+`tools/build_data.py` and `tools/build_pricing.py` build under the work folder: the repository's
+`data/` folder, or `VOLBT_WORK_DIR` when it is set. A fresh clone has no store, so these tests skip.
+To run them, either build the store in the clone or set `VOLBT_WORK_DIR` to a folder that already
+holds one, then run `uv run pytest -q -m real_data`. To build it, run
+`uv run python tools/build_data.py --fetch --export-dolthub` (it downloads the reference series,
+exports DoltHub's SPY rows and reads the Kaggle files under `VOL_DATA_DIR`), then
+`uv run python tools/build_pricing.py`.
+
 ```bash
 cd app
 npm ci

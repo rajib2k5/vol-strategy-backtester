@@ -83,6 +83,8 @@ def test_the_scored_window_has_2495_sessions_and_the_block_window_starts_with_ha
     from volbt.data.store import Store, session_calendar
 
     store = Store(config.store_dir())
+    if not store.has("smile_fits"):
+        pytest.skip("no built store: run tools/build_data.py and tools/build_pricing.py")
     calendar = session_calendar(store)
     days = ft.window(calendar, date(2010, 1, 4), date(2019, 12, 31))
     assert (len(days), days[0], days[-1]) == (2495, date(2010, 1, 4), calendar[calendar.index(date(2019, 12, 31)) - 21])

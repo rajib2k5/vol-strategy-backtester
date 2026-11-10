@@ -374,6 +374,8 @@ def test_the_dependence_summary_and_the_windows_re_measure_to_the_frozen_ones():
 
     frozen = spec()
     store = Store(config.store_dir())
+    if not store.has("smile_fits"):
+        pytest.skip("no built store: run tools/build_data.py and tools/build_pricing.py")
     dependence = prereg.measure_dependence(store)
     assert dependence == {k: v for k, v in frozen["calibration"].items() if k != "use"}
     windows = [{"start": "2010-01-04", "split": "development"}]
