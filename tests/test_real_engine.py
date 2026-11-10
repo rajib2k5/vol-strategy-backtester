@@ -33,6 +33,12 @@ REPO = Path(__file__).resolve().parent.parent
 COMMIT = "0" * 40
 
 
+def passing_gate(cfg, strategy, trial_hash):
+    """These validation diagnostics test the engine's budget and sources, not the gate (tests/test_prereg.py): a gate
+    that passes them and records nothing, so no test writes to the repository's runs_of_record.jsonl."""
+    return None
+
+
 def table(run_dir, name):
     return pq.read_table(Path(run_dir) / name / "part-0.parquet").to_pandas()
 
@@ -49,7 +55,8 @@ def store():
 def budget_runs(store, tmp_path_factory):
     cfg = RunConfig(sample_start=date(2010, 1, 4), sample_end=date(2023, 12, 29), split="validation")
     return [run_backtest(cfg, RollingShortStraddle(), store=store, runs_root=tmp_path_factory.mktemp(f"budget{i}"),
-                         source_commit=COMMIT, store_check=build.require_current) for i in range(2)]
+                         source_commit=COMMIT, store_check=build.require_current, run_gate=passing_gate)
+            for i in range(2)]
 
 
 @pytest.fixture(scope="module")
@@ -57,7 +64,7 @@ def dolthub_run(store, tmp_path_factory):
     cfg = RunConfig(sample_start=date(2020, 1, 2), sample_end=date(2023, 12, 29), split="validation",
                     data_source="dolthub", execution_mode="surface")
     return run_backtest(cfg, RollingShortStraddle(), store=store, runs_root=tmp_path_factory.mktemp("dolthub"),
-                        source_commit=COMMIT, store_check=build.require_current)
+                        source_commit=COMMIT, store_check=build.require_current, run_gate=passing_gate)
 
 
 def test_the_14_year_run_fits_the_60_second_budget_twice_with_equal_hashes(budget_runs):

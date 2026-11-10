@@ -21,6 +21,13 @@ THE 180-DAY CONSTRAINT (ADR-0008 amendment 8, proposed, and the milestone-2 walk
 Beyond 180 days the pricing build's one DGS3MO rate leaves a carry gap that PARITY_OUTLIER measures on
 15.4% of OptionsDX's quotes. Until the owner decides on a per-expiry rate, strategies trade expiries of
 at most MAX_EXPIRY_DAYS: nearest_monthly never returns a longer one, whatever it is asked for.
+
+DAYS TO EXPIRY IN MILESTONE 4 (part B). Every DTE of the M4 rules (the entry windows, exit_dte, the calendar's front)
+counts calendar days from a session to the contract's SETTLEMENT date, not to its listed expiry: settle_date applies
+decision D16's map, so the Saturday-dated December 2015 monthly (2015-12-19) counts to its Friday close, 2015-12-18.
+Strategies may not import the engine (ADR-0001 §4), so SETTLE_MAP is a copy of volbt.engine.settlement's
+NON_SESSION_EXPIRIES, and tests/test_strategy_picks.py keeps the two equal. The M3 reference strategy still counts to
+the listed expiry (its regression gate). Default taken 2026-11-09, owner can override.
 """
 
 from __future__ import annotations
@@ -76,3 +83,58 @@ def nearest_monthly(expiries, as_of: date, sessions, target_dte: int = 30, min_d
     if not candidates:
         return None
     return min(candidates, key=lambda day: (abs((day - as_of).days - target_dte), day))
+
+
+# Decision D16's map (volbt.engine.settlement.NON_SESSION_EXPIRIES): the session whose close settles a listed expiry
+# that is not a session. A copy, because strategies may not import the engine; a test keeps it equal to the engine's.
+SETTLE_MAP = {date(2015, 12, 19): date(2015, 12, 18), date(2018, 12, 5): date(2018, 12, 4)}
+
+
+def settle_date(expiry: date, sessions, last_session: date | None = None) -> date | None:
+    """The session whose close settles a contract listed with `expiry` (volbt.engine.settlement.settle_date's rule).
+
+    The expiry itself when it is a session or falls after the calendar's last date (`last_session`, default the latest
+    of `sessions`); else SETTLE_MAP's date; else None: an unmapped non-session expiry, which the engine refuses to
+    open (UnmappedExpiry), so no M4 rule picks it.
+    """
+    last_session = last_session if last_session is not None else (max(sessions) if sessions else None)
+    if expiry in sessions or (last_session is not None and expiry > last_session):
+        return expiry
+    return SETTLE_MAP.get(expiry)
+
+
+def dte(expiry: date, as_of: date, sessions, last_session: date | None = None) -> int | None:
+    """Calendar days from `as_of` to the settlement date of `expiry` (None for an unmapped non-session expiry)."""
+    settle = settle_date(expiry, sessions, last_session)
+    return None if settle is None else (settle - as_of).days
+
+
+def monthly_in_window(expiries, as_of: date, lo: int, hi: int, sessions,
+                      last_session: date | None = None) -> list[date]:
+    """The standard monthlies among the listed `expiries` with lo <= DTE <= hi at `as_of`, ascending.
+
+    DTE counts to the settlement date (module docstring); the listed expiry is also at most MAX_EXPIRY_DAYS after
+    as_of, the cap the engine's check_intent applies to every opening leg. `sessions` is the exchange calendar
+    (standard_monthly); `last_session` its last date (default: computed from `sessions`).
+    """
+    days = sessions if isinstance(sessions, (set, frozenset)) else frozenset(sessions)
+    last = last_session if last_session is not None else (max(days) if days else None)
+    found = []
+    for expiry in standard_monthly(expiries, days):
+        to_settle = dte(expiry, as_of, days, last)
+        if to_settle is not None and lo <= to_settle <= hi and (expiry - as_of).days <= MAX_EXPIRY_DAYS:
+            found.append(expiry)
+    return found
+
+
+def next_monthly(expiries, front: date, sessions) -> date | None:
+    """The standard monthly of the calendar month after `front`'s, if it is among the listed `expiries`; else None.
+
+    The straddle calendar's back leg is the next monthly or nothing: an unlisted next monthly is never replaced by a
+    later one (default taken 2026-11-09, owner can override).
+    """
+    year, month = (front.year + 1, 1) if front.month == 12 else (front.year, front.month + 1)
+    for expiry in standard_monthly(expiries, sessions):
+        if (expiry.year, expiry.month) == (year, month):
+            return expiry
+    return None

@@ -14,6 +14,14 @@ gain settle_date; position_marks gain qty, bid, ask, in_nav, h_model, spot, forw
 log_moneyness; expiry_events gain dividend_amount; risk_events hold `ruin` only in M3; daily_pnl keeps
 its attribution and margin columns typed and null (M5, M6); a new table cash_flows holds every cash
 movement in integer cents, so cash = initial + sum(cash_flows) exactly.
+
+Milestone 4 (plan sections 3 and 4) adds two tables and fills one column:
+    signals         one row per session and signal of the strategy (step 9): the ERD columns, plus iv30_flags,
+                    log_var_ratio (the signal s_t), n_window and flags (volbt.signals.base); zscore stays null
+    position_daily  one row per position per session from its opening fill to its close: the hedged P&L and
+                    its parts (volbt.engine.positions), cumulative, and the position's delta at the close
+    positions.entry_signal   the opening intent's entry_signal (null for a strategy that gives none)
+A run of a strategy with no signals writes an empty `signals` table; every M3 table keeps its bytes.
 """
 
 from __future__ import annotations
@@ -78,13 +86,21 @@ SCHEMAS: dict[str, pa.Schema] = {
                             ("share_nav_model_marked", F), ("mark_quality", S), ("delta_after_hedge_shares", F)]),
     "cash_flows": pa.schema([("flow_id", I64), ("session_date", D), ("kind", S), ("amount_cents", I64),
                              ("ref_id", I64)]),
+    "signals": pa.schema([("session_date", D), ("signal_name", S), ("iv30", F), ("iv30_flags", I32),
+                          ("rv_forecast", F), ("rv_model", S), ("model_fit_date", D), ("vrp_spread", F),
+                          ("zscore", F), ("vix_bucket", S), ("vol_regime", S), ("log_var_ratio", F),
+                          ("n_window", I32), ("flags", I32)]),
+    "position_daily": pa.schema([("session_date", D), ("position_id", I64), ("status", S), ("n_open_lots", I32),
+                                 ("premium_usd", F), ("fills_usd", F), ("open_value_usd", F), ("settled_usd", F),
+                                 ("hedge_usd", F), ("pnl_usd", F), ("delta_shares", F)]),
 }
 SCHEMAS["fills"] = SCHEMAS["fills"].append(pa.field("fill_flags", I32))   # SURFACE_* bits and H_MODEL_OTHER_EXPIRY
 
 SORT_KEYS = {"runs": (), "positions": ("position_id",), "orders": ("order_id",), "order_legs": ("order_id", "leg_no"),
              "fills": ("fill_id",), "lots": ("lot_id",), "position_marks": ("session_date", "lot_id"),
              "hedges": ("session_date",), "expiry_events": ("event_id",), "risk_events": ("event_id",),
-             "daily_pnl": ("session_date",), "cash_flows": ("flow_id",)}
+             "daily_pnl": ("session_date",), "cash_flows": ("flow_id",), "signals": ("session_date", "signal_name"),
+             "position_daily": ("session_date", "position_id")}
 
 
 def _clean(value):

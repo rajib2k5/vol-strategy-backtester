@@ -13,11 +13,13 @@
     5  step_05_mark            one mark per lot (ADR-0004), an INTRINSIC row for each lot settled today
                                (D11), greeks, NAV_mid and NAV_liq, DEGRADED, MARK_JUMP
     6  step_06_hedge           net delta, delivered shares included; -round_half_away(net) at S_t
-    7  step_07_snapshot        the daily_pnl row
+    7  step_07_snapshot        the daily_pnl row; each position's hedged P&L (volbt.engine.positions), its
+                               position_daily row
     8  step_08_eod_risk        passes through in M3, except ruin: NAV_mid <= 0 stops the run (ADR-0007 §5)
-    9  step_09_decide          strategy.decide(view, book.state(t), ctx), each intent read once (intake),
-                               checked, stamped with V_t; with fill_timing = same_close a fill pass 9b on
-                               snapshot t (D17)
+    9  step_09_decide          the strategy's signals updated through the view (their `signals` rows, then
+                               ctx.signals), then strategy.decide(view, book.state(t), ctx), each intent read
+                               once (intake), checked, stamped with V_t; with fill_timing = same_close a fill
+                               pass 9b on snapshot t (D17)
     10 step_10_early           early exercise and assignment for t+1 (ADR-0003 §5)
     11 step_11_write           the rows are appended; on_session_end(t, book)
 
@@ -48,6 +50,7 @@ from dataclasses import dataclass, field, replace
 from datetime import date
 from decimal import Decimal
 from pathlib import Path
+from types import MappingProxyType
 
 import duckdb
 import numpy as np
@@ -59,16 +62,18 @@ from volbt import config
 from volbt.data import osi
 from volbt.data import store as store_module
 from volbt.data.store import Store, YearCache, data_fingerprint, file_sha256, session_calendar, write_json
-from volbt.engine import early, fills, hedge, marks, settlement
+from volbt.engine import closures, early, fills, hedge, marks, positions, settlement
 from volbt.engine import surface as surf
 from volbt.engine.book import ENGINE_EXIT_REASONS, Book, Lot, Order, OrderLeg, Position
 from volbt.engine.cash import borrow_fee_cents, dividend_cents, interest_cents
 from volbt.engine.ledger import Ledger
-from volbt.engine.run_config import RunConfig, config_hash, config_json, make_run_id
+from volbt.engine.run_config import SPLIT_DATES, RunConfig, config_hash, config_json, make_run_id, trial_hash
+from volbt.signals.base import SignalValue
 from volbt.strategies.base import EXIT_REASONS, INTENTS, REDUCE_ONLY_INTENTS, LegIntent, OrderIntent, SessionContext
 from volbt.strategies.expiry import MAX_EXPIRY_DAYS
 
 DAYS_PER_YEAR = 365
+SIGNAL_WINDOW_DAYS = 30      # n_window: sessions in (t, t + 30 calendar days] (plan section 4)
 INPUT_TABLES = ("option_quotes", "quote_iv", "expiry_forwards", "smile_fits")
 REFERENCE_TABLES = ("rates", "dividends", "spy_bars", "vix")
 
@@ -138,9 +143,10 @@ def intake(intent) -> OrderIntent:
     if type(intent) is not OrderIntent:
         raise EngineError(f"a strategy returns OrderIntent objects, not {type(intent).__name__}")
     legs = tuple(LegIntent(str(leg.osi_symbol), int(leg.ratio)) for leg in intent.legs)
-    position_id, exit_reason = intent.position_id, intent.exit_reason
+    position_id, exit_reason, entry_signal = intent.position_id, intent.exit_reason, intent.entry_signal
     return OrderIntent(None if position_id is None else int(position_id), str(intent.intent), str(intent.structure),
-                       legs, int(intent.packages), None if exit_reason is None else str(exit_reason))
+                       legs, int(intent.packages), None if exit_reason is None else str(exit_reason),
+                       None if entry_signal is None else float(entry_signal))
 
 
 class Run:
@@ -148,6 +154,23 @@ class Run:
 
     def __init__(self, cfg: RunConfig, strategy, store: Store, calendar: list[date], sessions: list[date]) -> None:
         self.cfg, self.strategy, self.store = cfg, strategy, store
+        # The engine owns the strategy's signal objects (plan section 3): their state lives in one place.
+        self.signals = tuple(getattr(strategy, "signals", ()))
+        names = [signal.name for signal in self.signals]
+        if len(set(names)) != len(names) or not all(isinstance(name, str) and name for name in names):
+            raise EngineError(f"a strategy's signals need distinct, non-empty names: {names}")
+        # Each run starts its signals from a clean state: a fit left by another run (or another store) is dropped.
+        for signal in self.signals:
+            if not callable(getattr(signal, "reset", None)):
+                raise EngineError(f"signal {signal.name!r} has no reset(): the engine resets each signal before a run")
+            if not callable(getattr(signal, "params", None)):
+                raise EngineError(f"signal {signal.name!r} has no params(): its parameters enter config_json "
+                                  "(fix pass 2, review B claim 4b)")
+            signal.reset()
+        # Milestone 4, part B: a strategy that keeps run state (VolStrategy: the expiries it has held) clears it too.
+        reset = getattr(strategy, "reset", None)
+        if callable(reset):
+            reset()
         self.cache = YearCache(store, cfg.data_source)
         self.calendar = calendar
         self.session_set = frozenset(calendar)   # handed to the strategy in its SessionContext (D3): never mutable
@@ -169,6 +192,16 @@ class Run:
         if index is None or index + 1 >= len(self.calendar):
             return None
         return self.calendar[index + 1]
+
+    def n_window(self, day: date) -> int:
+        """Sessions in (day, day + 30 calendar days], from the calendar (decision D3; plan section 4), a closure
+        without notice counted as a session until its announcement date (volbt.engine.closures)."""
+        return closures.n_window(self.calendar, day, days=SIGNAL_WINDOW_DAYS)
+
+    def dividend_today(self) -> float:
+        """The dividend per share with ex-date today (0 on other sessions)."""
+        t = self.today
+        return float(sum(amount for ex_date, amount in zip(*t["paid"]) if ex_date == t["t"]))
 
     def flow(self, kind: str, amount_cents: int, ref_id: int | None = None) -> None:
         """Every cash movement goes through here: the book's cash and the cash_flows table move together."""
@@ -289,7 +322,11 @@ class Run:
                 continue
             shares = settlement.delivered_shares(lot.right, lot.qty)
             book.shares += shares
-            self.flow("early_settlement", -shares * fills.to_cents(lot.strike), event["event_id"])
+            cash = -shares * fills.to_cents(lot.strike)
+            self.flow("early_settlement", cash, event["event_id"])
+            # Booked before the dividends below, so the delivered shares carry today's dividend (engine.positions).
+            book.positions[lot.position_id].settled_usd += positions.delivery_value(
+                shares, cash, self.today["spot"], self.dividend_today())
             removed.add(lot.lot_id)
             self.close_lot(lot, "exercise" if lot.qty > 0 else "assignment")
         self.early_pending = []
@@ -394,6 +431,10 @@ class Run:
         fill_id = book.next_id("fill")
         self.flow("option_premium", -qty * 100 * price, fill_id)
         self.flow("option_fee", -fee, fill_id)
+        position = book.positions[order.position_id]
+        position.fills_cents += -qty * 100 * price - fee
+        if not order.reduce_only:
+            position.premium_cents += -qty * 100 * price
         leg.filled += qty
         quote = r["quote"]
         if r["source"] == "quote":
@@ -424,7 +465,6 @@ class Run:
         lot.avg_open_price = (lot.avg_open_price * lot.opened_qty + price / 100 * qty) / (lot.opened_qty + qty)
         lot.opened_qty += qty
         lot.qty += qty
-        position = book.positions[order.position_id]
         if position.status == "pending":
             position.status, position.opened_date = "open", t["t"]
 
@@ -461,6 +501,8 @@ class Run:
             book.shares += event["shares_delivered"]
             delivered += event["shares_delivered"]
             self.flow("settlement", event["cash_cents"], event_id)
+            book.positions[lot.position_id].settled_usd += positions.delivery_value(
+                event["shares_delivered"], event["cash_cents"], self.today["spot"])
             self.ledger.append("expiry_events", {
                 "event_id": event_id, "session_date": t, "effective_date": t, "lot_id": lot.lot_id,
                 "osi_symbol": lot.osi_symbol, "event_type": event["event_type"], "contracts": event["contracts"],
@@ -557,6 +599,40 @@ class Run:
             "margin_req_gross_usd": None, "short_option_mv_usd": None, "margin_req_net_usd": None,
             "excess_liquidity_usd": None, "share_nav_model_marked": share,
             "mark_quality": marks.mark_quality(gross, model, cfg), "delta_after_hedge_shares": today.get("delta_after")})
+        self.position_rows(t, rows)
+
+    def position_rows(self, t: date, rows: list[dict]) -> None:
+        """Each open position's hedged P&L at t's close (volbt.engine.positions), and a position closed today: its
+        position_daily row, held in `today` until step 11 commits it (step 7 runs again after pass 9b)."""
+        book, today, prev = self.book, self.today, self.prev
+        held = [p for p in book.positions.values()
+                if p.status == "open" or (p.status == "closed" and p.closed_date == t)]
+        today["position_rows"] = out = []
+        if not held:
+            return
+        by_lot = {r["lot_id"]: r for r in rows}
+        dividend = self.dividend_today()
+        hedged = self.cfg.hedge_mode != "never"
+        computed = positions.computed(self.cfg)     # else the book's hedge lags the positions' delta: P&L is NaN
+        for position in held:
+            lots = book.position_lots(position.position_id)
+            marked = [by_lot[lot.lot_id] for lot in lots if lot.lot_id in by_lot]
+            for row in marked:
+                book.lots[row["lot_id"]].mark_price = row["mark_price"]
+            open_usd, delta = positions.open_value(marked)
+            if not np.isfinite(delta):
+                # A lot with no sigma has no delta, so the book did not hedge today (step 6): the hedge the book
+                # holds is the one set at the last close, and so is the position's share of it.
+                delta = position.delta_shares
+            h = position.hedge_usd if computed else float("nan")
+            if hedged and prev is not None:
+                h += positions.hedge_increment(position.delta_shares, prev["spot"], today["spot"], dividend)
+            pnl = positions.position_pnl(position.fills_cents, open_usd, position.settled_usd, h)
+            position.pnl_usd = pnl
+            out.append({"session_date": t, "position_id": position.position_id, "status": position.status,
+                        "n_open_lots": len(marked), "premium_usd": position.premium_cents / 100,
+                        "fills_usd": position.fills_cents / 100, "open_value_usd": open_usd,
+                        "settled_usd": position.settled_usd, "hedge_usd": h, "pnl_usd": pnl, "delta_shares": delta})
 
     def step_08_eod_risk(self, t: date) -> bool:
         """Margin and budgets are M5. Ruin (ADR-0007 §5): NAV_mid <= 0 stops the run. True to stop."""
@@ -609,6 +685,8 @@ class Run:
                                       f"{MAX_EXPIRY_DAYS} days after the session")
                 settlement.settle_date(expiry, self.session_set, self.calendar[-1])
             return
+        if intent.entry_signal is not None:
+            raise EngineError(f"a reduce-only order carries no entry_signal, not {intent.entry_signal!r}")
         position = book.positions.get(intent.position_id)
         if position is None or position.status != "open":
             raise EngineError(f"a reduce-only order must name an open position, not {intent.position_id}")
@@ -623,11 +701,29 @@ class Run:
             if lot is None or lot.qty == 0 or lot.qty * want > 0 or abs(want) > abs(lot.qty):
                 raise EngineError(f"a reduce-only leg must reduce |qty| of a lot of the position: {leg} on {lot}")
 
+    def update_signals(self, t: date) -> MappingProxyType:
+        """Step 9, first: each of the strategy's signals updated once, through t's view, and its `signals` row. The
+        strategy reads the values in ctx.signals, a read-only mapping by name."""
+        values = {}
+        n_window = self.n_window(t)
+        for signal in self.signals:
+            value = signal.update(self.today["view"], n_window)
+            if type(value) is not SignalValue:
+                raise EngineError(f"signal {signal.name!r} returned {type(value).__name__}, not a SignalValue")
+            self.ledger.append("signals", {
+                "session_date": t, "signal_name": signal.name, "iv30": value.iv30, "iv30_flags": value.iv30_flags,
+                "rv_forecast": value.rv_forecast, "rv_model": value.rv_model, "model_fit_date": value.model_fit_date,
+                "vrp_spread": value.vrp_spread, "zscore": None, "vix_bucket": value.vix_bucket,
+                "vol_regime": value.vol_regime, "log_var_ratio": value.value, "n_window": value.n_window,
+                "flags": value.flags})
+            values[signal.name] = value
+        return MappingProxyType(values)
+
     def step_09_decide(self, t: date) -> bool:
         """The strategy's orders for t+1; with same_close, pass 9b. True when 9b ends in ruin (the run stops)."""
         today = self.today
         ctx = SessionContext(t, self.next_session(t), today["has_snapshot"], self.cfg.data_source,
-                             self.cfg.execution_mode, self.session_set)
+                             self.cfg.execution_mode, self.session_set, self.update_signals(t), today["nav_mid"])
         intents = [intake(intent) for intent in self.strategy.decide(today["view"], self.book.state(t), ctx) or []]
         symbols = [leg.osi_symbol for intent in intents for leg in intent.legs]
         quotes = self.quotes_for(symbols)
@@ -643,7 +739,8 @@ class Run:
             if intent.intent == "open":
                 position_id = self.book.next_id("position")
                 self.book.positions[position_id] = Position(position_id, self.strategy.name, intent.structure, t,
-                                                            tuple((leg.osi_symbol, int(leg.ratio)) for leg in intent.legs))
+                                                            tuple((leg.osi_symbol, int(leg.ratio)) for leg in intent.legs),
+                                                            entry_signal=intent.entry_signal)
             self.new_order(position_id, intent.intent, intent.intent in REDUCE_ONLY_INTENTS, intent.structure,
                            [("option", leg.osi_symbol, leg.ratio) for leg in intent.legs], int(intent.packages),
                            intent.exit_reason, volumes)
@@ -704,6 +801,11 @@ class Run:
         for row in self.today["marks"]:
             self.ledger.append("position_marks", row)
         today = self.today
+        for row in today.get("position_rows", []):
+            # Commit each position's H and delta: the next session's hedge term starts from them.
+            position = self.book.positions[row["position_id"]]
+            position.hedge_usd, position.delta_shares = row["hedge_usd"], row["delta_shares"]
+            self.ledger.append("position_daily", row)
         self.prev = {"t": t, "spot": today["spot"], "spot_cents": today["spot_cents"], "rate": today["rate"],
                      "cash_cents": self.book.cash_cents, "shares": self.book.shares, "nav_mid": today["nav_mid"],
                      "surface": (today["surface"] if today["has_snapshot"] and today["surface"] is not None
@@ -740,7 +842,8 @@ class Run:
             ledger.append("positions", {"position_id": p.position_id, "strategy_id": p.strategy_id,
                                         "structure": p.structure, "created_date": p.created_date,
                                         "opened_date": p.opened_date, "closed_date": p.closed_date,
-                                        "status": p.status, "entry_signal": None, "exit_reason": p.exit_reason})
+                                        "status": p.status, "entry_signal": p.entry_signal,
+                                        "exit_reason": p.exit_reason})
         for o in book.orders.values():
             ledger.append("orders", {"order_id": o.order_id, "position_id": o.position_id, "created_date": o.created_date,
                                      "target_fill_date": o.target_fill_date, "resolved_date": o.resolved_date,
@@ -764,15 +867,35 @@ class Run:
 
 def run_backtest(cfg: RunConfig, strategy, store: Store | None = None, runs_root: Path | None = None,
                  stop_after: date | None = None, on_session_end=None, source_commit: str = "uncommitted",
-                 store_check=None) -> RunResult:
+                 store_check=None, run_gate=None, rerun_of: str | None = None,
+                 rerun_reason: str | None = None) -> RunResult:
     """Run the daily loop over cfg's sample (or up to stop_after) and write the ledger. See the module docstring.
 
     store_check(store) runs before and after the run and must raise if the store is not current
     (tools/run_backtest.py passes volbt.build.require_current, which the engine may not import).
+    run_gate(cfg, strategy, trial_hash) runs once, before anything is read, and must raise to refuse the run
+    (milestone 4: the pre-registration's gate, tools/prereg.py, which the engine may not import either). It may
+    return a recorder, record(run_id, config_hash), called once the run's folder is in place. A run that ends after
+    the development split (2019-12-31) needs a gate: without one it is refused, whatever its purpose (fails closed;
+    fix pass after the M4 part A review).
+    The trust boundary (review B's B5; fix pass 3, item D6): the engine checks only that a gate is there. It cannot
+    tell the pre-registration's gate from one that refuses nothing (the tests' made-up gate is one), so whatever
+    limits a run past 2019 (spent windows, the holdout once, the validation re-runs, a diagnostic's kind) is the
+    caller's gate. tools/run_backtest.py and tools/smoke_m4.py pass prereg.make_run_gate (tested in
+    tests/test_smoke_m4.py); a caller that passes another gate is outside these checks.
+    rerun_of and rerun_reason go to the runs row as given (ADR-0010 §1: a re-run logs the run it repeats and why;
+    fix pass 2, review B N3): a non-blank string or None.
     """
+    for name, value in (("rerun_of", rerun_of), ("rerun_reason", rerun_reason)):
+        if value is not None and (type(value) is not str or not value.strip()):
+            raise EngineError(f"{name} must be a non-blank string or None, not {value!r}")
     started = time.perf_counter()
+    if run_gate is None and cfg.sample_end > SPLIT_DATES["development"][1]:
+        raise EngineError(f"a run that ends after {SPLIT_DATES['development'][1]} needs a run_gate "
+                          "(tools/prereg.py make_run_gate): without one it is refused")
     store = store or Store()
     runs_root = Path(runs_root) if runs_root is not None else config.work_dir() / "runs"
+    record = run_gate(cfg, strategy, trial_hash(cfg, strategy)) if run_gate is not None else None
     if store_check is not None:
         store_check(store)
     files = run_inputs(store, cfg.data_source, cfg.sample_start.year, cfg.sample_end.year)
@@ -804,7 +927,8 @@ def run_backtest(cfg: RunConfig, strategy, store: Store | None = None, runs_root
                     "data_fingerprint": fingerprint, "data_source": cfg.data_source,
                     "execution_mode": cfg.execution_mode, "fill_timing": cfg.fill_timing, "cap_mode": cfg.cap_mode,
                     "chain_mask": cfg.chain_mask, "split": cfg.split, "run_purpose": cfg.run_purpose,
-                    "trial_group": cfg.trial_group, "strategy": strategy.name, "rerun_of": None, "rerun_reason": None,
+                    "trial_group": cfg.trial_group, "strategy": strategy.name, "rerun_of": rerun_of,
+                    "rerun_reason": rerun_reason,
                     "sample_start": cfg.sample_start, "sample_end": effective.sample_end, "last_session": last_session,
                     "status": run.status})
     final = runs_root / f"run_id={run_id}"
@@ -828,5 +952,7 @@ def run_backtest(cfg: RunConfig, strategy, store: Store | None = None, runs_root
     if final.exists():
         shutil.rmtree(final)
     staging.rename(final)
+    if record is not None:
+        record(run_id, chash)
     return RunResult(run_id, final, run.status, chash, fingerprint, source_commit, run.counters["sessions"],
                      last_session, run.book.digest(), written, timings)

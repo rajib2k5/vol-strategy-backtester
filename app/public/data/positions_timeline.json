@@ -1,7 +1,7 @@
 {
-  "schema_version": "0.4.0",
-  "generated_at": "2026-11-10T14:34:57Z",
-  "source_commit": "3d95d708b250349c86841053746bfe4910f7f713",
+  "schema_version": "0.5.0",
+  "generated_at": "2026-11-10T14:42:48Z",
+  "source_commit": "8bd6e5e1d62ad2413d7cc1b6c0f84864651deac4-dirty",
   "run": {
     "run_id": "44dd4f7be51a91746a2bd91e75091590517e8b488bab5acb61bbd19f6f63cb93",
     "config_hash": "9700548f21bfbcfa14d8eee263c0827284c61f9a63ee8f56c09d90e0447e9286",

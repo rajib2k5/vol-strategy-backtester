@@ -11,9 +11,10 @@ The design goal is to show how much of the premium survives:
 > **Educational project — not financial advice.** It places no orders and makes no claim that any
 > strategy is profitable.
 
-**Status: milestones 0 to 2 are committed; milestone 3 (the daily backtest engine) is built and
-reviewed, and waits for its commit.** Milestones 0 and 1 built the scaffold, the design
-and decision records, and the option-chain data layer with its quality flags. Milestone 2 prices
+**Status: milestones 0 to 3 are committed, and so are parts A and B1 of milestone 4 (signals,
+strategies, and a forecast test that is pre-registered and not yet scored).** Milestones 0 and 1
+built the scaffold, the design and decision records, and the option-chain data layer with its
+quality flags. Milestone 2 prices
 every quote (Black-76 on a de-Americanised parity forward, implied vols, smiles); the findings of
 its four review rounds are fixed. Milestone 3 runs a strategy day by day: fills at the next close in
 whole cents, settlement and early exercise, one mark per lot per day, a daily delta hedge and
@@ -24,7 +25,11 @@ fixed and each has a test; what is not fixed is listed in the ledger. A 14-year 
 takes 18 to 21 s when the machine is not busy and 34 to 39 s when it is, against ADR-0001's 60 s
 limit. Its reference strategy, a rolling short straddle, is a diagnostic that exercises the engine
 and not a result: no P&L, NAV or Sharpe ratio is reported for it, and none for any run past 2019
-([walkthrough](docs/milestones/03-daily-engine.md), [ledger](docs/validation/03-ledger.md)). Until
+([walkthrough](docs/milestones/03-daily-engine.md), [ledger](docs/validation/03-ledger.md)).
+Milestone 4 adds the signals (realised variance, a HAR forecast of it, 30-day implied vol and their
+log ratio), four strategy structures with their entry and exit rules, and a test of the HAR forecast
+against a naive one whose threshold and data were fixed before it is scored
+([ledger](docs/validation/04-ledger.md)). Its walkthrough comes with part B2. Until
 the owner decides on ADR-0008's proposed per-expiry rate, strategies trade expiries of at most 180
 days ([milestone 2](docs/milestones/02-pricing-core.md), [its ledger](docs/validation/02-ledger.md)).
 No strategy results exist yet. The results table below fills in at milestone 6, and every number in

@@ -143,7 +143,7 @@ def test_a_run_stopped_at_t0_writes_the_same_ledger_on_a_and_on_b(engine_store, 
     assert a.last_session == b.last_session == t0
     assert a.digest == b.digest
     files = ledger_files(a)
-    assert files == ledger_files(b) and len(files) == 12
+    assert files == ledger_files(b) and len(files) == 14
     # runs/part-0.parquet names each store's data_fingerprint, which differs by design (B's inputs differ after
     # t0); every other ledger file must be the same bytes, and the runs rows equal in every other column.
     for name in files:

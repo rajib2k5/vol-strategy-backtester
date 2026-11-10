@@ -2176,6 +2176,539 @@ export function parsePositionsTimeline(raw: unknown): PositionsTimeline {
   return { schema_version, generated_at, source_commit, run, units, illustrative: false, label, positions, dates, open_count }
 }
 
+// ---------------------------------------------------------------- strategy datasets (milestone 4)
+
+/*
+ * signals_timeline.json and strategy_positions.json (schema 0.5.0) carry the volatility signal of the development split and
+ * the positions the strategies opened on it. Neither holds a result: no P&L, return or Sharpe, and no count of positions
+ * per exit reason (that count is a result), and the app computes none (ADR-0001 §6). Nothing after 2019 may be shown
+ * (decision D19): a file with a date after it, or of another split, is refused.
+ */
+
+/** The dataset the Signal page reads: the daily IV30, the HAR forecast of volatility, the log variance ratio and the forecast test. */
+export const SIGNALS_TIMELINE_DATASET = 'signals_timeline'
+
+/** The dataset the Strategies page reads: the positions of each strategy run, with the trial count of its group. */
+export const STRATEGY_POSITIONS_DATASET = 'strategy_positions'
+
+/** The first schema_version that has a signals_timeline or strategy_positions file; an older file cannot be one. */
+export const M4_DATASETS_MIN_VERSION = '0.5.0'
+
+/** The last day of the development split (decision D19): no date of either file, and no run's sample, may be after it. */
+export const DEVELOPMENT_LAST_DATE = '2019-12-31'
+
+/** The number fields of signals_timeline.json. */
+export const SIGNALS_TIMELINE_UNIT_KEYS = ['iv30', 'rv_forecast', 'rv_realised', 'log_var_ratio', 'n_window', 'coef'] as const
+
+export const SIGNALS_TIMELINE_UNITS: Record<(typeof SIGNALS_TIMELINE_UNIT_KEYS)[number], string> = {
+  iv30: 'annualised implied vol, decimal (0.20 = 20%)',
+  rv_forecast: 'annualised forecast vol over the next 30 calendar days, decimal',
+  rv_realised: 'annualised realised vol over the next 30 calendar days, ex post, decimal',
+  log_var_ratio: 'ln(IV30^2 / RV^2), dimensionless',
+  n_window: 'sessions in (t, t + 30 calendar days]',
+  coef: 'HAR coefficients [constant, daily, weekly, monthly] on daily squared log returns',
+}
+
+/** The number fields of strategy_positions.json. */
+export const STRATEGY_POSITIONS_UNIT_KEYS = ['ratio', 'entry_signal'] as const
+
+export const STRATEGY_POSITIONS_UNITS: Record<(typeof STRATEGY_POSITIONS_UNIT_KEYS)[number], string> = {
+  ratio: 'contracts per package, signed: + long, - short',
+  entry_signal: 'ln(IV30^2 / RV^2) at the entry decision, dimensionless',
+}
+
+export const RV_MODELS = ['har', 'naive'] as const
+export type RvModel = (typeof RV_MODELS)[number]
+
+/** The bits of a signals_timeline `flags` value, bit 0 first. */
+export const SIGNAL_FLAG_NAMES = ['RV_FALLBACK', 'RV_MISSING', 'IV30_MISSING', 'WINDOW_EMPTY'] as const
+
+/** The signal's fixed parameters, as the exporter writes them (the file names them; a file with others is not this signal). */
+export const SIGNAL_PARAMS = { window_days: 30, horizon: 21, min_pairs: 504 } as const
+
+/** The entry and exit levels of the log variance ratio, as the exporter writes them. The page draws them; it derives only theta - exit_band for a line's position. */
+export const SIGNAL_THRESHOLDS = { short_entry: [0, 0.4], long_entry: 0, exit_band: 0.4 } as const
+
+/** The structures a strategy position can have. */
+export const STRATEGY_STRUCTURES = ['short_straddle', 'long_straddle', 'short_strangle', 'straddle_calendar'] as const
+export type StrategyStructure = (typeof STRATEGY_STRUCTURES)[number]
+
+/** The forecast test's shortest honest label: the test is a proxy for how the signal would have done, not a result. */
+const FORECAST_LABEL_PREFIX = 'proxy'
+
+export interface SignalSpec {
+  name: string
+  rv_model: RvModel
+  window_days: 30
+  horizon: 21
+  min_pairs: 504
+}
+
+export interface HarFit {
+  fit_date: string
+  /** [constant, daily, weekly, monthly]. */
+  coef: number[]
+  /** At least 504. */
+  n_pairs: number
+}
+
+export interface ForecastTest {
+  prereg_id: string
+  /** SHA-256, 64 lowercase hex digits. */
+  prereg_sha256: string
+  window: string
+  k: 1
+  n: number
+  q: number
+  block: number
+  draws: number
+  mean_d: number
+  ewc_t: number
+  se: number
+  p: number
+  p_holm: number
+  ci: [number, number]
+  alpha: number
+  /** The registered decision threshold: the test chooses the forecast model when p is below it. Equal to alpha. */
+  threshold: number
+  worst_simulated_size: number
+  /** Simulated sizes of the test: the ABC-weighted size per seed and the worst matched size per seed, each in [0, 1]. Each ABC-weighted size is at most the worst matched size of its seed. */
+  effective_size: {
+    /** The threshold the sizes were simulated at, in (0, 1); equal to the test's threshold. */
+    threshold: number
+    abc_size_battery_seed: number
+    abc_size_second_seed: number
+    worst_matched_battery_seed: { rate: number; null_side: string }
+    worst_matched_second_seed: { rate: number; null_side: string }
+  }
+  /** The pre-registered fragile band [lo, hi) of p, two numbers in (0, 1) with lo < hi. */
+  fragile_band: [number, number]
+  /** True exactly when lo <= p < hi: the decision then rests on modelling choices. */
+  fragile: boolean
+  decision: RvModel
+  /** Starts with "proxy". */
+  label: string
+}
+
+export interface SignalsTimeline {
+  schema_version: string
+  generated_at: string
+  source_commit: string
+  run: EngineRunBlock
+  units: Record<(typeof SIGNALS_TIMELINE_UNIT_KEYS)[number], string>
+  illustrative: false
+  label: string
+  signal: SignalSpec
+  thresholds: { short_entry: [number, number]; long_entry: number; exit_band: number }
+  /** Strictly increasing, inside the run's sample, none after 2019-12-31. */
+  dates: string[]
+  /** Each of the four series has one entry per date; null where the value is missing. */
+  iv30: (number | null)[]
+  rv_forecast: (number | null)[]
+  /** Ex post: null where the 30-day window ends after 2019-12-31. */
+  rv_realised: (number | null)[]
+  log_var_ratio: (number | null)[]
+  /** The fit (a fits[].fit_date) behind each date's forecast; null for the naive model or where there is no forecast. */
+  model_fit_date: (string | null)[]
+  n_window: number[]
+  flags: number[]
+  flag_names: string[]
+  fits: HarFit[]
+  /** null while the test has not been scored. */
+  forecast_test: ForecastTest | null
+}
+
+export interface StrategyPosition extends Position {
+  structure: StrategyStructure
+  /** ln(IV30^2 / RV^2) at the entry decision; null when there was none. */
+  entry_signal: number | null
+}
+
+export interface StrategyRun {
+  run: EngineRunBlock
+  strategy: string
+  /** Shown as key/value text, never interpreted. */
+  params: Record<string, unknown>
+  trial_group: string
+  n_trials_group: number
+  positions: StrategyPosition[]
+}
+
+export interface StrategyPositions {
+  schema_version: string
+  generated_at: string
+  source_commit: string
+  units: Record<(typeof STRATEGY_POSITIONS_UNIT_KEYS)[number], string>
+  illustrative: false
+  label: string
+  /** Shown as written, first on the Strategies page. */
+  banner: string
+  runs: StrategyRun[]
+}
+
+/** The envelope both M4 datasets open with: a version that has the file, a timestamp and a source commit. */
+function parseM4Envelope(o: Record<string, unknown>, P: string): { schema_version: string; generated_at: string; source_commit: string } {
+  const schema_version = needSchemaVersion(o, P)
+  if (isOlderThan(schema_version, M4_DATASETS_MIN_VERSION)) {
+    fail(`${P}.schema_version`, `"${schema_version}" is older than ${M4_DATASETS_MIN_VERSION}, the version that introduced this file`)
+  }
+  return { schema_version, generated_at: needTimestamp(o, P), source_commit: needSourceCommit(o, P) }
+}
+
+/** An engine run block of the development split (decision D19): another split, or a sample ending after 2019, is refused. */
+function parseDevelopmentRun(o: Record<string, unknown>, path: string): EngineRunBlock {
+  const run = parseEngineRun(o, path)
+  if (run.split !== 'development') fail(`${path}.run.split`, `is "${run.split}" but this file shows the development split only (decision D19)`)
+  if (run.sample_end > DEVELOPMENT_LAST_DATE) {
+    fail(`${path}.run.sample_end`, `${run.sample_end} is after ${DEVELOPMENT_LAST_DATE}, the end of the development split (decision D19)`)
+  }
+  return run
+}
+
+/** The two blocks after the units that both M4 datasets carry: `illustrative` false and a non-empty label. */
+function needNotIllustrativeWithLabel(o: Record<string, unknown>, P: string): string {
+  if (need(o, 'illustrative', P) !== false) {
+    fail(`${P}.illustrative`, 'must be false: these are records of the engine, so a file flagged illustrative is refused')
+  }
+  return needString(o, 'label', P)
+}
+
+/** `date` plus `days` calendar days, as YYYY-MM-DD. */
+function addCalendarDays(date: string, days: number): string {
+  const d = new Date(`${date}T00:00:00Z`)
+  d.setUTCDate(d.getUTCDate() + days)
+  return d.toISOString().slice(0, 10)
+}
+
+/** A key that must be exactly the number `expected`. */
+function needExactly(obj: Record<string, unknown>, key: string, path: string, expected: number): void {
+  const v = need(obj, key, path)
+  if (v !== expected) fail(`${path}.${key}`, `expected ${expected}, got ${JSON.stringify(v)}`)
+}
+
+/** A finite number of any sign. */
+function needFiniteNumber(obj: Record<string, unknown>, key: string, path: string): number {
+  return checkFinite(need(obj, key, path), `${path}.${key}`)
+}
+
+function checkFinite(v: unknown, at: string): number {
+  if (typeof v !== 'number' || !Number.isFinite(v)) fail(at, `expected a finite number, got ${String(v)}`)
+  return v
+}
+
+/** A finite number strictly between 0 and 1. */
+function needOpenUnitInterval(obj: Record<string, unknown>, key: string, path: string): number {
+  const v = needFiniteNumber(obj, key, path)
+  if (v <= 0 || v >= 1) fail(`${path}.${key}`, `${v} is outside (0, 1)`)
+  return v
+}
+
+function parseSignalSpec(o: Record<string, unknown>, P: string): SignalSpec {
+  const at = `${P}.signal`
+  const s = asRecord(need(o, 'signal', P), at)
+  const name = needString(s, 'name', at)
+  const rv_model = needOneOf(s, 'rv_model', at, RV_MODELS)
+  for (const key of ['window_days', 'horizon', 'min_pairs'] as const) needExactly(s, key, at, SIGNAL_PARAMS[key])
+  return { name, rv_model, ...SIGNAL_PARAMS }
+}
+
+function parseThresholds(o: Record<string, unknown>, P: string): SignalsTimeline['thresholds'] {
+  const at = `${P}.thresholds`
+  const t = asRecord(need(o, 'thresholds', P), at)
+  const shortEntry = needArray(t, 'short_entry', at)
+  const want = SIGNAL_THRESHOLDS.short_entry
+  if (shortEntry.length !== want.length || shortEntry.some((x, i) => x !== want[i])) {
+    fail(`${at}.short_entry`, `expected [${want.join(', ')}], got ${JSON.stringify(shortEntry)}`)
+  }
+  needExactly(t, 'long_entry', at, SIGNAL_THRESHOLDS.long_entry)
+  needExactly(t, 'exit_band', at, SIGNAL_THRESHOLDS.exit_band)
+  return { short_entry: [want[0], want[1]], long_entry: SIGNAL_THRESHOLDS.long_entry, exit_band: SIGNAL_THRESHOLDS.exit_band }
+}
+
+/** A series of one entry per date, each a finite number or null; `positive` also requires a number to be above 0. */
+function needNullableSeries(o: Record<string, unknown>, key: string, P: string, length: number, positive: boolean): (number | null)[] {
+  const raw = needArray(o, key, P)
+  if (raw.length !== length) fail(`${P}.${key}`, `has ${raw.length} values but dates has ${length}`)
+  return raw.map((x, i) => {
+    if (x === null) return null
+    const at = `${P}.${key}[${i}]`
+    const v = checkFinite(x, at)
+    if (positive && v <= 0) fail(at, `expected a number above 0 or null, got ${v}`)
+    return v
+  })
+}
+
+function parseHarFit(raw: unknown, at: string): HarFit {
+  const f = asRecord(raw, at)
+  const fit_date = needDate(f, 'fit_date', at)
+  if (fit_date > DEVELOPMENT_LAST_DATE) fail(`${at}.fit_date`, `${fit_date} is after ${DEVELOPMENT_LAST_DATE}, the end of the development split (decision D19)`)
+  const coefRaw = needArray(f, 'coef', at)
+  if (coefRaw.length !== 4) fail(`${at}.coef`, `expected 4 coefficients [constant, daily, weekly, monthly], got ${coefRaw.length}`)
+  const coef = coefRaw.map((x, i) => checkFinite(x, `${at}.coef[${i}]`))
+  const n_pairs = needInteger(f, 'n_pairs', at, SIGNAL_PARAMS.min_pairs)
+  return { fit_date, coef, n_pairs }
+}
+
+function parseEffectiveSize(raw: unknown, at: string): ForecastTest['effective_size'] {
+  const e = asRecord(raw, at)
+  const worst = (key: 'worst_matched_battery_seed' | 'worst_matched_second_seed') => {
+    const w = asRecord(need(e, key, at), `${at}.${key}`)
+    return { rate: needInRange(w, 'rate', `${at}.${key}`, 0, 1, 'a size'), null_side: needString(w, 'null_side', `${at}.${key}`) }
+  }
+  const threshold = needOpenUnitInterval(e, 'threshold', at)
+  const abc_size_battery_seed = needInRange(e, 'abc_size_battery_seed', at, 0, 1, 'a size')
+  const abc_size_second_seed = needInRange(e, 'abc_size_second_seed', at, 0, 1, 'a size')
+  const worst_matched_battery_seed = worst('worst_matched_battery_seed')
+  const worst_matched_second_seed = worst('worst_matched_second_seed')
+  if (abc_size_battery_seed > worst_matched_battery_seed.rate) {
+    fail(`${at}.abc_size_battery_seed`, `${abc_size_battery_seed} is above the worst matched size ${worst_matched_battery_seed.rate} of its seed`)
+  }
+  if (abc_size_second_seed > worst_matched_second_seed.rate) {
+    fail(`${at}.abc_size_second_seed`, `${abc_size_second_seed} is above the worst matched size ${worst_matched_second_seed.rate} of its seed`)
+  }
+  return { threshold, abc_size_battery_seed, abc_size_second_seed, worst_matched_battery_seed, worst_matched_second_seed }
+}
+
+function parseFragileBand(raw: unknown, at: string): [number, number] {
+  if (!Array.isArray(raw) || raw.length !== 2) fail(at, `expected [lo, hi], got ${JSON.stringify(raw)}`)
+  const edge = (x: unknown, i: number): number => {
+    const v = checkFinite(x, `${at}[${i}]`)
+    if (v <= 0 || v >= 1) fail(`${at}[${i}]`, `${v} is outside (0, 1)`)
+    return v
+  }
+  const lo = edge(raw[0], 0)
+  const hi = edge(raw[1], 1)
+  if (lo >= hi) fail(at, `lo ${lo} is not below hi ${hi}`)
+  return [lo, hi]
+}
+
+function parseForecastTest(raw: unknown, at: string): ForecastTest {
+  const f = asRecord(raw, at)
+  const prereg_id = needString(f, 'prereg_id', at)
+  const prereg_sha256 = needHex(f, 'prereg_sha256', at)
+  const window = needString(f, 'window', at)
+  needExactly(f, 'k', at, 1)
+  const n = needInteger(f, 'n', at, 1)
+  const q = needInteger(f, 'q', at, 1)
+  const block = needInteger(f, 'block', at, 1)
+  const draws = needInteger(f, 'draws', at, 1)
+  const mean_d = needFiniteNumber(f, 'mean_d', at)
+  const ewc_t = needFiniteNumber(f, 'ewc_t', at)
+  const se = needNonNegativeNumber(f, 'se', at)
+  const p = needPositive(f, 'p', at, 1)
+  const p_holm = needPositive(f, 'p_holm', at, 1)
+  if (p_holm !== p) fail(`${at}.p_holm`, `${p_holm} differs from p ${p}: with k = 1 the Holm p is p`)
+  const ciRaw = needArray(f, 'ci', at)
+  if (ciRaw.length !== 2) fail(`${at}.ci`, `expected [lo, hi], got ${ciRaw.length} value(s)`)
+  const ci: [number, number] = [checkFinite(ciRaw[0], `${at}.ci[0]`), checkFinite(ciRaw[1], `${at}.ci[1]`)]
+  if (ci[0] > ci[1]) fail(`${at}.ci`, `lo ${ci[0]} is above hi ${ci[1]}`)
+  const alpha = needOpenUnitInterval(f, 'alpha', at)
+  const threshold = needOpenUnitInterval(f, 'threshold', at)
+  if (threshold !== alpha) fail(`${at}.threshold`, `${threshold} differs from alpha ${alpha}`)
+  const worst_simulated_size = needInRange(f, 'worst_simulated_size', at, 0, 1, 'a size')
+  const effective_size = parseEffectiveSize(need(f, 'effective_size', at), `${at}.effective_size`)
+  if (effective_size.threshold !== threshold) fail(`${at}.effective_size.threshold`, `${effective_size.threshold} differs from threshold ${threshold}`)
+  if (worst_simulated_size < effective_size.worst_matched_battery_seed.rate) {
+    fail(`${at}.worst_simulated_size`, `${worst_simulated_size} is below the worst matched battery-seed size ${effective_size.worst_matched_battery_seed.rate}`)
+  }
+  const decision = needOneOf(f, 'decision', at, RV_MODELS)
+  const expected: RvModel = p < threshold ? 'har' : 'naive'
+  if (decision !== expected) fail(`${at}.decision`, `is "${decision}" but p ${p} against threshold ${threshold} decides "${expected}"`)
+  const fragile_band = parseFragileBand(need(f, 'fragile_band', at), `${at}.fragile_band`)
+  const fragile = needBoolean(f, 'fragile', at)
+  const inBand = fragile_band[0] <= p && p < fragile_band[1]
+  if (fragile !== inBand) fail(`${at}.fragile`, `is ${fragile} but p ${p} against the band [${fragile_band[0]}, ${fragile_band[1]}) makes it ${inBand}`)
+  const label = needString(f, 'label', at)
+  if (!label.startsWith(FORECAST_LABEL_PREFIX)) fail(`${at}.label`, `${JSON.stringify(label)} does not start with "${FORECAST_LABEL_PREFIX}": the test is a proxy, and says so`)
+  return { prereg_id, prereg_sha256, window, k: 1, n, q, block, draws, mean_d, ewc_t, se, p, p_holm, ci, alpha, threshold, worst_simulated_size, effective_size, fragile_band, fragile, decision, label }
+}
+
+export function parseSignalsTimeline(raw: unknown): SignalsTimeline {
+  const P = SIGNALS_TIMELINE_DATASET
+  const o = asRecord(raw, P)
+  const { schema_version, generated_at, source_commit } = parseM4Envelope(o, P)
+  const run = parseDevelopmentRun(o, P)
+  const units = needUnits(o, P, SIGNALS_TIMELINE_UNIT_KEYS, SIGNALS_TIMELINE_UNITS)
+  const label = needNotIllustrativeWithLabel(o, P)
+  const signal = parseSignalSpec(o, P)
+  const thresholds = parseThresholds(o, P)
+  const rawDates = needArray(o, 'dates', P)
+  if (rawDates.length === 0) fail(`${P}.dates`, 'needs at least 1 date')
+  const dates = rawDates.map((x, i) => {
+    const at = `${P}.dates[${i}]`
+    if (typeof x !== 'string' || !isRealDate(x)) fail(at, `${JSON.stringify(x)} is not a calendar date YYYY-MM-DD`)
+    // The run's sample ends on or before DEVELOPMENT_LAST_DATE (parseDevelopmentRun), so a date inside it is never after it.
+    if (x < run.sample_start || x > run.sample_end) fail(at, `${x} is outside the run's sample ${run.sample_start} to ${run.sample_end}, which ends on or before ${DEVELOPMENT_LAST_DATE} (decision D19)`)
+    return x
+  })
+  dates.forEach((x, i) => {
+    if (i > 0 && !(x > dates[i - 1])) fail(`${P}.dates[${i}]`, `must be strictly increasing, but ${x} follows ${dates[i - 1]}`)
+  })
+  const iv30 = needNullableSeries(o, 'iv30', P, dates.length, true)
+  const rv_forecast = needNullableSeries(o, 'rv_forecast', P, dates.length, true)
+  const rv_realised = needNullableSeries(o, 'rv_realised', P, dates.length, true)
+  const log_var_ratio = needNullableSeries(o, 'log_var_ratio', P, dates.length, false)
+  dates.forEach((date, i) => {
+    if (log_var_ratio[i] !== null && (iv30[i] === null || rv_forecast[i] === null)) {
+      fail(`${P}.log_var_ratio[${i}]`, `is ${log_var_ratio[i]} but ${iv30[i] === null ? 'iv30' : 'rv_forecast'}[${i}] is null on ${date}: the ratio needs both`)
+    }
+    // The realised vol looks 30 calendar days ahead; a window that ends after the development split is not ours to show.
+    if (rv_realised[i] !== null && addCalendarDays(date, 30) > DEVELOPMENT_LAST_DATE) {
+      fail(`${P}.rv_realised[${i}]`, `is ${rv_realised[i]} but the 30-day window from ${date} ends after ${DEVELOPMENT_LAST_DATE}, so this must be null (decision D19)`)
+    }
+  })
+  const fitList = needArray(o, 'fits', P)
+  const fits = fitList.map((item, i) => parseHarFit(item, `${P}.fits[${i}]`))
+  fits.forEach((f, i) => {
+    if (i > 0 && !(f.fit_date > fits[i - 1].fit_date)) fail(`${P}.fits[${i}].fit_date`, `must be strictly increasing, but ${f.fit_date} follows ${fits[i - 1].fit_date}`)
+  })
+  if (signal.rv_model === 'naive' && fits.length > 0) fail(`${P}.fits`, 'must be empty for the naive model, which is not fitted')
+  const rawFitDates = needArray(o, 'model_fit_date', P)
+  if (rawFitDates.length !== dates.length) fail(`${P}.model_fit_date`, `has ${rawFitDates.length} values but dates has ${dates.length}`)
+  const model_fit_date = rawFitDates.map((x, i) => {
+    if (x === null) return null
+    const at = `${P}.model_fit_date[${i}]`
+    if (typeof x !== 'string' || !isRealDate(x)) fail(at, `${JSON.stringify(x)} is not a calendar date YYYY-MM-DD or null`)
+    if (signal.rv_model === 'naive') fail(at, `is ${x} but the naive model has no fit, so this must be null`)
+    if (x > dates[i]) fail(at, `${x} is after the date ${dates[i]} it forecasts for`)
+    if (!fits.some((f) => f.fit_date === x)) fail(at, `${x} is not the fit_date of any entry of fits`)
+    return x
+  })
+  const n_window = needArray(o, 'n_window', P).map((x, i) => checkInteger(x, `${P}.n_window[${i}]`, 0))
+  if (n_window.length !== dates.length) fail(`${P}.n_window`, `has ${n_window.length} values but dates has ${dates.length}`)
+  const flagCeiling = 2 ** SIGNAL_FLAG_NAMES.length - 1
+  const flags = needArray(o, 'flags', P).map((x, i) => {
+    const v = checkInteger(x, `${P}.flags[${i}]`, 0)
+    if (v > flagCeiling) fail(`${P}.flags[${i}]`, `${v} is above ${flagCeiling}, the value with all ${SIGNAL_FLAG_NAMES.length} flag bits set`)
+    return v
+  })
+  if (flags.length !== dates.length) fail(`${P}.flags`, `has ${flags.length} values but dates has ${dates.length}`)
+  const flag_names = needStrings(o, 'flag_names', P)
+  if (flag_names.length !== SIGNAL_FLAG_NAMES.length || flag_names.some((x, i) => x !== SIGNAL_FLAG_NAMES[i])) {
+    fail(`${P}.flag_names`, `expected [${SIGNAL_FLAG_NAMES.join(', ')}] (bit 0 first), got ${JSON.stringify(flag_names)}`)
+  }
+  const test = need(o, 'forecast_test', P)
+  const forecast_test = test === null ? null : parseForecastTest(test, `${P}.forecast_test`)
+  if (forecast_test !== null && signal.rv_model !== forecast_test.decision) {
+    fail(`${P}.signal.rv_model`, `is "${signal.rv_model}" but the forecast test chose "${forecast_test.decision}": the timeline shows the model the test chose`)
+  }
+  return {
+    schema_version, generated_at, source_commit, run, units, illustrative: false, label, signal, thresholds, dates,
+    iv30, rv_forecast, rv_realised, log_var_ratio, model_fit_date, n_window, flags, flag_names, fits, forecast_test,
+  }
+}
+
+/** A date of a position that must lie inside the run's sample (any calendar day: the file names no sessions). */
+function needDateInSample(obj: Record<string, unknown>, key: string, path: string, run: EngineRunBlock): string {
+  const v = needDate(obj, key, path)
+  if (v < run.sample_start || v > run.sample_end) fail(`${path}.${key}`, `${v} is outside the run's sample ${run.sample_start} to ${run.sample_end}`)
+  return v
+}
+
+const isCall = (osi: string): boolean => osi.charAt(12) === 'C'
+
+/** The legs of a structure, by the rules of that structure (the file carries every value checked here). */
+function checkStructureLegs(structure: StrategyStructure, legs: PositionLeg[], at: string): void {
+  const expected = structure === 'straddle_calendar' ? 4 : 2
+  if (legs.length !== expected) fail(`${at}.legs`, `a ${structure} has ${expected} legs, got ${legs.length}`)
+  const calls = legs.filter((l) => isCall(l.osi_symbol))
+  if (structure !== 'straddle_calendar' && (calls.length !== 1 || legs.length - calls.length !== 1)) {
+    fail(`${at}.legs`, `a ${structure} has one call and one put, got ${calls.length} call(s) and ${legs.length - calls.length} put(s)`)
+  }
+  const expiries = [...new Set(legs.map((l) => osiExpiry(l.osi_symbol)))].sort()
+  const strikes = new Set(legs.map((l) => osiStrike(l.osi_symbol)))
+  if (structure === 'short_straddle' || structure === 'long_straddle') {
+    const ratio = structure === 'short_straddle' ? -1 : 1
+    if (expiries.length !== 1) fail(`${at}.legs`, `a ${structure} has one expiry, got ${expiries.length}`)
+    if (strikes.size !== 1) fail(`${at}.legs`, `a ${structure} has one strike, got ${strikes.size}`)
+    legs.forEach((l, i) => {
+      if (l.ratio !== ratio) fail(`${at}.legs[${i}].ratio`, `is ${l.ratio} but every leg of a ${structure} has ratio ${ratio}`)
+    })
+  } else if (structure === 'short_strangle') {
+    if (expiries.length !== 1) fail(`${at}.legs`, `a short_strangle has one expiry, got ${expiries.length}`)
+    legs.forEach((l, i) => {
+      if (l.ratio !== -1) fail(`${at}.legs[${i}].ratio`, `is ${l.ratio} but every leg of a short_strangle has ratio -1`)
+    })
+    const put = legs.find((l) => !isCall(l.osi_symbol)) as PositionLeg
+    if (!(osiStrike(calls[0].osi_symbol) > osiStrike(put.osi_symbol))) {
+      fail(`${at}.legs`, `the call strike ${osiStrike(calls[0].osi_symbol)} is not above the put strike ${osiStrike(put.osi_symbol)}, which a short_strangle needs`)
+    }
+  } else {
+    if (strikes.size !== 1) fail(`${at}.legs`, `a straddle_calendar has one strike, got ${strikes.size}`)
+    if (expiries.length !== 2) fail(`${at}.legs`, `a straddle_calendar has two expiries, got ${expiries.length}`)
+    for (const expiry of expiries) {
+      const same = legs.filter((l) => osiExpiry(l.osi_symbol) === expiry)
+      if (same.length !== 2 || same.filter((l) => isCall(l.osi_symbol)).length !== 1) {
+        fail(`${at}.legs`, `a straddle_calendar has a call and a put on each expiry, but ${expiry} has ${same.length} leg(s)`)
+      }
+    }
+    legs.forEach((l, i) => {
+      const ratio = osiExpiry(l.osi_symbol) === expiries[0] ? -1 : 1
+      if (l.ratio !== ratio) fail(`${at}.legs[${i}].ratio`, `is ${l.ratio} but the ${ratio === -1 ? 'nearer' : 'farther'} expiry's legs of a straddle_calendar have ratio ${ratio}`)
+    })
+  }
+}
+
+function parseStrategyPosition(raw: unknown, at: string, run: EngineRunBlock): StrategyPosition {
+  const p = asRecord(raw, at)
+  const position_id = needInteger(p, 'position_id', at, 1)
+  const structure = needOneOf(p, 'structure', at, STRATEGY_STRUCTURES)
+  const opened = needDateInSample(p, 'opened', at, run)
+  let closed: string | null = null
+  if (need(p, 'closed', at) !== null) {
+    closed = needDateInSample(p, 'closed', at, run)
+    if (closed < opened) fail(`${at}.closed`, `${closed} is before opened ${opened}`)
+  }
+  const legList = needArray(p, 'legs', at)
+  const legs = legList.map((item, i): PositionLeg => {
+    const legAt = `${at}.legs[${i}]`
+    const leg = asRecord(item, legAt)
+    const osi_symbol = needOsiSymbol(leg, 'osi_symbol', legAt)
+    const ratio = need(leg, 'ratio', legAt)
+    if (ratio !== 1 && ratio !== -1) fail(`${legAt}.ratio`, `expected 1 or -1, got ${JSON.stringify(ratio)}`)
+    if (opened >= osiExpiry(osi_symbol)) fail(`${at}.opened`, `${opened} is not before the expiry ${osiExpiry(osi_symbol)} of ${JSON.stringify(osi_symbol)}`)
+    return { osi_symbol, ratio }
+  })
+  checkStructureLegs(structure, legs, at)
+  const entry = need(p, 'entry_signal', at)
+  const entry_signal = entry === null ? null : checkFinite(entry, `${at}.entry_signal`)
+  const reason = need(p, 'exit_reason', at)
+  let exit_reason: ExitReason | null = null
+  if (closed === null) {
+    if (reason !== null) fail(`${at}.exit_reason`, `is ${JSON.stringify(reason)} but the position is open (closed is null), so this must be null`)
+  } else {
+    if (reason === null) fail(`${at}.exit_reason`, `is null but the position closed on ${closed}, so it has an exit reason`)
+    exit_reason = checkOneOf(reason, `${at}.exit_reason`, EXIT_REASONS)
+  }
+  return { position_id, structure, opened, closed, legs, entry_signal, exit_reason }
+}
+
+function parseStrategyRun(raw: unknown, at: string): StrategyRun {
+  const r = asRecord(raw, at)
+  const run = parseDevelopmentRun(r, at)
+  const strategy = needString(r, 'strategy', at)
+  if (strategy !== run.strategy) fail(`${at}.strategy`, `is "${strategy}" but run.strategy is "${run.strategy}"`)
+  const params = asRecord(need(r, 'params', at), `${at}.params`)
+  const trial_group = needString(r, 'trial_group', at)
+  const n_trials_group = needInteger(r, 'n_trials_group', at, 1)
+  const positions = needArray(r, 'positions', at).map((item, i) => parseStrategyPosition(item, `${at}.positions[${i}]`, run))
+  assertOrdered(positions, `${at}.positions`, 'position_id', (x) => x.position_id)
+  return { run, strategy, params, trial_group, n_trials_group, positions }
+}
+
+export function parseStrategyPositions(raw: unknown): StrategyPositions {
+  const P = STRATEGY_POSITIONS_DATASET
+  const o = asRecord(raw, P)
+  const { schema_version, generated_at, source_commit } = parseM4Envelope(o, P)
+  const units = needUnits(o, P, STRATEGY_POSITIONS_UNIT_KEYS, STRATEGY_POSITIONS_UNITS)
+  const label = needNotIllustrativeWithLabel(o, P)
+  const banner = needString(o, 'banner', P)
+  const runList = needArray(o, 'runs', P)
+  if (runList.length === 0) fail(`${P}.runs`, 'needs at least 1 run')
+  const runs = runList.map((item, i) => parseStrategyRun(item, `${P}.runs[${i}]`))
+  return { schema_version, generated_at, source_commit, units, illustrative: false, label, banner, runs }
+}
+
 // ---------------------------------------------------------------- small pure helpers
 
 export function findDataset(manifest: Manifest, name: string): DatasetEntry | undefined {

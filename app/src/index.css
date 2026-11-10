@@ -154,3 +154,8 @@ figure.chart figcaption { margin: .4rem 0 0; }
 /* The run's hashes are 40 to 64 characters with no break: let them wrap, so a phone-width page does not scroll sideways. */
 .blotter-page dl.meta, .positions-page dl.meta { grid-template-columns: max-content minmax(0, 1fr); }
 .blotter-page dl.meta dd, .positions-page dl.meta dd { overflow-wrap: anywhere; }
+
+/* ---- Signal and Strategies pages ---- */
+.signal-page dl.meta, .strategies-page dl.meta { grid-template-columns: max-content minmax(0, 1fr); }
+.signal-page dl.meta dd, .strategies-page dl.meta dd { overflow-wrap: anywhere; }
+.strategies-page dl.meta .unit-row { display: contents; }

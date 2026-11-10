@@ -32,6 +32,7 @@ pythonpath = ["src"]
 markers = [
     "real_data: reads the full vendor data and the built store under work_dir()",
     "network: downloads from the internet",
+    "slow: a long simulation (the E4 inference falsifiers); runs by default, `-m 'not slow'` skips it",
 ]
 addopts = "-m 'not real_data and not network'"
 

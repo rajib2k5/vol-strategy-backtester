@@ -9,6 +9,10 @@
 Book.state(t) hands a strategy a FROZEN copy (volbt.strategies.base.BookState): nothing in it is the
 engine's own object, so writing to it raises and cannot move the book. Book.digest() is a SHA-256 of the
 whole book, so a test can show that a strategy's decide() changed nothing.
+
+Milestone 4: a position also carries what its hedged P&L needs (volbt.engine.positions, plan section 3): its
+fills' cash and opening premium in integer cents, the value its settled lots delivered, the hedge term H and its
+delta at the last close; a lot carries its mark at the last close.
 """
 
 from __future__ import annotations
@@ -43,6 +47,7 @@ class Lot:
     avg_open_price: float = 0.0  # USD per share, over the contracts opened
     opened_qty: int = 0          # contracts opened in total (signed), for the average
     closed_date: date | None = None
+    mark_price: float | None = None   # the in-NAV mark at the last close (milestone 4: LotState.mark_price)
 
 
 @dataclass
@@ -56,6 +61,14 @@ class Position:
     opened_date: date | None = None
     closed_date: date | None = None
     exit_reason: str | None = None
+    entry_signal: float | None = None  # the opening intent's entry_signal (milestone 4)
+    # The hedged P&L's parts (volbt.engine.positions), committed at each session's close (step 11).
+    fills_cents: int = 0         # sum of the option fills' cash: -qty 100 price - fees
+    premium_cents: int = 0       # -sum of the opening fills' qty 100 price: credit > 0
+    settled_usd: float = 0.0     # what the settled and early-exercised lots delivered, at their sessions
+    hedge_usd: float = 0.0       # H at the last close
+    delta_shares: float = 0.0    # the position's delta in shares at the last close
+    pnl_usd: float | None = None # pnl at the last close; None until the first position_daily row
 
 
 @dataclass
@@ -123,9 +136,12 @@ class Book:
             if position.status not in ("pending", "open"):
                 continue
             lots = tuple(LotState(lot.lot_id, lot.position_id, lot.osi_symbol, lot.expiry, lot.strike, lot.right,
-                                  lot.qty) for lot in self.position_lots(position.position_id))
+                                  lot.qty, lot.mark_price) for lot in self.position_lots(position.position_id))
+            opened = position.status != "pending"
             positions.append(PositionState(position.position_id, position.structure, position.status,
-                                           position.opened_date, lots))
+                                           position.opened_date, lots,
+                                           position.premium_cents / 100 if opened else None,
+                                           position.pnl_usd, position.entry_signal))
         pending = tuple(PendingOrderState(o.order_id, o.position_id, o.intent, o.created_date) for o in self.pending())
         return BookState(session, self.cash_cents, self.shares, tuple(positions), pending)
 

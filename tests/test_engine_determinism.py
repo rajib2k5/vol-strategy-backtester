@@ -74,7 +74,7 @@ def test_the_ledger_and_the_json_bodies_have_the_same_bytes_in_every_process(eng
                                           "bodies": reported["bodies"]}
 
     first = runs["here 1"]
-    assert len(first["ledger"]) == 12 and set(first["bodies"]) == {"blotter", "positions_timeline"}
+    assert len(first["ledger"]) == 14 and set(first["bodies"]) == {"blotter", "positions_timeline"}
     for name, run in runs.items():
         assert run["folder"] == first["folder"], name
         assert run["ledger"] == first["ledger"], name

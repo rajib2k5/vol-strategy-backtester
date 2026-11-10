@@ -13,6 +13,8 @@ import {
   ContractError,
   DATA_QUALITY_DATASET,
   POSITIONS_TIMELINE_DATASET,
+  SIGNALS_TIMELINE_DATASET,
+  STRATEGY_POSITIONS_DATASET,
   SURFACE_DATASET,
   SURFACE_FRAMES_DATASET,
   assertDatasetMatchesEntry,
@@ -22,12 +24,16 @@ import {
   parseIllustrativeSurface,
   parseManifest,
   parsePositionsTimeline,
+  parseSignalsTimeline,
+  parseStrategyPositions,
   parseSurfaceFrames,
   type Blotter,
   type DataQuality,
   type IllustrativeSurface,
   type Manifest,
   type PositionsTimeline,
+  type SignalsTimeline,
+  type StrategyPositions,
   type SurfaceFrames,
 } from '../lib/contract'
 
@@ -44,6 +50,13 @@ export interface AppData {
   blotter: Blotter
   /** When each position of that run was open, for the Positions page (milestone 3). */
   positionsTimeline: PositionsTimeline
+  /**
+   * The signal behind the strategies, for the Signal page (milestone 4). Optional: null (or absent) while the manifest does
+   * not list the dataset, and the page has no tab then.
+   */
+  signalsTimeline?: SignalsTimeline | null
+  /** The positions of each strategy run, for the Strategies page (milestone 4). Optional like signalsTimeline. */
+  strategyPositions?: StrategyPositions | null
 }
 
 /** `fetch` = the request itself failed or returned junk; `contract` = valid JSON that breaks the contract. */
@@ -104,6 +117,17 @@ async function loadDataset<T extends { schema_version: string }>(
   return dataset
 }
 
+/** Like loadDataset, for a dataset the manifest may not list yet: null when it does not (nothing is fetched), the same failures when it does. */
+async function loadOptionalDataset<T extends { schema_version: string }>(
+  manifest: Manifest,
+  name: string,
+  parse: (raw: unknown) => T,
+  fetchFn: FetchLike,
+): Promise<T | null> {
+  if (!findDataset(manifest, name)) return null
+  return loadDataset(manifest, name, parse, fetchFn)
+}
+
 export async function loadAppData(fetchFn: FetchLike = (url) => fetch(url)): Promise<AppData> {
   const manifestRaw = await getJson(`${DATA_DIR}/manifest.json`, fetchFn)
   const manifest = asContractFailure(() => parseManifest(manifestRaw), 'manifest.json')
@@ -113,7 +137,9 @@ export async function loadAppData(fetchFn: FetchLike = (url) => fetch(url)): Pro
   const surfaceFrames = await loadDataset(manifest, SURFACE_FRAMES_DATASET, parseSurfaceFrames, fetchFn)
   const blotter = await loadDataset(manifest, BLOTTER_DATASET, parseBlotter, fetchFn)
   const positionsTimeline = await loadDataset(manifest, POSITIONS_TIMELINE_DATASET, parsePositionsTimeline, fetchFn)
-  return { manifest, surface, dataQuality, surfaceFrames, blotter, positionsTimeline }
+  const signalsTimeline = await loadOptionalDataset(manifest, SIGNALS_TIMELINE_DATASET, parseSignalsTimeline, fetchFn)
+  const strategyPositions = await loadOptionalDataset(manifest, STRATEGY_POSITIONS_DATASET, parseStrategyPositions, fetchFn)
+  return { manifest, surface, dataQuality, surfaceFrames, blotter, positionsTimeline, signalsTimeline, strategyPositions }
 }
 
 /** Plain-language explanation for the UI, always ending with how to regenerate the files. */

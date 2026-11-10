@@ -37,7 +37,7 @@ def test_the_results_blocks_come_first_after_the_envelope(store, tmp_path, quali
                                    frames_body=body)
     written = json.loads((tmp_path / "surface_frames.json").read_text(encoding="utf-8"))
     assert list(written)[:6] == ["schema_version", "generated_at", "source_commit", "run", "units", "illustrative"]
-    assert written["illustrative"] is False and written["schema_version"] == contract.SCHEMA_VERSION == "0.4.0"
+    assert written["illustrative"] is False and written["schema_version"] == contract.SCHEMA_VERSION == "0.5.0"
 
 
 def test_the_run_block_names_the_pricing_build(store):

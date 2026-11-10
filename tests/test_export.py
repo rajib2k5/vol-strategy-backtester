@@ -19,7 +19,7 @@ from volbt import build  # noqa: E402
 
 SHA = "0123456789abcdef0123456789abcdef01234567"
 FIXED_NOW = datetime(2026, 10, 27, 12, 0, 0, tzinfo=timezone.utc)
-ENVELOPE = {"schema_version": "0.4.0", "generated_at": "2026-10-27T12:00:00Z", "source_commit": SHA}
+ENVELOPE = {"schema_version": "0.5.0", "generated_at": "2026-10-27T12:00:00Z", "source_commit": SHA}
 
 
 def reject_non_finite(token):
@@ -70,7 +70,7 @@ def test_manifest_content(exported):
             {
                 "name": "illustrative_surface",
                 "path": "illustrative_surface.json",
-                "schema_version": "0.4.0",
+                "schema_version": "0.5.0",
                 "description": (
                     "Illustrative SSVI implied-vol surface for the milestone-0 3D hero. "
                     "Not market data."
@@ -79,7 +79,7 @@ def test_manifest_content(exported):
             {
                 "name": "data_quality",
                 "path": "data_quality.json",
-                "schema_version": "0.4.0",
+                "schema_version": "0.5.0",
                 "description": (
                     "Milestone-1 data-quality aggregates: quote flags per source and year, rows per "
                     "source, the calendar fixes, the cross-vendor agreement and the quality-gate "
@@ -89,7 +89,7 @@ def test_manifest_content(exported):
             {
                 "name": "surface_frames",
                 "path": "surface_frames.json",
-                "schema_version": "0.4.0",
+                "schema_version": "0.5.0",
                 "description": (
                     "Milestone-2 SPY implied-vol surfaces on a fixed grid for a few labelled dates, "
                     "from the de-Americanised OTM smiles of the pricing build. Market data."

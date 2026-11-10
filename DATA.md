@@ -28,13 +28,13 @@ These figures are shared under the same licence, CC BY-SA 4.0. A document that q
 
 - `app/public/data/data_quality.json`, see [`app/public/data/LICENSE-DATA.md`](app/public/data/LICENSE-DATA.md) for the fields;
 - the milestone walkthroughs `docs/milestones/00-foundations.md`, `01-data-layer.md`, `02-pricing-core.md` and `03-daily-engine.md`, each as a whole;
-- the validation ledgers `docs/validation/00-design-research-ledger.md`, `00-round2-ledger.md`, `01-ledger.md`, `02-ledger.md` and `03-ledger.md`, each as a whole;
+- the validation ledgers `docs/validation/00-design-research-ledger.md`, `00-round2-ledger.md`, `01-ledger.md`, `02-ledger.md`, `03-ledger.md` and `04-ledger.md`, each as a whole;
 - the concept pages `docs/concepts/02-quality-flags-bitmask.md`, `03-put-call-parity-forward-and-spot.md`, `05-sampling-mask.md`, `06-private-dolt-mirror.md`, `09-implied-vol-solving.md`, `10-crr-lattice-and-de-americanisation.md`, `11-smile-in-total-variance.md` and `15-nav-mid-nav-liq-and-model-marks.md`, each as a whole;
 - the ADRs `docs/adr/0002-fill-model.md`, `0003-expiry-settlement-early-exercise.md`, `0004-mark-to-market.md`, `0008-pricing-inputs.md`, `0009-data-sources-calendar-quality-flags.md` and `0010-evaluation-protocol.md`, each as a whole;
 - `docs/prfaq.md` and `LEARNING_LOG.md`, each as a whole;
 - the knowledge graph in `docs/architecture/graph/`, which quotes the figures above in its node labels and rationales: `GRAPH_REPORT.md` carries the short form under its title (`graphify` writes that file, so a regenerated report needs the paragraph added again), and `graph.html`, `graph.json` and `graph.svg` are generated and carry no notice in the file, so this list is their notice.
 
-The 26 documents in the list above, `GRAPH_REPORT.md` among them, each carry the short form. The share-alike condition covers those figures, not the code. Everything else in the repository stays MIT. In `data_quality.json`, the OptionsDX-derived numbers are aggregate counts, shares and quantile summaries only: our own measurements, with no OptionsDX quote, price or chain row.
+The 27 documents in the list above, `GRAPH_REPORT.md` among them, each carry the short form. The share-alike condition covers those figures, not the code. Everything else in the repository stays MIT. In `data_quality.json`, the OptionsDX-derived numbers are aggregate counts, shares and quantile summaries only: our own measurements, with no OptionsDX quote, price or chain row.
 
 `app/public/data/illustrative_surface.json` is a made-up SSVI surface, not market data, and is MIT like the code.
 

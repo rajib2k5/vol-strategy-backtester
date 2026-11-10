@@ -513,6 +513,12 @@ def mutate(src: Path, relative: str, line: str) -> None:
     ("build.py", "import volbt.strategies", "build may not import strategies"),
     ("export/__init__.py", "import volbt.data", "export may not import data"),
     ("stray.py", "x = 1", "stray.py: belongs to no row"),
+    # Milestone 4, part B: the new strategy modules are checked like the rest of the row.
+    ("strategies/vol.py", "from volbt.engine import settlement", "strategies may not import engine"),
+    ("strategies/structures.py", "from volbt.data.store import Store", "strategies may not import data"),
+    ("strategies/rules.py", "import pandas", "strategies may not import pandas"),
+    ("strategies/grid.py", "from volbt.engine.run_config import RunConfig", "strategies may not import engine"),
+    ("strategies/expiry.py", "x = getattr(view, '_read')", "getattr() is banned in strategies"),
 ])
 def test_each_mutant_is_caught(mutable_src, relative, line, expected):
     assert violations(mutable_src) == []          # the copy starts clean

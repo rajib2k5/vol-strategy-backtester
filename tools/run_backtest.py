@@ -16,6 +16,13 @@ The split protocol (decision D19). A run whose sample ends after 2019-12-31 repo
 this tool never prints a P&L, a NAV or a return for any run, and tools/report_m3.py prints them for no run
 past the development split. --for-app records the run as the one tools/export_app_data.py exports
 (work_dir()/runs/app_run.json); only a development-split run may be recorded.
+
+The run gate (milestone 4). The tool passes tools/prereg.py's run gate in, like the store check: it refuses a trial
+past 2019 that its pre-registration does not list. This tool runs diagnostics only; past 2019 a diagnostic must name
+its --diagnostic-kind (RunConfig.DIAGNOSTIC_KINDS: "volume_cap" with --cap-mode volume, "surface_s" with --mode
+surface on OptionsDX; fix pass 3, item D6), and the gate records it and limits its re-runs as for a validation trial.
+--rerun-of and --rerun-reason go to the runs row and to the gate's record (ADR-0010 §1). The engine trusts the gate
+it is handed (run_backtest's docstring): this tool always hands it prereg.make_run_gate (tested).
 """
 
 from __future__ import annotations
@@ -26,11 +33,12 @@ import sys
 from datetime import date, datetime, timezone
 from pathlib import Path
 
+import prereg
 from volbt import build, config
 from volbt.contract import source_commit
 from volbt.data.store import Store
 from volbt.engine.loop import run_backtest
-from volbt.engine.run_config import RunConfig
+from volbt.engine.run_config import DIAGNOSTIC_KINDS, RunConfig
 from volbt.strategies.reference import RollingShortStraddle
 
 APP_RUN_FILE = "app_run.json"
@@ -51,6 +59,10 @@ def parse(argv):
     parser.add_argument("--store", type=Path, default=None)
     parser.add_argument("--runs-root", type=Path, default=None)
     parser.add_argument("--for-app", action="store_true", help="record this run for tools/export_app_data.py")
+    parser.add_argument("--rerun-of", default=None, help="the run id this run repeats (runs.rerun_of)")
+    parser.add_argument("--rerun-reason", default=None, help="why it is re-run (runs.rerun_reason)")
+    parser.add_argument("--diagnostic-kind", choices=tuple(DIAGNOSTIC_KINDS), default=None,
+                        help="which diagnostic a run past 2019 is (RunConfig.diagnostic_kind; the gate requires it)")
     return parser.parse_args(argv)
 
 
@@ -61,11 +73,13 @@ def main(argv: list[str] | None = None) -> int:
         return 2
     cfg = RunConfig(sample_start=args.start, sample_end=args.end, split=args.split, data_source=args.source,
                     execution_mode=args.mode, fill_timing=args.fill_timing, cap_mode=args.cap_mode,
-                    hedge_mode=args.hedge_mode, seed=args.seed)
+                    hedge_mode=args.hedge_mode, seed=args.seed, diagnostic_kind=args.diagnostic_kind)
     store = Store(args.store)
     runs_root = args.runs_root or config.work_dir() / "runs"
     result = run_backtest(cfg, RollingShortStraddle(exit_dte=args.exit_dte), store=store, runs_root=runs_root,
-                          source_commit=source_commit(), store_check=build.require_current)
+                          source_commit=source_commit(), store_check=build.require_current,
+                          run_gate=prereg.make_run_gate(rerun_reason=args.rerun_reason, rerun_of=args.rerun_of),
+                          rerun_of=args.rerun_of, rerun_reason=args.rerun_reason)
     meta_path = result.run_dir / "run_meta.json"
     meta = json.loads(meta_path.read_text(encoding="utf-8"))
     meta["created_at"] = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")

@@ -88,7 +88,8 @@ function yearTicks(start: string, end: string): number[] {
   return years.filter((_, n) => n % every === 0)
 }
 
-function Timeline({ file }: { file: PositionsTimeline }) {
+/** The timeline of a run's positions: PositionsTimeline's, and each run of strategy_positions.json (the Strategies page). */
+export function Timeline({ file, title = 'When each position was open' }: { file: Pick<PositionsTimeline, 'positions' | 'run'>; title?: string }) {
   const id = useId()
   const { positions, run } = file
   const t0 = day(run.sample_start)
@@ -98,7 +99,7 @@ function Timeline({ file }: { file: PositionsTimeline }) {
   const open = positions.filter((p) => p.closed === null).length
   return (
     <svg viewBox={`0 0 ${WIDTH} ${height}`} style={{ width: '100%', height: 'auto' }} role="img" aria-labelledby={`${id}-title`} aria-describedby={`${id}-desc`}>
-      <title id={`${id}-title`}>When each position was open</title>
+      <title id={`${id}-title`}>{title}</title>
       <desc id={`${id}-desc`}>
         {`${fmt(positions.length, 0)} positions from ${run.sample_start} to ${run.sample_end}, one bar each, in the order they were opened, top to bottom. A bar runs from the day the position was opened to the day it was closed and is coloured by its exit reason (the list above names them).${open > 0 ? ` ${fmt(open, 0)} of them have no close date and are drawn to ${run.sample_end}, dashed.` : ''}`}
       </desc>

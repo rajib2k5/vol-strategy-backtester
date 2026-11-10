@@ -68,14 +68,22 @@ def config(**overrides) -> RunConfig:
     return replace(base, **overrides)
 
 
+def made_up_gate(cfg, strategy, trial_hash):
+    """A run gate that passes every run and records none: the made-up stores' sessions are in 2022-2023, past the
+    development split, and run_backtest refuses such a run without a gate (tests/test_prereg.py tests the real one)."""
+    return None
+
+
 def run(store, root: Path, strategy, check: bool = True, **kwargs):
-    """run_backtest on `store` with the store check of tools/run_backtest.py; kwargs go to RunConfig."""
+    """run_backtest on `store` with the store check of tools/run_backtest.py and made_up_gate (or kwargs'
+    run_gate); the other kwargs go to RunConfig."""
     stop_after = kwargs.pop("stop_after", None)
     on_session_end = kwargs.pop("on_session_end", None)
     commit = kwargs.pop("source_commit", "0" * 40)
+    gate = kwargs.pop("run_gate", made_up_gate)
     return run_backtest(config(**kwargs), strategy, store=store, runs_root=Path(root), stop_after=stop_after,
                         on_session_end=on_session_end, source_commit=commit,
-                        store_check=build.require_current if check else None)
+                        store_check=build.require_current if check else None, run_gate=gate)
 
 
 def table(result_or_dir, name: str):
