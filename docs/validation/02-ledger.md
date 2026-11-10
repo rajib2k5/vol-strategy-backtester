@@ -7,7 +7,7 @@
 - **Design reviewer:** `adversarial-reviewer` (Opus). Synthetic clean chains, the real store (read-only) and a copy of the app's validator.
 - **Verifier:** `verifier` (Sonnet). Re-measured the walkthrough's numbers and re-ran 10 of its 40 mutants.
 
-**Recorded by the orchestrator** (the reviewers' rules forbid writing report files). The probes are in the session scratchpad (`egv/m2/{code/probes,design,verify}/`). **Scope:** the uncommitted milestone-2 tree on top of 35cb682.
+**Recorded by the orchestrator** (the reviewers' rules forbid writing report files). The probes are in the session scratchpad (`egv/m2/{code/probes,design,verify}/`). **Scope:** the uncommitted milestone-2 tree on top of 4a50af4.
 
 ## The orchestrator's own verification, before acting
 
@@ -122,7 +122,7 @@ The ten survivors the brief named are all killed now, each by its own test: M5 (
 
 ## Round 2 (2026-10-29)
 
-**Reviewers:** a code reviewer (`adversarial-reviewer`, Opus: probes on a read-only store copy, 34 new mutants), a design reviewer (`adversarial-reviewer`, Opus: synthetic chains, the real store read-only, a copy of the app's validator) and a verifier (`verifier`, Sonnet: every gate, about 90 `file:line` references, the concepts' numbers). **Scope:** the uncommitted tree on top of 35cb682 after the round-1 fixes D1-D13. Probes in the session scratchpad (`egv/m2/r2/{code/probes,design,verify}/`); the fixes' own probes in `fix3/`.
+**Reviewers:** a code reviewer (`adversarial-reviewer`, Opus: probes on a read-only store copy, 34 new mutants), a design reviewer (`adversarial-reviewer`, Opus: synthetic chains, the real store read-only, a copy of the app's validator) and a verifier (`verifier`, Sonnet: every gate, about 90 `file:line` references, the concepts' numbers). **Scope:** the uncommitted tree on top of 4a50af4 after the round-1 fixes D1-D13. Probes in the session scratchpad (`egv/m2/r2/{code/probes,design,verify}/`); the fixes' own probes in `fix3/`.
 
 ### The orchestrator's own verification, before acting
 
@@ -218,7 +218,7 @@ The first run killed 151 of 163. E2c, E2d, E2g, E5c and E13d survived it because
 
 ## Round 3 (2026-10-29)
 
-**Reviewers:** a code reviewer (`adversarial-reviewer`, Opus: probes on a read-only store copy, its own mutants N1-N14 in a scratch copy) and a docs, licence and app-validator reviewer (`adversarial-reviewer`, Opus, with two forks for claim 1 and claims 9-10). **Scope:** the uncommitted tree on top of 35cb682 after the round-2 fixes E1-E14. The code reviewer attacked E1-E3, E5 and E13; the docs reviewer E4, E6-E12 and E14. Probes in the session scratchpad (`egv/m2/r3/{code/probes,docs}/`); the fixes' own probes in `fix4/`.
+**Reviewers:** a code reviewer (`adversarial-reviewer`, Opus: probes on a read-only store copy, its own mutants N1-N14 in a scratch copy) and a docs, licence and app-validator reviewer (`adversarial-reviewer`, Opus, with two forks for claim 1 and claims 9-10). **Scope:** the uncommitted tree on top of 4a50af4 after the round-2 fixes E1-E14. The code reviewer attacked E1-E3, E5 and E13; the docs reviewer E4, E6-E12 and E14. Probes in the session scratchpad (`egv/m2/r3/{code/probes,docs}/`); the fixes' own probes in `fix4/`.
 
 ### The orchestrator's own verification, before acting
 
@@ -328,7 +328,7 @@ What the run found about the tests themselves:
 
 ## Round 4 (2026-10-30)
 
-**Reviewer:** `adversarial-reviewer` (Opus): probes on a read-only copy of the store, the gates and its own 10 mutants in a scratch copy with `.git`. **Scope:** the uncommitted tree on top of 35cb682 after the round-3 fixes. It attacked F1-F14 (claims 1-8 of its brief: F1, F2, F3, F5 and F7, F9, the gates, the mutants, the documents). Probes in the session scratchpad (`egv/m2/r4/work/probes/`); the fixes' own probes and runs in `fix5/`.
+**Reviewer:** `adversarial-reviewer` (Opus): probes on a read-only copy of the store, the gates and its own 10 mutants in a scratch copy with `.git`. **Scope:** the uncommitted tree on top of 4a50af4 after the round-3 fixes. It attacked F1-F14 (claims 1-8 of its brief: F1, F2, F3, F5 and F7, F9, the gates, the mutants, the documents). Probes in the session scratchpad (`egv/m2/r4/work/probes/`); the fixes' own probes and runs in `fix5/`.
 
 ### The orchestrator's own verification, before acting
 

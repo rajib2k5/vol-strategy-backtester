@@ -22,7 +22,7 @@ same results:
 - `ast_bypass.py`: 13 bypasses missed, including `exec`, `eval`, `self._read` and
   `builtins.__import__`.
 
-**Scope:** the uncommitted milestone-1 tree against 046fd8f.
+**Scope:** the uncommitted milestone-1 tree against 165890a.
 
 ## Verdicts
 
@@ -107,7 +107,7 @@ scratchpad (`egv/round2/probes/`). It never ran dolt, and it did not modify the 
 | 6 | R6: `parseDataQuality` | SURVIVES as listed | 14 further contradictions are accepted: cross-sums, the pinned rule set, calendar actions. |
 | 7 | R7: no cross-vendor verdict | SURVIVES | The 2020 share is 0.854. The OptionsDX median by year is +1.08, +0.05, −2.31 and −2.49 bp. |
 | 8 | The dolt mirror guards | PARTIALLY REFUTED | With `VOL_DATA_DIR` elsewhere, the real clone passes as a mirror and as a work dir. |
-| 9 | No vendor values | SURVIVES (scope); gaps | The scanner misses other date formats and values 4 or more lines from their date. The two real values it missed in prose, ADR-0010:107 and concept 00:362, were already present at 046fd8f. |
+| 9 | No vendor values | SURVIVES (scope); gaps | The scanner misses other date formats and values 4 or more lines from their date. The two real values it missed in prose, ADR-0010:107 and concept 00:362, were already present at 165890a. |
 | 10 | The docs | **REFUTED** | Stale count and citation; links to deleted `.mmd` files; ADR-0009:121. |
 | 11 | The gates | SURVIVES | 557 passed + 1 dolt test deselected; real_data 23 without dolt; vitest 566. |
 
@@ -118,7 +118,7 @@ prices are 06-17's). The rule is changed to drop all 12 closure dates (default t
 
 The owner decided: "Keep the strict rule: no real vendor values or data files … in any new commit,
 made-up values in tests, and leave public history as it is." For this repo:
-- the 17 dated vendor values quoted in prose in the pushed commit 046fd8f stay in history; there is no rewrite and no force-push;
+- the 17 dated vendor values quoted in prose in the pushed commit 165890a stay in history; there is no rewrite and no force-push;
 - every real value in the milestone-1 tree is replaced with a made-up or coarse value;
 - `tools/licensing/scan_real_rows.py` must print 0 hits before every push.
 

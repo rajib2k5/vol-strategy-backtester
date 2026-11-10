@@ -13,7 +13,7 @@
 - Token cost: 0 for this update (`graphify update`: code re-extracted by AST, no LLM). The first build, 2026-10-28, cost ~626,980 tokens across 3 semantic-extraction subagents (docs only); doc nodes of files that did not change are kept; docs written or edited since (for example docs/milestones/01-data-layer.md) were not re-read. `graph.svg` was regenerated from this `graph.json` on 2026-10-29 with `uv tool run --with matplotlib==3.11.2 --with scipy==1.18.1` (see `docs/architecture/README.md`).
 
 ## Graph Freshness
-- Built from commit: `046fd8fe`
+- Built from commit: `165890a8`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
