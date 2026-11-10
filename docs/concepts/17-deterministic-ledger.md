@@ -41,7 +41,7 @@ A change of seed changes `config_hash`, so it changes the folder, and leaves eve
 ## Where it breaks
 
 - **The same id replaces the folder.** A second run with the same `run_id` removes the first folder and renames its own into place. That is safe only because the same id means the same bytes.
-- **The committed JSON names a dirty commit.** `blotter.json` and `positions_timeline.json` say `engine_commit 9fb7403...-dirty` until the milestone is committed and the files are exported again.
+- **An uncommitted tree names no code.** A run made on an uncommitted tree records `<commit>-dirty`. So after the milestone commit the development run is made again at that commit and the files are exported again: `blotter.json` and `positions_timeline.json` name `engine_commit 3d95d70...` and the run `44dd4f7be51a...`.
 - **A mutant shows each guard.** A uuid in place of the hash (mutant 31) is caught by `check_ledger` inside the determinism test. Lot ids taken from iterating a set (mutant 29) fail the same test under a different `PYTHONHASHSEED`. Both are killed.
 
 ## In this project

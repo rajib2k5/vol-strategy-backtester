@@ -1,7 +1,7 @@
 {
   "schema_version": "0.4.0",
-  "generated_at": "2026-11-09T23:40:37Z",
-  "source_commit": "f5cc66b751813e1233fc0aeb39fff6fb8522f82f-dirty",
+  "generated_at": "2026-11-10T14:34:57Z",
+  "source_commit": "3d95d708b250349c86841053746bfe4910f7f713",
   "datasets": [
     {
       "name": "illustrative_surface",

@@ -79,7 +79,7 @@ With `hedge.mode = never`, shares delivered by an *early* assignment were never 
 
 - ADR-0001's §5 dataset table still shows the `blotter` shape without `events[]`; ADR-0001 amendment 13 (round 2, 2026-11-09) records the change.
 - A view-level mutation run of the app pages showed survivors on `PositionsPage.tsx`; round 2 found the two real ones (in a ruin run, the legend's "open" count and the timeline description's count) and added a test that kills each.
-- The committed engine datasets name the engine commit `9fb7403...-dirty` until the milestone is committed and exported again.
+- The committed engine datasets name the engine commit `9fb7403...-dirty` until the milestone is committed and exported again. (Resolved on 2026-11-10: the development run was made again at the milestone-3 commit `3d95d70...`, run `44dd4f7be51a...`, and both files were exported again; see the walkthrough's "The committed datasets".)
 - The module docstring of `src/volbt/engine/report.py` said the run id hashes three parts; `tools/run_backtest.py`'s said the same until round 2 (CR-d) fixed it.
 - Documents outside the second documentation step's list described the first version (concept 14's map entries, concept 17's three-part run id, the sequence diagram's two non-session expiries and its run id). Concepts 14 and 17 and the diagram spec now say what the code does; round 2 also restored the 2018-12-05 entry, which concept 14 now describes with its source (DS-3, DS-NEW3).
 - `data/logs/m3_run_budget.log` and `data/logs/m3_run_dolthub.log` (git-ignored) still hold the builder's runs from before the fixes (`6be0ab41f980...` and `be21f7850824...`). The timings of the runs after the fixes are in each run's `run_meta.json` and in `data/logs/report_m3.txt`.
