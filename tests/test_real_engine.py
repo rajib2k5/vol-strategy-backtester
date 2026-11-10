@@ -6,12 +6,15 @@ lot, the hedge's residual, fill prices against quotes, the cap's information dat
 
 ADR-0001's revisit trigger: "a 14-year, single-strategy run takes longer than 60 s". The budget run is the
 reference strategy on OptionsDX 2010-01-04 to 2023-12-29, timed inside run_backtest (store checks and
-fingerprints included), run twice; the two ledgers must be byte-identical.
+fingerprints included), run twice; the two ledgers must be byte-identical. The test prints both runs (time, CPU
+time, the core the run ended on) and checks the hashes before it checks the budget, so a budget miss hides neither
+the other run's timing nor the determinism check. The 60 s line itself is ADR-0001's and stays as it is.
 """
 
 from __future__ import annotations
 
 import json
+import time
 from datetime import date
 from pathlib import Path
 
@@ -51,12 +54,42 @@ def store():
     return store
 
 
+def where_it_ran() -> dict:
+    """The CPU this thread last ran on, with its cpu_capacity and maximum frequency where Linux gives them.
+
+    One sample, taken after a run, not a profile of the whole run. On a machine with two core types it says which
+    kind the run ended on (on the 2026-11-10 machine a run held on the slower cores took about twice as long)."""
+    out: dict = {}
+    try:
+        stat = Path("/proc/thread-self/stat").read_text()
+        out["last_cpu"] = cpu = int(stat.rsplit(")", 1)[1].split()[36])     # field 39 of proc(5): processor
+    except (OSError, ValueError, IndexError):
+        return out
+    for key, name in (("cpu_capacity", "cpu_capacity"), ("max_khz", "cpufreq/cpuinfo_max_freq")):
+        try:
+            out[key] = int(Path(f"/sys/devices/system/cpu/cpu{cpu}/{name}").read_text())
+        except (OSError, ValueError):
+            pass
+    return out
+
+
 @pytest.fixture(scope="module")
-def budget_runs(store, tmp_path_factory):
+def budget_where():
+    """Filled by budget_runs: per run, its process CPU time and where_it_ran()."""
+    return []
+
+
+@pytest.fixture(scope="module")
+def budget_runs(store, tmp_path_factory, budget_where):
     cfg = RunConfig(sample_start=date(2010, 1, 4), sample_end=date(2023, 12, 29), split="validation")
-    return [run_backtest(cfg, RollingShortStraddle(), store=store, runs_root=tmp_path_factory.mktemp(f"budget{i}"),
-                         source_commit=COMMIT, store_check=build.require_current, run_gate=passing_gate)
-            for i in range(2)]
+    runs = []
+    for i in range(2):
+        cpu_before = time.process_time()
+        runs.append(run_backtest(cfg, RollingShortStraddle(), store=store,
+                                 runs_root=tmp_path_factory.mktemp(f"budget{i}"), source_commit=COMMIT,
+                                 store_check=build.require_current, run_gate=passing_gate))
+        budget_where.append({"process_cpu_s": round(time.process_time() - cpu_before, 3), **where_it_ran()})
+    return runs
 
 
 @pytest.fixture(scope="module")
@@ -67,13 +100,21 @@ def dolthub_run(store, tmp_path_factory):
                         source_commit=COMMIT, store_check=build.require_current, run_gate=passing_gate)
 
 
-def test_the_14_year_run_fits_the_60_second_budget_twice_with_equal_hashes(budget_runs):
+def test_the_14_year_run_fits_the_60_second_budget_twice_with_equal_hashes(budget_runs, budget_where):
     first, second = budget_runs
-    for run in budget_runs:
-        assert run.status == "ok" and run.sessions == 3522 and run.last_session == date(2023, 12, 29)
-        assert run.timings["total_s"] < BUDGET_SECONDS, run.timings
-    assert first.files == second.files and first.digest == second.digest and first.run_id == second.run_id
+    # Both runs are reported before any assert, and the hashes are checked before the budget: a budget miss must not
+    # hide the other run's timing or skip the determinism check.
+    report = [{"run": i + 1, "total_s": run.timings["total_s"], **where}
+              for i, (run, where) in enumerate(zip(budget_runs, budget_where, strict=True))]
     print("budget timings:", [run.timings for run in budget_runs])
+    print("budget runs:", report)
+    for run in budget_runs:
+        assert run.status == "ok" and run.sessions == 3522 and run.last_session == date(2023, 12, 29), report
+    assert first.files == second.files, ("the two runs wrote different files", report)
+    assert first.digest == second.digest, ("the two runs' book digests differ", report)
+    assert first.run_id == second.run_id, ("the two runs' run ids differ", report)
+    over = [row["run"] for row in report if not row["total_s"] < BUDGET_SECONDS]
+    assert not over, (f"run(s) {over} took {BUDGET_SECONDS} s or more", report)
 
 
 def health(run_dir, mode: str) -> dict:

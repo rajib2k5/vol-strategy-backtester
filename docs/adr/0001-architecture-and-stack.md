@@ -74,6 +74,31 @@ The round-2 reviews of M3 (2026-11-09; `docs/validation/03-ledger.md`, "Round 2"
 14. **§7, `check_ledger` guards against accidents, not tampering** (finding CR-b). Amendment 8 says the reader re-hashes every ledger file against `run_meta.json`. Those hashes sit in the same folder, unsigned, so editing a table and its hash together passes. **Changed:** nothing in the code; the docstring of `volbt.engine.report.check_ledger` and the M3 walkthrough say what the check covers (a file edited, replaced or truncated after the run, a renamed folder) and what it does not.
 15. **§5 and §6, the app's engine validators check what the file can prove** (findings DS-6 and CR-10). This replaces the "Not changed" part of amendment 12. **Changed** (`app/src/lib/contract.ts`): a fill's price is in whole cents; an event's strike is its OSI symbol's; when a settlement price is present, an expiry event's outcome follows ADR-0003's one-cent rule in integer cents; a pin flag needs a short lot and |S − K| within ADR-0003's $0.50 band; fill and event dates are on or before the contract's expiry; a non-early event is dated on its settle date (the expiry, or the date ADR-0003 amendment 1 maps it to, from a map that a Python contract test keeps equal to `NON_SESSION_EXPIRIES`); `exit_reason` `expiry` needs a close on or after the legs' settle date; `open_count` equals the positions open on each date; a reduce-only fill may not reduce contracts that no earlier fill opened. The exporter refuses an `exit_reason` the app would refuse, and a Python contract test keeps the two lists of exit reasons equal (`tests/test_contract.py`). Each rule is a comparison of values the file carries, not a result, so §6 still holds.
 
+### Open question for the owner: the 60 s trigger on a shared machine (recorded 2026-11-10)
+
+Nothing in the decision changes here; the 60 s line stays as it is. The header's revisit trigger is "a 14-year,
+single-strategy run takes longer than 60 s". The test of it is
+`tests/test_real_engine.py::test_the_14_year_run_fits_the_60_second_budget_twice_with_equal_hashes`: the reference
+strategy on OptionsDX 2010-01-04 to 2023-12-29, run twice in one process, timed by `run_backtest` itself
+(`timings["total_s"]`, wall clock, store checks and fingerprints included).
+
+What was measured on 2026-11-10, on the machine the gates run on (10 Cortex-X925 cores at 3.9 GHz and 10 Cortex-A725
+cores at 2.8 GHz, shared with other jobs):
+- At load 1.1 to 2.0: run 1 / run 2 took 22.727 / 23.092 s at commit 8bd6e5e and 22.740 / 23.166 s at 937ec73,
+  with equal hashes.
+- One run held on the A725 cores (`taskset`) took 47.572 s at load 1.6; one held on the X925 cores took 24.291 s.
+- At load 18 to 27 the same code took 50.8 / 63.4 s and 48.8 / 60.7 s (an independent check of 8bd6e5e), and
+  22.769 / 59.336 s while the load rose from 7.5 to 25 (a gate run at 16513ca).
+- A later run in the same process is 0.68 to 1.11 s slower than the first (4 of 4 pairs, Arrow's default memory
+  pool). Every run tried, in one process or a fresh one, gave the same run id and digest.
+
+So the test can miss 60 s on a busy machine while the engine's own speed has not changed. **The question:** does a
+miss under load count as the trigger? Possible answers: (a) yes, as written (the default); (b) the trigger counts
+only a run at low load, with the load recorded next to each gate run; (c) the test holds the run to the faster cores;
+(d) the trigger uses CPU time instead of wall time (on this machine CPU time also doubles on the slower cores, so (d)
+alone does not remove the core effect). Since 2026-11-10 the test prints both runs, with each run's process CPU time
+and the core it ended on, and checks the hashes before the budget, so a miss shows both timings.
+
 ## Context
 
 We backtest SPY option strategies on end-of-day (EOD) chain snapshots. There is one snapshot a day, and no intraday data.
