@@ -18,6 +18,10 @@ Three datasets:
                              labelled dates: read from the pricing build's smile_fits, so run
                              tools/build_pricing.py first. Each grid cell is an IV off the de-Americanised
                              OTM smiles (ADR-0004's interpolation rules), never a quote.
+  blotter.json and           one engine run's fills and expiry events, and its positions with the count
+  positions_timeline.json    open each session (milestone 3; volbt.engine.report). The run is the one
+                             tools/run_backtest.py --for-app recorded in work_dir()/runs/app_run.json, or
+                             --run-dir: a development-split run only (decision D19). No P&L is written.
 """
 
 from __future__ import annotations
@@ -25,6 +29,7 @@ from __future__ import annotations
 import argparse
 import json
 import math
+import re
 import sys
 from pathlib import Path
 
@@ -33,7 +38,8 @@ from datetime import date
 import numpy as np
 import pandas as pd
 
-from volbt import build, illustrative
+from volbt import build, config, illustrative
+from volbt.engine import report as engine_report
 from volbt.contract import GitLookup, SCHEMA_VERSION, build_envelope, git_state
 from volbt.data import flags, quality
 from volbt.data.mask import WINDOW
@@ -49,6 +55,9 @@ DEFAULT_OUT_DIR = REPO_ROOT / "app" / "public" / "data"
 SURFACE_FILE = "illustrative_surface.json"
 DATA_QUALITY_FILE = "data_quality.json"
 SURFACE_FRAMES_FILE = "surface_frames.json"
+BLOTTER_FILE = "blotter.json"
+POSITIONS_FILE = "positions_timeline.json"
+APP_RUN_FILE = "app_run.json"
 MANIFEST_FILE = "manifest.json"
 SURFACE_LABEL = "Illustrative SSVI surface — not market data"
 # Six decimals is far more than the 3D plot can show and keeps the files small.
@@ -297,8 +306,42 @@ def surface_payload(
     }
 
 
-def manifest_payload(envelope: dict) -> dict:
-    """The manifest.json content: the list of datasets the app can load."""
+ENGINE_DATASETS = [
+    {"name": "blotter", "path": BLOTTER_FILE,
+     "description": ("Milestone-3 fills and expiry events of one diagnostic engine run of the reference strategy on "
+                     "the development split. Exercises the engine; not a strategy result; no P&L.")},
+    {"name": "positions_timeline", "path": POSITIONS_FILE,
+     "description": ("Milestone-3 positions of the same run, from open to close, and the count open each session. "
+                     "Not a strategy result; no P&L.")},
+]
+
+
+def engine_bodies(run_dir: Path, splits: tuple[str, ...] = ("development",)) -> tuple[dict, dict]:
+    """(blotter, positions_timeline) after the envelope, from one development-split run's ledger (D19).
+
+    `splits` widens the guard only for runs on MADE-UP stores (tests/engine_store.py is dated 2023, so its runs are
+    'validation'): the committed app files come from the real development run."""
+    blotter = engine_report.blotter_body(run_dir)
+    if not re.fullmatch(r"[0-9a-f]{40}(-dirty)?", blotter["run"]["engine_commit"]):
+        raise ValueError(f"{run_dir}: engine_commit {blotter['run']['engine_commit']!r} names no commit; the app refuses "
+                         "it (run tools/run_backtest.py inside the git work tree)")
+    if blotter["run"]["split"] not in splits:
+        raise ValueError(f"{run_dir}: only a development-split run may feed the app (decision D19), not "
+                         f"{blotter['run']['split']!r}")
+    return blotter, engine_report.positions_timeline_body(run_dir)
+
+
+def app_run_dir(runs_root: Path | None = None) -> Path:
+    """The run tools/run_backtest.py --for-app recorded; FileNotFoundError naming the fix if there is none."""
+    path = (runs_root or config.work_dir() / "runs") / APP_RUN_FILE
+    if not path.is_file():
+        raise FileNotFoundError(f"no {path}: run the development run first: uv run python tools/run_backtest.py "
+                                "--start 2010-01-04 --end 2019-12-31 --split development --for-app")
+    return Path(json.loads(path.read_text(encoding="utf-8"))["run_dir"])
+
+
+def manifest_payload(envelope: dict, engine: bool = False) -> dict:
+    """The manifest.json content: the list of datasets the app can load (the engine's two when `engine`)."""
     return {
         **envelope,
         "datasets": [
@@ -330,7 +373,7 @@ def manifest_payload(envelope: dict) -> dict:
                     "from the de-Americanised OTM smiles of the pricing build. Market data."
                 ),
             },
-        ],
+        ] + ([{**entry, "schema_version": SCHEMA_VERSION} for entry in ENGINE_DATASETS] if engine else []),
     }
 
 
@@ -522,7 +565,7 @@ def write_json(path: Path, payload: dict) -> None:
 
 def build_payloads(
     out_dir: Path = DEFAULT_OUT_DIR, git_lookup: GitLookup = git_state, now=None, *, quality_body: dict,
-    frames_body: dict,
+    frames_body: dict, blotter_body: dict | None = None, positions_body: dict | None = None,
 ) -> dict[str, dict]:
     """Write every JSON file into out_dir; return {file name: content}.
 
@@ -532,12 +575,16 @@ def build_payloads(
     """
     # One envelope for all files, so every file in a run has the same timestamp.
     envelope = build_envelope(git_lookup, now)
+    engine = blotter_body is not None and positions_body is not None
     payloads = {
-        MANIFEST_FILE: manifest_payload(envelope),
+        MANIFEST_FILE: manifest_payload(envelope, engine),
         SURFACE_FILE: surface_payload(envelope),
         DATA_QUALITY_FILE: {**envelope, **quality_body},
         SURFACE_FRAMES_FILE: {**envelope, **frames_body},
     }
+    if engine:
+        payloads[BLOTTER_FILE] = {**envelope, **blotter_body}
+        payloads[POSITIONS_FILE] = {**envelope, **positions_body}
     out_dir.mkdir(parents=True, exist_ok=True)
     for name, payload in payloads.items():
         write_json(out_dir / name, payload)
@@ -554,6 +601,12 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--store", type=Path, default=None,
                         help="the built store to read data_quality.json and surface_frames.json from "
                              "(default: the store under work_dir())")
+    parser.add_argument("--run-dir", type=Path, default=None,
+                        help="the engine run (a run_id=... folder) blotter.json and positions_timeline.json come from "
+                             "(default: the one tools/run_backtest.py --for-app recorded)")
+    parser.add_argument("--allow-split", action="append", default=[], choices=("validation", "holdout"),
+                        help="also accept a run of this split: ONLY for a run on a made-up store (the tests'), never "
+                             "for real data after 2019 (decision D19)")
     args = parser.parse_args(argv)
     try:
         dates = SURFACE_FRAME_DATES if not args.frame else frame_dates(args.frame)
@@ -563,10 +616,12 @@ def main(argv: list[str] | None = None) -> int:
     try:
         body = data_quality_body(store)
         frames = surface_frames_body(store, dates)
+        blotter, positions = engine_bodies(args.run_dir or app_run_dir(), ("development", *args.allow_split))
     except FileNotFoundError as error:
         print(f"error: {error}", file=sys.stderr)
         return 1
-    for name in build_payloads(args.out_dir, quality_body=body, frames_body=frames):
+    for name in build_payloads(args.out_dir, quality_body=body, frames_body=frames, blotter_body=blotter,
+                               positions_body=positions):
         print("wrote", args.out_dir / name)
     return 0
 

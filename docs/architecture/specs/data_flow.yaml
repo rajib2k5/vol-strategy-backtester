@@ -8,6 +8,13 @@
 # Refreshed after M2 (2026-10-29) against src/volbt/build.py and src/volbt/pricing: the "Pricing build (M2, built)" lane is tools/build_pricing.py,
 # one (source, year) partition of option_quotes per process, skipped when its input fingerprint is unchanged, then pricing_summary.json read back
 # from the stored tables. Every OTM quote is de-Americanised (no |k| band); the exporter adds surface_frames.json.
+# Refreshed after M3 (2026-10-30) against src/volbt/engine/, src/volbt/data/store.py (YearCache, StoreView), tools/run_backtest.py and tools/export_app_data.py:
+# the "Simulation" lane is built for the engine (tools/run_backtest.py, YearCache, StoreView, volbt.engine.loop and the reference strategy, the ledger parquet
+# under work_dir()/runs/run_id=ID/), and the new "Engine export (M3, built)" lane is volbt.engine.report and tools/export_app_data.py, which write blotter.json
+# and positions_timeline.json for the app's Blotter and Positions tabs. The engine reads the pricing tables through a YearCache (a year at a time, two years in
+# memory) behind a per-session StoreView; a view also works without a cache (SQL, as in M1); nothing in src/ or tools/ uses that path. Still planned: signals (M4), the end-of-day risk, margin and
+# hedge sweep (M5), and the results lane (M6). Neither lane quotes a P&L, NAV or return: the committed files come from the development run of a diagnostic
+# reference strategy (decision D19).
 # Where data lives (2026-10-29, volbt.config): vendor sources are only read, from $VOL_DATA_DIR; DoltHub is queried through a private mirror under it
 # ($VOL_DATA_DIR/vol-strategy-backtester/cache/dolt_mirror/options), never the shared clone. Downloads and built tables are written to the repo's
 # git-ignored data/ (work_dir()): data/raw/ and data/store/.
@@ -18,7 +25,8 @@ lanes:
   - {id: vendors, label: "Vendors"}
   - {id: ingest, label: "Ingest and clean (M1, built)"}
   - {id: features, label: "Pricing build (M2, built)"}
-  - {id: simulation, label: "Simulation (M3 to M5, planned)"}
+  - {id: simulation, label: "Simulation (engine built in M3; signals M4 and risk M5 planned)"}
+  - {id: report, label: "Engine export (M3, built)"}
   - {id: results, label: "Results (M6, planned)"}
   - {id: presentation, label: "Presentation (app built in M0)"}
 nodes:
@@ -47,16 +55,23 @@ nodes:
   - {id: s_iv, label: "expiry_forwards, quote_iv, smile_fits", sublabel: "Partitioned by source and year in the repo's data/store/", type: store, lane: features}
   - {id: s_pricing_summary, label: "pricing_summary.json", sublabel: "Headline numbers by source, year and tenor, read back from the stored tables; no clock time", type: store, lane: features}
   - {id: f_export_sf, label: "tools/export_app_data.py: surface_frames.json", sublabel: "IVs of a few labelled dates on a fixed grid, read off the smiles", type: process, lane: features}
-  - {id: e_view, label: "MarketView as_of t", sublabel: "Built in M1 (StoreView): LookAheadError after t; SplitError past the split end", type: process, lane: simulation}
-  - {id: e_sig, label: "Signals from the view: RV, HAR/GARCH, IV30 minus RV forecast", sublabel: "Causal; expanding window from 2000, refit monthly on data up to t (ADR-0001)", type: process, lane: simulation}
-  - {id: e_loop, label: "Daily loop: fills, expiry, marks, hedge, risk, orders", sublabel: "Order of steps in engine_daily_loop_sequence.mmd", type: process, lane: simulation}
-  - {id: s_ledger, label: "runs, signals, orders, order_legs, fills, positions, lots, position_marks, hedges, expiry_events, risk_events, greeks_snapshots, daily_pnl", type: store, lane: simulation}
+  - {id: e_run, label: "tools/run_backtest.py", sublabel: "Builds the RunConfig and the strategy; passes the commit and build.require_current to the engine; --for-app records the run for the app", type: process, lane: simulation}
+  - {id: e_cache, label: "YearCache: the pricing tables a year at a time", sublabel: "option_quotes, quote_iv, expiry_forwards, smile_fits of one source, two years in memory; reference tables whole. Only a view slices it", type: process, lane: simulation}
+  - {id: e_view, label: "StoreView as_of t, one per session", sublabel: "Built in M1; M3 adds quotes, quote_ivs, forwards and smiles. LookAheadError after t; SplitError past the split end; the engine's own reads use it too", type: process, lane: simulation}
+  - {id: e_sig, label: "Signals from the view: RV, HAR/GARCH, IV30 minus RV forecast (planned, M4)", sublabel: "Causal; expanding window from 2000, refit monthly on data up to t (ADR-0001)", type: process, lane: simulation}
+  - {id: e_strat, label: "RollingShortStraddle (reference strategy)", sublabel: "A diagnostic that exercises the engine, not a result: sells ATM straddles on the monthly expiry nearest 30 days, closes when DTE at the next session is 7 or less", type: process, lane: simulation}
+  - {id: e_loop, label: "volbt.engine.loop.run_backtest: eleven steps per session", sublabel: "Load, start of day, fills, settlement, marks, hedge, daily_pnl, risk (ruin only), decide, early exercise, write. Steps in engine_daily_loop_sequence.mmd", type: process, lane: simulation}
+  - {id: s_ledger, label: "Ledger: runs, positions, orders, order_legs, fills, lots, position_marks, hedges, expiry_events, risk_events, daily_pnl, cash_flows", sublabel: "One parquet file per table in work_dir()/runs/run_id=ID/ (the id is the folder name), written once, plus run_meta.json. signals (M4) and greeks_snapshots (M5) are planned", type: store, lane: simulation}
+  - {id: x_report, label: "volbt.engine.report", sublabel: "check_ledger: file SHA-256s against run_meta.json and the run id's derivation, before and after the read; blotter_body, positions_timeline_body; no P&L (D19)", type: process, lane: report}
+  - {id: x_export, label: "tools/export_app_data.py: blotter.json and positions_timeline.json", sublabel: "Adds the envelope; reads the run recorded in app_run.json; refuses a run whose split is not development (B11)", type: process, lane: report}
   - {id: r_metrics, label: "Metrics, PSR/DSR, regimes, stress windows", type: process, lane: results}
   - {id: r_attr, label: "Greek P&L attribution", type: process, lane: results}
   - {id: r_grid, label: "Spot x vol stress grid", sublabel: "Full revaluation", type: process, lane: results}
   - {id: r_export, label: "Export + JSON Schema validation", type: process, lane: results}
-  - {id: a_json, label: "manifest.json + dataset JSON files", sublabel: "Written today: manifest, illustrative_surface (M0), data_quality (M1), surface_frames (M2). The M3 to M6 datasets are planned", type: output, lane: presentation}
-  - {id: u_app, label: "React app renders", type: ui, lane: presentation}
+  - {id: a_json, label: "manifest.json + dataset JSON files", sublabel: "Written today: manifest, illustrative_surface (M0), data_quality (M1), surface_frames (M2), blotter and positions_timeline (M3). The M4 to M6 datasets are planned", type: output, lane: presentation}
+  - {id: u_blotter, label: "Blotter tab", sublabel: "Fills and expiry events of the engine run; a diagnostic, not a result", type: ui, lane: presentation}
+  - {id: u_positions, label: "Positions tab", sublabel: "Positions from open to close and the count open each session", type: ui, lane: presentation}
+  - {id: u_app, label: "React app renders the other tabs", sublabel: "About, Surface, Data quality and Architecture; reads only app/public/data/*.json", type: ui, lane: presentation}
 edges:
   - {from: v_yf, to: i_ref, label: "OHLC, dividends"}
   - {from: v_fred, to: i_ref, label: "yield, percent"}
@@ -84,7 +99,6 @@ edges:
   - {from: s_iv, to: s_pricing_summary, label: "aggregates"}
   - {from: s_iv, to: f_export_sf, label: "smile nodes"}
   - {from: f_export_sf, to: a_json, label: "write surface_frames.json"}
-  - {from: s_quotes, to: e_view, label: "quotes for t"}
   - {from: s_quotes, to: i_mask, label: "DoltHub's listed pairs"}
   - {from: s_quotes, to: i_xvendor, label: "both vendors' rows, 2020-2023"}
   - {from: s_ref, to: i_xvendor, label: "SPY bars, rates, dividends"}
@@ -94,18 +108,31 @@ edges:
   - {from: s_summary, to: i_export_dq, label: "cross-vendor quantiles, gate result"}
   - {from: i_export_dq, to: a_json, label: "write data_quality.json"}
   - {from: i_mask, to: e_view, label: "planned: the view does not serve chain_mask yet"}
-  - {from: s_iv, to: e_view, label: "surface for t"}
-  - {from: s_ref, to: e_view, label: "SPY bars, rates, VIX"}
-  - {from: e_view, to: e_sig, label: "SPY bars, VIX, surface up to t"}
-  - {from: e_sig, to: e_loop, label: "signal values at t"}
+  - {from: s_quotes, to: e_cache, label: "option_quotes, one source and year"}
+  - {from: s_iv, to: e_cache, label: "quote_iv, expiry_forwards, smile_fits"}
+  - {from: s_ref, to: e_cache, label: "SPY bars, rates, dividends, VIX"}
+  - {from: s_ref, to: e_loop, label: "session calendar: dates only (D3)"}
+  - {from: e_cache, to: e_view, label: "the slice dated t, within the view's bound"}
+  - {from: s_iv, to: e_run, label: "require_current: tables made by the current code over the current inputs"}
+  - {from: e_run, to: e_loop, label: "RunConfig, strategy, commit, store check"}
+  - {from: e_view, to: e_sig, label: "planned: SPY bars, VIX, surface up to t"}
+  - {from: e_sig, to: e_loop, label: "planned: signal values at t"}
   - {from: e_view, to: e_loop, label: "one session"}
-  - {from: e_loop, to: s_ledger, label: "append rows"}
+  - {from: e_view, to: e_strat, label: "the chain of t, up to as_of"}
+  - {from: e_strat, to: e_loop, label: "order intents"}
+  - {from: e_loop, to: s_ledger, label: "rows held in memory, written once; the store is checked again first"}
+  - {from: s_ledger, to: x_report, label: "12 tables and run_meta.json"}
+  - {from: e_run, to: x_export, label: "app_run.json (--for-app)"}
+  - {from: x_report, to: x_export, label: "blotter and positions_timeline bodies"}
+  - {from: x_export, to: a_json, label: "write blotter.json and positions_timeline.json"}
   - {from: s_ledger, to: r_metrics, label: "daily_pnl"}
   - {from: s_ledger, to: r_attr, label: "position_marks"}
   - {from: s_ledger, to: r_grid, label: "lots at as_of"}
   - {from: r_metrics, to: r_export, label: "metrics"}
   - {from: r_attr, to: r_export, label: "pnl_attribution"}
   - {from: r_grid, to: r_export, label: "stress_grid"}
-  - {from: s_ledger, to: r_export, label: "blotter, positions, greeks"}
+  - {from: s_ledger, to: r_export, label: "planned: greeks and the M6 datasets"}
   - {from: r_export, to: a_json, label: "write"}
+  - {from: a_json, to: u_blotter, label: "fetch blotter.json"}
+  - {from: a_json, to: u_positions, label: "fetch positions_timeline.json"}
   - {from: a_json, to: u_app, label: "fetch"}

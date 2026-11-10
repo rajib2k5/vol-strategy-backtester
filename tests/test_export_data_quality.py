@@ -397,14 +397,20 @@ def real_store():
 
 @pytest.mark.real_data
 @pytest.mark.parametrize("name", ["manifest.json", "illustrative_surface.json", "data_quality.json",
-                                  "surface_frames.json"])
+                                  "surface_frames.json", "blotter.json", "positions_timeline.json"])
 def test_the_committed_files_equal_a_fresh_export_from_the_real_store(tmp_path, real_store, name):
-    # Catches "rebuilt the store or changed the report, forgot to re-run the exporter".
+    # Catches "rebuilt the store or changed the report, forgot to re-run the exporter". The engine datasets come
+    # from the development run tools/run_backtest.py --for-app recorded (milestone 3).
     stamp = read_json(COMMITTED_DIR / "manifest.json")
     now = datetime.strptime(stamp["generated_at"], "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=timezone.utc)
+    try:
+        blotter, positions = export_app_data.engine_bodies(export_app_data.app_run_dir())
+    except FileNotFoundError:
+        pytest.skip("no recorded development run: tools/run_backtest.py ... --for-app")
     export_app_data.build_payloads(tmp_path, lookup_for(stamp["source_commit"]), now,
                                    quality_body=export_app_data.data_quality_body(real_store),
-                                   frames_body=export_app_data.surface_frames_body(real_store))
+                                   frames_body=export_app_data.surface_frames_body(real_store),
+                                   blotter_body=blotter, positions_body=positions)
     assert (tmp_path / name).read_bytes() == (COMMITTED_DIR / name).read_bytes(), (
         f"app/public/data/{name} is stale; run: uv run python tools/export_app_data.py")
 

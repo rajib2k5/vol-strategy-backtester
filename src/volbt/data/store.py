@@ -25,8 +25,10 @@ from pathlib import Path
 from types import MappingProxyType
 
 import duckdb
+import numpy as np
 import pandas as pd
 import pyarrow as pa
+import pyarrow.compute as pc
 import pyarrow.parquet as pq
 
 from volbt import config
@@ -366,6 +368,26 @@ def check_not_after(requested: date, as_of: date, what: str) -> date:
     return day
 
 
+# The columns the milestone-3 day reads serve (VIEW_SQL and the year cache serve the same ones).
+QUOTE_COLUMNS = ("quote_date", "osi_symbol", "expiry", "strike", "call_put", "bid", "ask", "volume", "spy_close",
+                 "quality_flags")
+QUOTE_IV_COLUMNS = ("quote_date", "osi_symbol", "expiry", "log_moneyness", "is_otm", "in_smile", "iv", "iv_flags")
+FORWARD_COLUMNS = ("quote_date", "expiry", "tau_years", "r_cc", "discount_factor", "spot", "forward", "forward_carry",
+                   "method", "flags")
+SMILE_COLUMNS = ("quote_date", "expiry", "tau_years", "k_nodes", "total_var_nodes", "n_points", "atm_iv", "fit_flags")
+# The day reads: view method -> (table, the day's sort column, the columns served).
+DAY_READS = {"chain": ("option_quotes", "osi_symbol", None), "quotes": ("option_quotes", "osi_symbol", QUOTE_COLUMNS),
+             "quote_ivs": ("quote_iv", "osi_symbol", QUOTE_IV_COLUMNS),
+             "forwards": ("expiry_forwards", "expiry", FORWARD_COLUMNS),
+             "smiles": ("smile_fits", "expiry", SMILE_COLUMNS)}
+# The reads bounded by `<= as_of`: view method -> (table, date column, the columns served).
+UPTO_READS = {"sessions": ("spy_bars", "date", ("date",)),
+              "spy_bars": ("spy_bars", "date", ("date", "open", "high", "low", "close", "volume")),
+              "dividends": ("dividends", "ex_date", ("ex_date", "amount")),
+              "rates": ("rates", "date", ("date", "dgs3mo_pct", "r_cc")),
+              "vix": ("vix", "date", ("date", "open", "high", "low", "close"))}
+
+
 # The only SQL a view ever runs. Each query reads one table and ends with the bound
 # `<= as_of`, whose value the reader in view() supplies itself: a caller passes the other
 # parameters, never the bound. Columns are named, so a new column in a table is not served
@@ -382,6 +404,16 @@ VIEW_SQL = {
     # year = ? lets DuckDB skip every other year's files (partition pruning).
     "chain": ("SELECT * FROM option_quotes WHERE source = ? AND year = ? AND quote_date = ? "
               "AND quote_date <= ? ORDER BY osi_symbol"),
+    # Milestone 3: the derived tables of one session, and the quote columns the engine needs. The same
+    # rule: one source, one year, one quote date, and the view's own bound.
+    "quotes": (f"SELECT {', '.join(QUOTE_COLUMNS)} FROM option_quotes WHERE source = ? AND year = ? "
+               "AND quote_date = ? AND quote_date <= ? ORDER BY osi_symbol"),
+    "quote_ivs": (f"SELECT {', '.join(QUOTE_IV_COLUMNS)} FROM quote_iv WHERE source = ? AND year = ? "
+                  "AND quote_date = ? AND quote_date <= ? ORDER BY osi_symbol"),
+    "forwards": (f"SELECT {', '.join(FORWARD_COLUMNS)} FROM expiry_forwards WHERE source = ? AND year = ? "
+                 "AND quote_date = ? AND quote_date <= ? ORDER BY expiry"),
+    "smiles": (f"SELECT {', '.join(SMILE_COLUMNS)} FROM smile_fits WHERE source = ? AND year = ? "
+               "AND quote_date = ? AND quote_date <= ? ORDER BY expiry"),
 }
 
 
@@ -434,22 +466,187 @@ class StoreView:
     def vix(self) -> pd.DataFrame:
         return self._read("vix")
 
+    # --- milestone 3: one session's derived tables, for the engine and (from M4) the strategies ----------
 
-def view(as_of: date, split: str, store: Store | None = None) -> StoreView:
+    def _day(self, name: str, quote_date: date, source: str, osi_symbols) -> pd.DataFrame:
+        day = check_not_after(quote_date, self._as_of, name)
+        return self._read(name, source, str(day.year), day, symbols=None if osi_symbols is None else sorted(set(osi_symbols)))
+
+    def quotes(self, quote_date: date, osi_symbols=None, source: str = "optionsdx") -> pd.DataFrame:
+        """option_quotes of one session (QUOTE_COLUMNS), all of them or only `osi_symbols`, by osi_symbol."""
+        return self._day("quotes", quote_date, source, osi_symbols)
+
+    def quote_ivs(self, quote_date: date, osi_symbols=None, source: str = "optionsdx") -> pd.DataFrame:
+        """quote_iv of one session (QUOTE_IV_COLUMNS): log-moneyness, OTM, in_smile, IV, iv_flags."""
+        return self._day("quote_ivs", quote_date, source, osi_symbols)
+
+    def forwards(self, quote_date: date, source: str = "optionsdx") -> pd.DataFrame:
+        """expiry_forwards of one session (FORWARD_COLUMNS), by expiry; empty on a session with no snapshot."""
+        return self._day("forwards", quote_date, source, None)
+
+    def smiles(self, quote_date: date, source: str = "optionsdx") -> pd.DataFrame:
+        """smile_fits of one session (SMILE_COLUMNS), by expiry: the nodes the surface is read from."""
+        return self._day("smiles", quote_date, source, None)
+
+
+class YearCache:
+    """One source's derived and quote tables, a year at a time, in memory (milestone 3, decision D1).
+
+    Per-day SQL is too slow for a 14-year run: one connect() is 45.6 ms, a day's chain 36-84 ms (the M3
+    plan's measurements), so the engine reads a year at once instead. On the first read of a year the cache
+    loads that year's option_quotes, quote_iv, expiry_forwards and smile_fits partitions (each its one
+    part-0.parquet: the engine checks the store with Store.checked_partitions and checked_table_file before a
+    run, volbt.engine.loop.run_inputs) and the reference tables, and keeps the two most recent years. That
+    spares a reload of the old year in early January; ADR-0004 rule 4 does not need it, because a stale
+    surface is the DaySurface the engine already holds (M3 review: keep = 1 is equivalent for it). A cached
+    chain() has the stored columns; the SQL one also has the hive columns source and year.
+
+    It has NO public read method. Only a view's private reader reads it, and the reader applies the view's
+    own bound: one quote date that check_not_after has passed, or `date <= as_of`. A strategy holds a view,
+    never the cache (the engine keeps the handle). What the cache guarantees about the frames it returns:
+    no frame is a view into the cached year. Each one owns all its memory (owned_frame: the day's rows are
+    copied out with Table.take, every numpy array once more), so no buffer behind it holds a row it does not
+    show, and writing to a frame changes nothing in the cache (M3 round-2 review: zero-copy slices let a
+    strategy read 30 sessions ahead). What it does not guarantee: a read past the end of an array still
+    reads whatever memory follows, the cached year included (M3 round-3 review: an as_strided read 63 MB
+    past a frame's buffer once landed in the live cached year). Nor does it stop code that holds the cache
+    itself. The import-boundary rule for strategies and signals (no as_strided, stride_tricks, lib or .base,
+    no ctypes, no __array_interface__, __array_struct__ or __array__) is a tripwire against accidents, not a
+    sandbox: ADR-0001 test 1.
+    """
+
+    __slots__ = ("_store", "_source", "_keep", "_years", "_reference")
+
+    def __init__(self, store: Store, source: str, keep: int = 2) -> None:
+        self._store, self._source, self._keep = store, source, keep
+        self._years: dict[int, dict] = {}
+        self._reference: dict[str, tuple[pd.DataFrame, np.ndarray]] = {}
+
+    def _year(self, year: int) -> dict:
+        if year in self._years:
+            return self._years[year]
+        loaded = {}
+        for name, (table, key, columns) in DAY_READS.items():
+            if table in loaded:
+                continue
+            path = self._store.partition_file(table, {"source": self._source, "year": year})
+            if not path.is_file():
+                loaded[table] = None
+                continue
+            arrow = pq.read_table(path)
+            days = arrow["quote_date"].to_numpy().astype("datetime64[D]").astype(np.int64)
+            if days.size and np.any(np.diff(days) < 0):
+                arrow = arrow.sort_by([("quote_date", "ascending"), (key, "ascending")])
+                days = arrow["quote_date"].to_numpy().astype("datetime64[D]").astype(np.int64)
+            loaded[table] = (_dates_as_timestamps(arrow), days)
+        self._years[year] = loaded
+        while len(self._years) > self._keep:
+            del self._years[min(self._years)]
+        return loaded
+
+    def _slice(self, name: str, source: str, day: date, symbols=None) -> pd.DataFrame:
+        """The rows of `name` dated exactly `day` (the caller has bounded it), as a new DataFrame; with
+        `symbols`, only those contracts (filtered before the conversion, which is most of the cost)."""
+        if source != self._source:
+            raise ValueError(f"this year cache serves {self._source!r}, not {source!r}")
+        table, key, columns = DAY_READS[name]
+        entry = self._year(day.year)[table]
+        if entry is None:
+            return pd.DataFrame(columns=list(columns) if columns else [])
+        arrow, days = entry
+        target = np.datetime64(day, "D").astype(np.int64)
+        lo, hi = np.searchsorted(days, target, "left"), np.searchsorted(days, target, "right")
+        # Take the day's rows out of a slice of the day (a take over the whole year's chunks cost 0.9 ms a read):
+        # the take writes new buffers that hold those rows only, and owned_frame copies them into numpy.
+        part = arrow.slice(lo, hi - lo)
+        rows = np.arange(hi - lo)
+        if symbols is not None:
+            wanted = pc.is_in(part["osi_symbol"], value_set=pa.array(list(symbols), type=pa.string()))
+            rows = rows[np.asarray(wanted.to_numpy(zero_copy_only=False), dtype=bool)]
+        if columns is not None:
+            part = part.select(list(columns))
+        return owned_frame(part.take(pa.array(rows, type=pa.int64())))
+
+    def _upto(self, name: str, bound: date) -> pd.DataFrame:
+        """The rows of a reference table dated on or before `bound`, as a new DataFrame."""
+        table, column, columns = UPTO_READS[name]
+        if table not in self._reference:
+            frame = _dates_as_timestamps(pq.read_table(self._store.checked_table_file(table))).to_pandas()
+            frame = frame.sort_values(column, kind="stable").reset_index(drop=True)
+            self._reference[table] = (frame, pd.to_datetime(frame[column]).to_numpy().astype("datetime64[D]"))
+        frame, days = self._reference[table]
+        end = int(np.searchsorted(days, np.datetime64(bound, "D"), "right"))
+        return frame.iloc[:end][list(columns)].copy()
+
+
+def owned_frame(part: pa.Table) -> pd.DataFrame:
+    """`part` as a DataFrame that shares no memory with the table it was taken from (M3 round-2 review).
+
+    Table.slice and to_pandas are zero-copy for string and list columns: a day's frame kept views into the whole
+    cached year, and np.lib.stride_tricks.as_strided on one smile row read the smiles of the next 30 sessions. So
+    `part` must come from Table.take, which copies the rows it selects into buffers of their own (string data,
+    offsets, list children); then every numpy array is copied once more, so that the frame owns all its memory
+    and a test can measure it: each column's buffer is exactly the frame's rows, each list element its own array.
+    """
+    frame = part.to_pandas().copy(deep=True)
+    for name in frame.columns:
+        if frame[name].dtype == object:
+            owned = np.empty(len(frame), dtype=object)
+            for i, value in enumerate(frame[name]):
+                owned[i] = value.copy() if isinstance(value, np.ndarray) else value
+            frame[name] = owned
+    return frame
+
+
+def _dates_as_timestamps(table: pa.Table) -> pa.Table:
+    """Date columns as timestamp[us], cast once in Arrow, so a cached read converts to the dtype DuckDB's .df()
+    gives (datetime64[us]) and equals an SQL read; the cast at load costs nothing per session."""
+    for index, column in enumerate(table.schema):
+        if pa.types.is_date(column.type):
+            table = table.set_column(index, column.name, table.column(index).cast(pa.timestamp("us")))
+    return table
+
+
+def session_calendar(store: Store) -> list[date]:
+    """Every SPY session date in the store, future ones included (milestone-3 decision D3).
+
+    The engine reads it once, outside any view: it needs the next session (an order's target fill date,
+    a DTE exit, projected ex-dates). Exchange holidays are published in advance, so knowing which future
+    weekdays trade is not look-ahead; what it does leak is an UNSCHEDULED closure a day early (2012-10-29/30,
+    2018-12-05, 2025-01-09 are absent from spy_bars). Dates only: no price of a future date.
+    """
+    bars = pq.read_table(store.checked_table_file("spy_bars"), columns=["date"]).to_pandas()
+    return sorted(d.date() if hasattr(d, "date") else d for d in bars["date"])
+
+
+def view(as_of: date, split: str, store: Store | None = None, cache: YearCache | None = None) -> StoreView:
     """Create the view for one session. Raises SplitError if as_of is past the split's end.
 
     as_of must be a plain datetime.date (plain_date above); it is rebuilt before use. The
     split check, and the bound every query of the view carries, use only this module's code.
+    With a YearCache the reader slices the cached year instead of running SQL (milestone 3): the same
+    queries, the same bound, applied by this closure itself.
     """
     day = check_split(as_of, split)
     source = store if store is not None else Store()
 
-    def read(name: str, *params) -> pd.DataFrame:
+    def read(name: str, *params, symbols=None) -> pd.DataFrame:
         if name not in VIEW_SQL:
             raise ValueError(f"a view runs only its own queries {sorted(VIEW_SQL)}, not {name!r}")
         sql = VIEW_SQL[name]
         if sql.count("?") != len(params) + 1:
             raise TypeError(f"view query {name!r} takes {sql.count('?') - 1} parameters, not {len(params)}")
-        return source.query(sql, [*params, day])
+        if symbols is not None and name not in ("quotes", "quote_ivs"):
+            raise TypeError(f"view query {name!r} takes no symbol filter")
+        if cache is None:
+            rows = source.query(sql, [*params, day])
+            if symbols is not None:
+                rows = rows[rows["osi_symbol"].isin(set(symbols))].reset_index(drop=True)
+            return rows
+        if name in DAY_READS:
+            quote_source, _, requested = params
+            # The bound again, with this module's code: the slice is one date, and never after as_of.
+            return cache._slice(name, quote_source, check_not_after(requested, day, name), symbols)
+        return cache._upto(name, day)
 
     return StoreView(day, split, read)

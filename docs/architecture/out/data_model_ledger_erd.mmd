@@ -2,12 +2,11 @@
 title: "vol-strategy-backtester data model: per-run ledger"
 ---
 erDiagram
-    runs["runs (planned, M3)"] {
-        VARCHAR run_id PK
-        TIMESTAMP created_at
+    runs {
         VARCHAR source_commit
+        VARCHAR code_fingerprint
         VARCHAR config_hash
-        JSON config_json
+        VARCHAR config_json
         VARCHAR data_fingerprint
         VARCHAR data_source
         VARCHAR execution_mode
@@ -17,14 +16,15 @@ erDiagram
         VARCHAR split
         VARCHAR run_purpose
         VARCHAR trial_group
+        VARCHAR strategy
         VARCHAR rerun_of "nullable"
         VARCHAR rerun_reason "nullable"
         DATE sample_start
         DATE sample_end
+        DATE last_session
         VARCHAR status
     }
     signals["signals (planned, M4)"] {
-        VARCHAR run_id PK, FK
         DATE session_date PK
         VARCHAR signal_name PK
         DOUBLE iv30 "nullable"
@@ -36,33 +36,35 @@ erDiagram
         VARCHAR vix_bucket
         VARCHAR vol_regime
     }
-    positions["positions (planned, M3)"] {
-        VARCHAR run_id PK, FK
+    positions {
         BIGINT position_id PK
         VARCHAR strategy_id
         VARCHAR structure
-        DATE opened_date
+        DATE created_date
+        DATE opened_date "nullable"
         DATE closed_date "nullable"
         VARCHAR status
         DOUBLE entry_signal "nullable"
         VARCHAR exit_reason "nullable"
     }
-    orders["orders (planned, M3)"] {
-        VARCHAR run_id PK, FK
+    orders {
         BIGINT order_id PK
         BIGINT position_id FK "nullable"
         DATE created_date
-        DATE target_fill_date
+        DATE target_fill_date "nullable"
+        DATE resolved_date "nullable"
         VARCHAR intent
         BOOLEAN reduce_only
+        VARCHAR structure "nullable"
         INTEGER packages_requested
         INTEGER packages_after_risk
+        INTEGER packages_filled
         VARCHAR risk_action
         VARCHAR status
         VARCHAR cancel_reason "nullable"
+        VARCHAR exit_reason "nullable"
     }
-    order_legs["order#95;legs (planned, M3)"] {
-        VARCHAR run_id PK, FK
+    order_legs {
         BIGINT order_id PK, FK
         SMALLINT leg_no PK
         VARCHAR instrument
@@ -70,22 +72,25 @@ erDiagram
         INTEGER ratio
         BIGINT cap_volume "nullable"
         DATE cap_volume_date "nullable"
+        INTEGER filled
+        VARCHAR cancel_reason "nullable"
     }
-    fills["fills (planned, M3)"] {
-        VARCHAR run_id PK, FK
+    fills {
         BIGINT fill_id PK
         BIGINT order_id FK
         SMALLINT leg_no
         DATE fill_date
+        VARCHAR instrument
         VARCHAR osi_symbol "nullable"
         INTEGER qty
-        INTEGER price_cents
+        BIGINT price_cents
         DOUBLE price
         DOUBLE bid "nullable"
         DOUBLE ask "nullable"
         DOUBLE mid "nullable"
         DOUBLE half_spread "nullable"
-        DOUBLE k_half_spread
+        DOUBLE k_half_spread "nullable"
+        BIGINT fees_cents
         DOUBLE fees
         VARCHAR fill_source
         INTEGER cap_contracts "nullable"
@@ -93,69 +98,82 @@ erDiagram
         BIGINT cap_volume "nullable"
         DATE cap_volume_date "nullable"
         BOOLEAN volume_reliable
+        INTEGER fill_flags
     }
-    lots["lots (planned, M3)"] {
-        VARCHAR run_id PK, FK
+    lots {
         BIGINT lot_id PK
         BIGINT position_id FK
         VARCHAR osi_symbol
         DATE expiry
+        DATE settle_date
         DOUBLE strike
         VARCHAR option_right
         INTEGER qty_open
+        INTEGER qty_opened
         DOUBLE avg_open_price
         DATE opened_date
         DATE closed_date "nullable"
     }
-    position_marks["position#95;marks (planned, M3)"] {
-        VARCHAR run_id PK, FK
+    position_marks {
         DATE session_date PK
         BIGINT lot_id PK, FK
+        INTEGER qty
         DOUBLE mark_price
         DOUBLE mark_iv "nullable"
         VARCHAR mark_source
-        INTEGER quality_flags
+        INTEGER quality_flags "nullable"
+        DOUBLE bid "nullable"
+        DOUBLE ask "nullable"
         DOUBLE value_mid_usd
         DOUBLE value_liq_usd
-        DOUBLE delta_shares
-        DOUBLE gamma_1pct_usd
-        DOUBLE vega_1vol_usd
-        DOUBLE theta_1d_usd
-        DOUBLE pnl_residual_usd
+        BOOLEAN in_nav
+        DOUBLE h_model "nullable"
+        DOUBLE spot
+        DOUBLE forward "nullable"
+        DOUBLE tau_years
+        DOUBLE log_moneyness "nullable"
+        DOUBLE delta_shares "nullable"
+        DOUBLE gamma_1pct_usd "nullable"
+        DOUBLE vega_1vol_usd "nullable"
+        DOUBLE theta_1d_usd "nullable"
+        DOUBLE pnl_residual_usd "nullable"
         INTEGER mark_flags
     }
-    hedges["hedges (planned, M3)"] {
-        VARCHAR run_id PK, FK
+    hedges {
         DATE session_date PK, FK
+        DATE executed_date
         VARCHAR trigger
         VARCHAR timing
         DOUBLE delta_before_shares
         INTEGER shares_traded
         DOUBLE price
+        BIGINT price_cents
         DOUBLE commission
         DOUBLE slippage
+        BIGINT commission_cents
+        BIGINT slippage_cents
         INTEGER shares_after
         DOUBLE delta_after_shares
     }
-    expiry_events["expiry#95;events (planned, M3)"] {
-        VARCHAR run_id PK, FK
+    expiry_events {
         BIGINT event_id PK
         DATE session_date
         DATE effective_date
         BIGINT lot_id FK
+        VARCHAR osi_symbol
         VARCHAR event_type
         INTEGER contracts
         INTEGER shares_delivered
         DOUBLE strike
         DOUBLE settlement_price "nullable"
         DATE dividend_ex_date FK "nullable"
+        DOUBLE dividend_amount "nullable"
         VARCHAR decision_method "nullable"
         DOUBLE decision_iv "nullable"
         DOUBLE threshold_value "nullable"
         BOOLEAN pin_flag
     }
-    risk_events["risk#95;events (planned, M3)"] {
-        VARCHAR run_id PK, FK
+    risk_events {
         BIGINT event_id PK
         DATE session_date
         VARCHAR kind
@@ -166,7 +184,6 @@ erDiagram
         VARCHAR action
     }
     greeks_snapshots["greeks#95;snapshots (planned, M5)"] {
-        VARCHAR run_id PK, FK
         DATE session_date PK
         DOUBLE delta_shares
         DOUBLE delta_usd
@@ -184,32 +201,48 @@ erDiagram
         DOUBLE budget_stress_worst_usd
         INTEGER breach_flags
     }
-    daily_pnl["daily#95;pnl (planned, M3)"] {
-        VARCHAR run_id PK, FK
+    daily_pnl {
         DATE session_date PK, FK
+        BOOLEAN has_snapshot
+        DOUBLE spot
         DOUBLE nav_mid
         DOUBLE nav_liq
         DOUBLE cash
+        BIGINT cash_cents
         INTEGER shares
         DOUBLE share_value
         DOUBLE option_value_mid
-        DOUBLE pnl_total
-        DOUBLE pnl_delta
-        DOUBLE pnl_gamma
-        DOUBLE pnl_vega
-        DOUBLE pnl_theta
+        DOUBLE option_value_liq
+        DOUBLE option_value_gross
+        DOUBLE model_marked_value_gross
+        INTEGER n_open_lots
+        DOUBLE pnl_total "nullable"
+        DOUBLE pnl_delta "nullable"
+        DOUBLE pnl_gamma "nullable"
+        DOUBLE pnl_vega "nullable"
+        DOUBLE pnl_theta "nullable"
         DOUBLE pnl_fees
         DOUBLE pnl_interest
         DOUBLE pnl_dividends
-        DOUBLE pnl_residual
-        DOUBLE daily_return
-        DOUBLE rf_return
-        DOUBLE margin_req_gross_usd
-        DOUBLE short_option_mv_usd
-        DOUBLE margin_req_net_usd
-        DOUBLE excess_liquidity_usd
+        DOUBLE pnl_borrow
+        DOUBLE pnl_residual "nullable"
+        DOUBLE daily_return "nullable"
+        DOUBLE rf_return "nullable"
+        DOUBLE rate
+        DOUBLE margin_req_gross_usd "nullable"
+        DOUBLE short_option_mv_usd "nullable"
+        DOUBLE margin_req_net_usd "nullable"
+        DOUBLE excess_liquidity_usd "nullable"
         DOUBLE share_nav_model_marked
         VARCHAR mark_quality
+        DOUBLE delta_after_hedge_shares "nullable"
+    }
+    cash_flows {
+        BIGINT flow_id PK
+        DATE session_date
+        VARCHAR kind
+        BIGINT amount_cents
+        BIGINT ref_id "nullable"
     }
     spy_bars["spy#95;bars (partial)"] {
         DATE date PK
@@ -227,15 +260,6 @@ erDiagram
         DOUBLE[] total_var_nodes
     }
     spy_bars ||--o{ daily_pnl : "session of"
-    runs ||--o{ signals : "produces"
-    runs ||--o{ positions : "produces"
-    runs ||--o{ orders : "produces"
-    runs ||--o{ fills : "produces"
-    runs ||--o{ hedges : "produces"
-    runs ||--o{ expiry_events : "produces"
-    runs ||--o{ risk_events : "produces"
-    runs ||--o{ greeks_snapshots : "produces"
-    runs ||--o{ daily_pnl : "produces"
     positions ||--o{ lots : "holds"
     positions |o--o{ orders : "opened and closed by"
     orders ||--o{ order_legs : "has legs"
@@ -243,11 +267,9 @@ erDiagram
     orders |o--o{ risk_events : "scaled or rejected by"
     lots ||--o{ position_marks : "marked daily"
     lots ||--o{ expiry_events : "settled by"
+    fills |o--o{ cash_flows : "cash of a fill or event"
     option_quotes ||--o{ position_marks : "quote mark source"
     smile_fits |o--o{ position_marks : "model mark source"
     dividends |o--o{ expiry_events : "early-exercise test"
     spy_bars ||--o{ hedges : "hedge price"
     vix ||--o{ signals : "regime label"
-    orders ||--o{ order_legs : ""
-    runs ||--o{ lots : ""
-    runs ||--o{ position_marks : ""

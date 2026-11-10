@@ -26,8 +26,8 @@ def test_envelope_has_exactly_the_three_keys():
 
 
 def test_schema_version_is_pinned():
-    assert contract.SCHEMA_VERSION == "0.3.0"
-    assert contract.build_envelope(lambda: (SHA, False), FIXED_NOW)["schema_version"] == "0.3.0"
+    assert contract.SCHEMA_VERSION == "0.4.0"
+    assert contract.build_envelope(lambda: (SHA, False), FIXED_NOW)["schema_version"] == "0.4.0"
 
 
 def test_generated_at_is_utc_iso_with_z():
@@ -347,3 +347,57 @@ def test_real_lookup_hash_fits_the_apps_7_to_64_hex_pattern(tmp_path, object_for
     assert len(head) == hex_length
     assert re.fullmatch(r"[0-9a-f]{7,64}", head)
     assert re.fullmatch(r"[0-9a-f]{7,64}-dirty", contract.source_commit(lambda: (head, True)))
+
+
+# --- the engine datasets: lists the app and the engine must agree on --------------------------------------------------
+
+CONTRACT_TS = Path(__file__).resolve().parent.parent / "app" / "src" / "lib" / "contract.ts"
+
+
+def ts_constant(name: str) -> str:
+    """The text of `export const <name> ... = <literal>` on one line of app/src/lib/contract.ts."""
+    found = re.findall(rf"^export const {name}\b[^=]*= (.+)$", CONTRACT_TS.read_text(encoding="utf-8"), re.MULTILINE)
+    assert len(found) == 1, f"{name} must be one one-line literal in contract.ts"
+    return found[0]
+
+
+def test_the_apps_exit_reasons_are_the_engines_position_exit_reasons():
+    """Every positions.exit_reason the engine can write (a strategy's EXIT_REASONS and the engine's own) is one the
+    app accepts, and no other. Compared as sets: the app keeps its legend's order, the engine strategy-then-engine."""
+    from volbt.engine.book import POSITION_EXIT_REASONS
+
+    # The whole array literal, element by element (M3 round-3 review: a findall of '...' let "roll", `roll`, 'Roll'
+    # or a spread through): each element must be exactly one single-quoted [a-z_]+ string.
+    literal = re.fullmatch(r"\[(.*)\] as const", ts_constant("EXIT_REASONS").strip())
+    assert literal, "EXIT_REASONS must be a one-line array literal `[...] as const`"
+    elements = [element.strip() for element in literal.group(1).split(",")]
+    assert [e for e in elements if not re.fullmatch(r"'[a-z_]+'", e)] == []
+    app = [element[1:-1] for element in elements]
+    assert len(app) == len(set(app)) and len(POSITION_EXIT_REASONS) == len(set(POSITION_EXIT_REASONS))
+    assert set(app) == set(POSITION_EXIT_REASONS)
+
+
+def test_the_apps_blotter_fixture_charges_what_the_engine_charges():
+    """The app's made-up blotter fixture follows the engine's cost rules (M3 round-3 review, N2: it charged 6.50 per
+    10 contracts and 5.00 per 1,000 shares): an option fill pays option_fee_cents, a share fill commission plus
+    slippage (stock_cost_cents), each at RunConfig's defaults, the run config of every exported run."""
+    import json
+    from datetime import date
+
+    from volbt.engine.fills import option_fee_cents, stock_cost_cents
+    from volbt.engine.run_config import RunConfig
+
+    cfg = RunConfig(date(2015, 1, 2), date(2015, 3, 20), "development")
+    fixture = json.loads((CONTRACT_TS.parents[1] / "test" / "fixtures" / "blotter.json").read_text(encoding="utf-8"))
+    charged = [(f["instrument"], f["qty"], round(f["fees"] * 100)) for f in fixture["fills"]]
+    engine = [(i, q, option_fee_cents(q, cfg) if i == "option" else sum(stock_cost_cents(q, cfg))) for i, q, _ in charged]
+    assert {i for i, _, _ in charged} == {"option", "share"}
+    assert charged == engine
+
+
+def test_the_apps_settlement_map_is_the_engines():
+    """The app checks an expiry event's date against the contract's settle date, so it carries decision D16's map."""
+    from volbt.engine.settlement import NON_SESSION_EXPIRIES
+
+    app = dict(re.findall(r"'(\d{4}-\d\d-\d\d)': '(\d{4}-\d\d-\d\d)'", ts_constant("NON_SESSION_EXPIRIES")))
+    assert app == {expiry.isoformat(): settle.isoformat() for expiry, settle in NON_SESSION_EXPIRIES.items()}

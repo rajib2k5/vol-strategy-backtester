@@ -1,10 +1,10 @@
 {
-  "schema_version": "0.3.0",
-  "generated_at": "2026-10-30T06:27:15Z",
-  "source_commit": "248d200ea742834a0891389ec869aa535aaca61e",
+  "schema_version": "0.4.0",
+  "generated_at": "2026-11-09T23:40:37Z",
+  "source_commit": "f5cc66b751813e1233fc0aeb39fff6fb8522f82f-dirty",
   "run": {
-    "run_id": "pricing-a4b22664c957",
-    "config_hash": "a4b22664c9573d31e965046179b15e6ff64065d440181d35f39c3930bf6bab03",
+    "run_id": "pricing-c4c7d9f04fa1",
+    "config_hash": "c4c7d9f04fa1f43b07af753ac5dbfb23bfacd2f123dbb73ce1491b209bbdc497",
     "data_fingerprint": "7bf3848067197e892752b618eb4d20d1208c3af1861b044044039fe7b504a306",
     "data_source": "optionsdx",
     "data_last_date": "2023-12-29",

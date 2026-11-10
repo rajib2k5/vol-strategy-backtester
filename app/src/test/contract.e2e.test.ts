@@ -13,15 +13,19 @@
  */
 import { describe, expect, it } from 'vitest'
 import {
+  BLOTTER_DATASET,
   DATA_QUALITY_DATASET,
+  POSITIONS_TIMELINE_DATASET,
   SURFACE_DATASET,
   SURFACE_FRAMES_DATASET,
   assertDatasetMatchesEntry,
   commitState,
   findDataset,
+  parseBlotter,
   parseDataQuality,
   parseIllustrativeSurface,
   parseManifest,
+  parsePositionsTimeline,
   parseSurfaceFrames,
 } from '../lib/contract'
 import { loadAppData } from '../data/loadAppData'
@@ -31,6 +35,9 @@ const committed = import.meta.glob('../../public/data/*.json', { query: '?raw', 
   string,
   string
 >
+
+/** The key names of a result: the engine files carry what the engine did and none of these. */
+const NO_RESULT_KEY = /pnl|p_and_l|nav|return|sharpe/i
 
 /** The parsed JSON of a committed file, by its file name (fails the test if the file is missing). */
 function committedJson(fileName: string): unknown {
@@ -42,19 +49,27 @@ function committedJson(fileName: string): unknown {
 }
 
 describe('the committed app/public/data files', () => {
-  it('include the manifest, the illustrative surface, the data-quality aggregates and the real surfaces', () => {
+  it('include the manifest, the illustrative surface, the data-quality aggregates, the real surfaces and the engine run', () => {
     // Guards the guard: an empty glob would make every test below pass vacuously.
     expect(Object.keys(committed).map((k) => k.split('/').pop()).sort()).toEqual([
+      'blotter.json',
       'data_quality.json',
       'illustrative_surface.json',
       'manifest.json',
+      'positions_timeline.json',
       'surface_frames.json',
     ])
   })
 
-  it('pass the manifest parser, which lists the three datasets', () => {
+  it('pass the manifest parser, which lists the five datasets', () => {
     const manifest = parseManifest(committedJson('manifest.json'))
-    expect(manifest.datasets.map((d) => d.name)).toEqual([SURFACE_DATASET, DATA_QUALITY_DATASET, SURFACE_FRAMES_DATASET])
+    expect(manifest.datasets.map((d) => d.name)).toEqual([
+      SURFACE_DATASET,
+      DATA_QUALITY_DATASET,
+      SURFACE_FRAMES_DATASET,
+      BLOTTER_DATASET,
+      POSITIONS_TIMELINE_DATASET,
+    ])
   })
 
   it('list only files that exist next to the manifest', () => {
@@ -105,12 +120,48 @@ describe('the committed app/public/data files', () => {
     }
   })
 
+  it('pass the blotter parser: a diagnostic run on the development split, with fills and no result', () => {
+    const file = parseBlotter(committedJson('blotter.json'))
+    expect(file.illustrative).toBe(false)
+    expect(file.run).toMatchObject({
+      data_source: 'optionsdx',
+      split: 'development',
+      run_purpose: 'diagnostic',
+      strategy: 'RollingShortStraddle',
+      sample_start: '2010-01-04',
+      sample_end: '2019-12-31',
+    })
+    expect(file.fills.length).toBeGreaterThan(0)
+    // No P&L, NAV, return or Sharpe is shipped. The raw file is read, not the parsed one: the parser drops keys it does not know.
+    const raw = committedJson('blotter.json') as { fills: object[]; events: object[] }
+    for (const body of [raw, ...raw.fills.slice(0, 1), ...raw.events.slice(0, 1)]) {
+      for (const key of Object.keys(body)) expect(key).not.toMatch(NO_RESULT_KEY)
+    }
+  })
+
+  it('pass the positions-timeline parser, and describe the same run as the blotter', () => {
+    const blotter = parseBlotter(committedJson('blotter.json'))
+    const file = parsePositionsTimeline(committedJson('positions_timeline.json'))
+    expect(file.illustrative).toBe(false)
+    expect(file.positions.length).toBeGreaterThan(0)
+    expect(file.dates.length).toBeGreaterThan(0)
+    expect(file.open_count).toHaveLength(file.dates.length)
+    // Both files are written from one run's ledger, so the run block is the same in both.
+    expect(file.run).toEqual(blotter.run)
+    const raw = committedJson('positions_timeline.json') as { positions: object[] }
+    for (const body of [raw, ...raw.positions.slice(0, 1)]) {
+      for (const key of Object.keys(body)) expect(key).not.toMatch(NO_RESULT_KEY)
+    }
+  })
+
   it('agree with each other: same schema_version in each manifest entry and in its file', () => {
     const manifest = parseManifest(committedJson('manifest.json'))
     const files = {
       [SURFACE_DATASET]: parseIllustrativeSurface(committedJson('illustrative_surface.json')),
       [DATA_QUALITY_DATASET]: parseDataQuality(committedJson('data_quality.json')),
       [SURFACE_FRAMES_DATASET]: parseSurfaceFrames(committedJson('surface_frames.json')),
+      [BLOTTER_DATASET]: parseBlotter(committedJson('blotter.json')),
+      [POSITIONS_TIMELINE_DATASET]: parsePositionsTimeline(committedJson('positions_timeline.json')),
     }
     for (const [name, file] of Object.entries(files)) {
       const entry = findDataset(manifest, name)
@@ -134,6 +185,8 @@ describe('the committed app/public/data files', () => {
       './data/illustrative_surface.json': committedJson('illustrative_surface.json'),
       './data/data_quality.json': committedJson('data_quality.json'),
       './data/surface_frames.json': committedJson('surface_frames.json'),
+      './data/blotter.json': committedJson('blotter.json'),
+      './data/positions_timeline.json': committedJson('positions_timeline.json'),
     }
     const data = await loadAppData(fakeFetch(files, requested))
     expect(requested).toEqual([
@@ -141,9 +194,12 @@ describe('the committed app/public/data files', () => {
       './data/illustrative_surface.json',
       './data/data_quality.json',
       './data/surface_frames.json',
+      './data/blotter.json',
+      './data/positions_timeline.json',
     ])
     expect(data.surface.params).toMatchObject({ model: 'SSVI' })
     expect(data.dataQuality.gate.passed).toBe(true)
     expect(data.surfaceFrames.frames).toHaveLength(4)
+    expect(data.blotter.run.run_id).toBe(data.positionsTimeline.run.run_id)
   })
 })

@@ -33,11 +33,18 @@ flowchart TB
         s_pricing_summary[("pricing_summary.json\nHeadline numbers by source, year and tenor, read back from the stored tables; no clock time")]
         f_export_sf["tools/export_app_data.py#58; surface_frames.json\nIVs of a few labelled dates on a fixed grid, read off the smiles"]
     end
-    subgraph simulation["Simulation (M3 to M5, planned)"]
-        e_view["MarketView as_of t\nBuilt in M1 (StoreView)#58; LookAheadError after t; SplitError past the split end"]
-        e_sig["Signals from the view#58; RV, HAR/GARCH, IV30 minus RV forecast\nCausal; expanding window from 2000, refit monthly on data up to t (ADR-0001)"]
-        e_loop["Daily loop#58; fills, expiry, marks, hedge, risk, orders\nOrder of steps in engine_daily_loop_sequence.mmd"]
-        s_ledger[("runs, signals, orders, order_legs, fills, positions, lots, position_marks, hedges, expiry_events, risk_events, greeks_snapshots, daily_pnl")]
+    subgraph simulation["Simulation (engine built in M3; signals M4 and risk M5 planned)"]
+        e_run["tools/run_backtest.py\nBuilds the RunConfig and the strategy; passes the commit and build.require_current to the engine; --for-app records the run for the app"]
+        e_cache["YearCache#58; the pricing tables a year at a time\noption_quotes, quote_iv, expiry_forwards, smile_fits of one source, two years in memory; reference tables whole. Only a view slices it"]
+        e_view["StoreView as_of t, one per session\nBuilt in M1; M3 adds quotes, quote_ivs, forwards and smiles. LookAheadError after t; SplitError past the split end; the engine's own reads use it too"]
+        e_sig["Signals from the view#58; RV, HAR/GARCH, IV30 minus RV forecast (planned, M4)\nCausal; expanding window from 2000, refit monthly on data up to t (ADR-0001)"]
+        e_strat["RollingShortStraddle (reference strategy)\nA diagnostic that exercises the engine, not a result#58; sells ATM straddles on the monthly expiry nearest 30 days, closes when DTE at the next session is 7 or less"]
+        e_loop["volbt.engine.loop.run_backtest#58; eleven steps per session\nLoad, start of day, fills, settlement, marks, hedge, daily_pnl, risk (ruin only), decide, early exercise, write. Steps in engine_daily_loop_sequence.mmd"]
+        s_ledger[("Ledger#58; runs, positions, orders, order_legs, fills, lots, position_marks, hedges, expiry_events, risk_events, daily_pnl, cash_flows\nOne parquet file per table in work_dir()/runs/run_id=ID/ (the id is the folder name), written once, plus run_meta.json. signals (M4) and greeks_snapshots (M5) are planned")]
+    end
+    subgraph report["Engine export (M3, built)"]
+        x_report["volbt.engine.report\ncheck_ledger#58; file SHA-256s against run_meta.json and the run id's derivation, before and after the read; blotter_body, positions_timeline_body; no P#38;L (D19)"]
+        x_export["tools/export_app_data.py#58; blotter.json and positions_timeline.json\nAdds the envelope; reads the run recorded in app_run.json; refuses a run whose split is not development (B11)"]
     end
     subgraph results["Results (M6, planned)"]
         r_metrics["Metrics, PSR/DSR, regimes, stress windows"]
@@ -46,8 +53,10 @@ flowchart TB
         r_export["Export + JSON Schema validation"]
     end
     subgraph presentation["Presentation (app built in M0)"]
-        a_json[/"manifest.json + dataset JSON files\nWritten today#58; manifest, illustrative_surface (M0), data_quality (M1), surface_frames (M2). The M3 to M6 datasets are planned"/]
-        u_app("React app renders")
+        a_json[/"manifest.json + dataset JSON files\nWritten today#58; manifest, illustrative_surface (M0), data_quality (M1), surface_frames (M2), blotter and positions_timeline (M3). The M4 to M6 datasets are planned"/]
+        u_blotter("Blotter tab\nFills and expiry events of the engine run; a diagnostic, not a result")
+        u_positions("Positions tab\nPositions from open to close and the count open each session")
+        u_app("React app renders the other tabs\nAbout, Surface, Data quality and Architecture; reads only app/public/data/*.json")
     end
     v_yf -->|"OHLC, dividends"| i_ref
     v_fred -->|"yield, percent"| i_ref
@@ -75,7 +84,6 @@ flowchart TB
     s_iv -->|"aggregates"| s_pricing_summary
     s_iv -->|"smile nodes"| f_export_sf
     f_export_sf -->|"write surface_frames.json"| a_json
-    s_quotes -->|"quotes for t"| e_view
     s_quotes -->|"DoltHub's listed pairs"| i_mask
     s_quotes -->|"both vendors' rows, 2020-2023"| i_xvendor
     s_ref -->|"SPY bars, rates, dividends"| i_xvendor
@@ -85,36 +93,50 @@ flowchart TB
     s_summary -->|"cross-vendor quantiles, gate result"| i_export_dq
     i_export_dq -->|"write data_quality.json"| a_json
     i_mask -->|"planned#58; the view does not serve chain_mask yet"| e_view
-    s_iv -->|"surface for t"| e_view
-    s_ref -->|"SPY bars, rates, VIX"| e_view
-    e_view -->|"SPY bars, VIX, surface up to t"| e_sig
-    e_sig -->|"signal values at t"| e_loop
+    s_quotes -->|"option_quotes, one source and year"| e_cache
+    s_iv -->|"quote_iv, expiry_forwards, smile_fits"| e_cache
+    s_ref -->|"SPY bars, rates, dividends, VIX"| e_cache
+    s_ref -->|"session calendar#58; dates only (D3)"| e_loop
+    e_cache -->|"the slice dated t, within the view's bound"| e_view
+    s_iv -->|"require_current#58; tables made by the current code over the current inputs"| e_run
+    e_run -->|"RunConfig, strategy, commit, store check"| e_loop
+    e_view -->|"planned#58; SPY bars, VIX, surface up to t"| e_sig
+    e_sig -->|"planned#58; signal values at t"| e_loop
     e_view -->|"one session"| e_loop
-    e_loop -->|"append rows"| s_ledger
+    e_view -->|"the chain of t, up to as_of"| e_strat
+    e_strat -->|"order intents"| e_loop
+    e_loop -->|"rows held in memory, written once; the store is checked again first"| s_ledger
+    s_ledger -->|"12 tables and run_meta.json"| x_report
+    e_run -->|"app_run.json (--for-app)"| x_export
+    x_report -->|"blotter and positions_timeline bodies"| x_export
+    x_export -->|"write blotter.json and positions_timeline.json"| a_json
     s_ledger -->|"daily_pnl"| r_metrics
     s_ledger -->|"position_marks"| r_attr
     s_ledger -->|"lots at as_of"| r_grid
     r_metrics -->|"metrics"| r_export
     r_attr -->|"pnl_attribution"| r_export
     r_grid -->|"stress_grid"| r_export
-    s_ledger -->|"blotter, positions, greeks"| r_export
+    s_ledger -->|"planned#58; greeks and the M6 datasets"| r_export
     r_export -->|"write"| a_json
+    a_json -->|"fetch blotter.json"| u_blotter
+    a_json -->|"fetch positions_timeline.json"| u_positions
     a_json -->|"fetch"| u_app
     classDef source fill:#E0F2FE,stroke:#0284C7,color:#0F172A
     class v_optionsdx,v_dolthub source
     classDef store fill:#FEF3C7,stroke:#D97706,color:#0F172A
     class s_ref,s_quality,s_quotes,s_xvendor,s_summary,s_iv,s_pricing_summary,s_ledger store
     classDef process fill:#E0E7FF,stroke:#4F46E5,color:#0F172A
-    class i_ref,i_cal,i_load,i_flags,g_quality,i_mask,i_xvendor,i_export_dq,f_build,f_forward,f_iv,f_smile,f_export_sf,e_view,e_sig,e_loop,r_metrics,r_attr,r_grid,r_export process
+    class i_ref,i_cal,i_load,i_flags,g_quality,i_mask,i_xvendor,i_export_dq,f_build,f_forward,f_iv,f_smile,f_export_sf,e_run,e_cache,e_view,e_sig,e_strat,e_loop,x_report,x_export,r_metrics,r_attr,r_grid,r_export process
     classDef output fill:#D1FAE5,stroke:#059669,color:#0F172A
     class a_json output
     classDef external fill:#F1F5F9,stroke:#475569,color:#0F172A
     class v_yf,v_fred,v_cboe external
     classDef ui fill:#FCE7F3,stroke:#DB2777,color:#0F172A
-    class u_app ui
+    class u_blotter,u_positions,u_app ui
     style vendors fill:#F1F5F9,stroke:#E2E8F0,color:#64748B
     style ingest fill:#EFF6FF,stroke:#DBEAFE,color:#64748B
     style features fill:#F5F3FF,stroke:#E9E5FD,color:#64748B
     style simulation fill:#ECFDF5,stroke:#D1FAE5,color:#64748B
-    style results fill:#FFF7ED,stroke:#FFEDD5,color:#64748B
-    style presentation fill:#FDF2F8,stroke:#FCE7F3,color:#64748B
+    style report fill:#FFF7ED,stroke:#FFEDD5,color:#64748B
+    style results fill:#FDF2F8,stroke:#FCE7F3,color:#64748B
+    style presentation fill:#F1F5F9,stroke:#E2E8F0,color:#64748B

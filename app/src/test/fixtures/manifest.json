@@ -20,6 +20,18 @@
       "path": "surface_frames.json",
       "schema_version": "0.3.0",
       "description": "Test fixture: two made-up surfaces"
+    },
+    {
+      "name": "blotter",
+      "path": "blotter.json",
+      "schema_version": "0.4.0",
+      "description": "Test fixture: a made-up diagnostic run's fills and events"
+    },
+    {
+      "name": "positions_timeline",
+      "path": "positions_timeline.json",
+      "schema_version": "0.4.0",
+      "description": "Test fixture: the made-up run's positions and open counts"
     }
   ]
 }

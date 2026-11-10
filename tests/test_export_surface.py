@@ -37,7 +37,7 @@ def test_the_results_blocks_come_first_after_the_envelope(store, tmp_path, quali
                                    frames_body=body)
     written = json.loads((tmp_path / "surface_frames.json").read_text(encoding="utf-8"))
     assert list(written)[:6] == ["schema_version", "generated_at", "source_commit", "run", "units", "illustrative"]
-    assert written["illustrative"] is False and written["schema_version"] == contract.SCHEMA_VERSION == "0.3.0"
+    assert written["illustrative"] is False and written["schema_version"] == contract.SCHEMA_VERSION == "0.4.0"
 
 
 def test_the_run_block_names_the_pricing_build(store):
@@ -383,7 +383,8 @@ def _main_frames(monkeypatch, tmp_path, *frame_args) -> tuple:
     monkeypatch.setattr(export_app_data, "data_quality_body", lambda store: {})
     monkeypatch.setattr(export_app_data, "surface_frames_body", lambda store, frames: seen.append(frames) or {})
     monkeypatch.setattr(export_app_data, "build_payloads", lambda *args, **kwargs: {})
-    args = ["--store", str(tmp_path), "--out-dir", str(tmp_path / "out")]
+    monkeypatch.setattr(export_app_data, "engine_bodies", lambda run_dir, splits: ({}, {}))
+    args = ["--store", str(tmp_path), "--out-dir", str(tmp_path / "out"), "--run-dir", str(tmp_path)]
     for text in frame_args:
         args += ["--frame", text]
     assert export_app_data.main(args) == 0

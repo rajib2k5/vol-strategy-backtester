@@ -3,59 +3,82 @@ title: "Engine daily loop: one trading session t"
 ---
 sequenceDiagram
     autonumber
-    participant Eng as Engine
-    participant Store as Chain store
-    participant View as MarketView as_of t
-    participant Fill as Fill model
-    participant Exp as Expiry and assignment
-    participant Mark as Marker
-    participant Hedge as Hedger
-    participant Risk as Risk and margin
-    participant Sig as Signals
-    participant Strat as Strategy
+    participant Eng as Run (loop.py)
+    participant Cache as YearCache (parquet, 2 years in memory)
+    participant View as StoreView as_of t
+    participant Cash as cash.py
+    participant Fill as fills.py
+    participant Settle as settlement.py
+    participant Mark as marks.py
+    participant Hedge as hedge.py
+    participant Strat as Strategy (RollingShortStraddle)
+    participant Early as early.py
     participant Led as Ledger
-    Eng->>Store: load snapshot t#58; option_quotes, quote_iv, smile_fits, S_t, r_t, dividends, VIX
-    Store-->>Eng: snapshot t, or none on a missing session
-    Eng->>View: create view with as_of = t and the run's split
-    Note right of View: A read dated after t raises LookAheadError, and as_of past the split end raises SplitError
-    Eng->>Exp: book early assignments and exercises decided at t-1
-    Note right of Exp: Start of day#58; events decided at t-1
-    Exp-->>Eng: share deliveries at strike K
-    Eng->>Eng: cancel pending orders on lots these events removed (LOT_REMOVED)
-    Eng->>Eng: dividends with ex-date t on share positions
-    Eng->>Eng: cash interest from t-1 to t at r_cc of t-1
-    Eng->>Fill: pending orders created at t-1
+    Eng->>View: step_01_load#58; create the view with as_of = t and the run's split
+    Note right of View: A read dated after t raises LookAheadError, and as_of past the split end raises SplitError. Every market read goes through the view#59; the one exception is the session calendar, dates only (D3)
+    View->>Cache: slice the rows dated t#58; SPY bar, rates, dividends up to t, and the day tables
+    Cache-->>View: option_quotes, quote_iv, expiry_forwards, smile_fits of t
+    Eng->>Eng: S_t, r(t) = the last DGS3MO dated before t, dividends paid by t#59; the day's surface, or the previous one copied when t has no usable smile
+    Note right of Eng: A copy is counted as stale_surface_days in run_meta.json
+    Eng->>Eng: step_02_start_of_day#58; book the early events decided at t-1 (shares at K, cash -/+ 100 K)
+    Eng->>Cash: dividends with ex-date t on the shares held#59; interest from t-1 to t on the prior-close cash at r(t-1)#59; borrow fee on short shares
+    Cash-->>Eng: signed integer cents, each rounded once#58; cash_flows rows dividend, interest, borrow_fee
+    Eng->>Eng: cancel every pending order with a leg on a lot those events removed (LOT_REMOVED)
+    Eng->>Eng: step_03_fill#58; a next_open hedge from t-1 trades at today's open#59; share orders fill at this close whatever the snapshot (D15)
     alt snapshot t exists
-        Fill->>View: quote for each leg
-        Fill-->>Eng: fills at mid plus or minus k times half-spread in integer cents, fees
-        Fill-->>Eng: cap from the order-date volume V_t (hard cap of record), remainder cancelled with reason
+        Eng->>View: quotes and quote_iv of the legs' contracts at t
+        View-->>Eng: bid, ask, quality_flags, volume, IV
+        Eng->>Fill: option orders created before t#58; quote state, price in integer cents at mid plus or minus k half-spreads, cap, whole packages, fees
+        Fill-->>Eng: fills, and cash_flows option_premium and option_fee#59; a remainder is cancelled (NO_QUOTE, ZERO_BID, ILLIQUID, CAP)
     else no snapshot on t
-        Fill-->>Eng: orders wait for the next snapshot
+        Eng->>Eng: option orders wait for the next snapshot
     end
-    Eng->>Exp: contracts expiring at t
-    Exp->>View: SPY official close S_t
-    Exp-->>Eng: ITM by at least 0.01 settles into shares at K, else expires, pin flags
-    Eng->>Mark: mark every open lot
-    Mark->>View: quote mid, zero-bid mid, surface IV or stale surface
-    Mark-->>Eng: mark_price, mark_source, surface flags, Black-76 greeks per lot
-    Eng->>Eng: NAV_mid and NAV_liq
-    Eng->>Hedge: net delta including delivered shares
-    alt schedule or band says hedge
-        Hedge-->>Eng: SPY trade at S_t with commission and slippage
-    else no hedge today
+    Eng->>Settle: step_04_settle#58; lots whose settle_date is t, against the SPY close S_t
+    Note right of Settle: settle_date is the expiry, or D16's map for the two mapped non-session expiries (2015-12-19 to 12-18, 2018-12-05 to 12-04)#59; any other raises UnmappedExpiry
+    Settle-->>Eng: ITM by 0.01 or more#58; shares at K, else expired worthless#59; pin flag#59; expiry_events and cash_flows settlement
+    Eng->>Eng: cancel pending orders on the settled lots (LOT_REMOVED, D12)
+    opt hedge mode never and shares were delivered
+        Eng->>Eng: new_order#58; share_liquidation for the delivered shares, filled at the t+1 close (ADR-0003 section 3, D15)
+    end
+    Eng->>View: step_05_mark#58; quotes and quote_iv of the open lots' contracts at t
+    View-->>Eng: bid, ask, quality_flags, own IV, in_smile
+    Eng->>Mark: mark_lots#58; one mark per open lot, plus an INTRINSIC row for each lot settled today, kept out of NAV (D11)
+    Note right of Mark: QUOTE_MID, ZERO_BID_MID, else the CRR American price at the surface IV (SURFACE_MODEL#59; STALE_SURFACE with no snapshot). Never a carried last mid
+    Mark-->>Eng: mark_price, mark_source, mark_flags (MARK_JUMP, IV_FAIL, GREEKS_OTM_IV), Black-76 greeks, value_mid and value_liq per lot
+    Eng->>Hedge: step_06_hedge#58; net delta in shares, delivered shares included#59; due on the schedule or the band, or never
+    Note right of Hedge: With hedge_timing next_open the plan is kept and trades at the next open, in step 3. Implemented, but no test exercises it
+    alt hedge due
+        Hedge-->>Eng: hedge_shares#58; minus round_half_away(net delta), at S_t
+        Eng->>Fill: stock_cost_cents#58; commission and slippage, Decimal ROUND_HALF_UP
+        Fill-->>Eng: cash_flows hedge_trade, hedge_commission, hedge_slippage#59; a hedges row, a zero-share trade included
+    else not due
         Hedge-->>Eng: no trade
     end
-    Eng->>Led: greeks_snapshots and P&L attribution against t-1
-    Eng->>Risk: end-of-day greek budgets, stress grid cells, net margin requirement
-    Risk-->>Eng: reduce-only orders for t+1 on breach or margin call
-    Eng->>Sig: compute signals from the view, refitting on schedule
-    Sig->>View: SPY bars, VIX and surface dated up to t
-    Sig-->>Eng: IV30, RV forecast, VRP spread, regime, model_fit_date
-    Eng->>Strat: view, signals, open positions
-    Strat-->>Eng: exits and entries as order intents
-    Eng->>Risk: pre-trade check of each intent#58; greeks, stress cells, net margin
-    Risk-->>Eng: scaled, rejected or accepted orders queued for t+1
-    Eng->>Exp: early-exercise test for t+1#58; calls by closed form before an ex-date, puts on the CRR lattice
-    Exp-->>Eng: assignments and exercises effective at t+1
-    Eng->>Led: orders, fills, position_marks, hedges, expiry_events, risk_events, signals, daily_pnl
-    Led-->>Eng: rows appended for session t
+    Eng->>Mark: step_07_snapshot#58; NAV_mid, NAV_liq, the model-marked share of gross option value
+    Mark-->>Eng: OK, or DEGRADED above 20#37;
+    Eng->>Led: daily_pnl row for t (the attribution and margin columns stay null until M5 and M6)
+    alt step_08_eod_risk#58; NAV_mid above 0
+        Eng->>Strat: step_09_decide#58; decide(view, book.state(t), ctx)
+        Note right of Strat: book.state is a frozen copy#58; the strategy cannot move the book
+        Strat->>View: forwards and quotes at t, up to as_of only
+        View-->>Strat: the chain of t
+        Strat-->>Eng: order intents#58; open a short straddle when flat#59; close when DTE at the next session is at most exit_dte (0 holds to expiry)
+        Eng->>Eng: check_intent, stamp the order-date volume V_t on each leg, create the orders for t+1
+        opt fill_timing is same_close
+            Eng->>Fill: pass 9b#58; today's new option orders against snapshot t, stamped t (D17)
+            Fill-->>Eng: fills dated t#59; the new lots are marked at t and the daily_pnl row of t is recomputed
+        end
+        Eng->>Early: step_10_early#58; each open lot not settling today, at the surface IV
+        Note right of Early: Calls#58; before a projected ex-date t+1, by the closed form (the lattice with two ex-dates). Puts#58; every day, a pre-filter and then the CRR lattice, N = 500
+        Early-->>Eng: exercise or assign at t+1#58; an expiry_events row (early_exercised, early_assigned), booked in step 2 of t+1
+        opt hedge mode never and shares will be delivered
+            Eng->>Eng: new_order#58; share_liquidation, decided at t, filled at the t+1 close (ADR-0003 section 5)
+        end
+    else NAV_mid at or below 0 (ruin)
+        Eng->>Led: a risk_events row kind ruin, the open positions get exit_reason ruin, the run stops after step 11
+    end
+    Eng->>Led: step_11_write#58; position_marks rows of t#59; keep the close (cash, shares, NAV, surface, marks) for t+1
+    Eng->>Eng: on_session_end(t, book)
+    Eng->>Led: run_backtest, after the last session#58; runs, positions, orders, order_legs and lots rows#59; all 12 tables written to a .tmp folder
+    Note right of Led: Once per run, not per session. The store is checked again first#58; an input file that changed while the run read it raises StoreChanged and no ledger is written
+    Led-->>Eng: SHA-256 of each file in run_meta.json#59; the folder is renamed to runs/run_id=ID, with ID = SHA-256(config_hash, data_fingerprint, commit, code_fingerprint)

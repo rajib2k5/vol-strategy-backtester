@@ -1078,16 +1078,21 @@ function parseRun(o: Record<string, unknown>, path: string): RunBlock {
   return run
 }
 
-function parseUnits(o: Record<string, unknown>, path: string): SurfaceFrames['units'] {
+/** The `units` block of a results dataset: every key of `keys`, each exactly the string `expected` gives. Unknown extra keys are dropped. */
+function needUnits<K extends string>(o: Record<string, unknown>, path: string, keys: readonly K[], expected: Record<K, string>): Record<K, string> {
   const at = `${path}.units`
   const raw = asRecord(need(o, 'units', path), at)
-  const units = {} as SurfaceFrames['units']
-  for (const key of SURFACE_UNIT_KEYS) {
+  const units = {} as Record<K, string>
+  for (const key of keys) {
     const unit = needString(raw, key, at)
-    if (unit !== SURFACE_UNITS[key]) fail(`${at}.${key}`, `"${unit}" is not the exporter's unit for ${key}, "${SURFACE_UNITS[key]}"`)
+    if (unit !== expected[key]) fail(`${at}.${key}`, `"${unit}" is not the exporter's unit for ${key}, "${expected[key]}"`)
     units[key] = unit
   }
   return units
+}
+
+function parseUnits(o: Record<string, unknown>, path: string): SurfaceFrames['units'] {
+  return needUnits(o, path, SURFACE_UNIT_KEYS, SURFACE_UNITS)
 }
 
 /** rows x cols of numbers, each passing `check` (which fails with its own message). */
@@ -1533,6 +1538,642 @@ export function parseSurfaceFrames(raw: unknown): SurfaceFrames {
     fail(`${P}.run`, `samples ${run.sample_start} to ${run.sample_end} but the frames run from ${frames[0].date} to ${frames[frames.length - 1].date}`)
   }
   return { schema_version, generated_at, source_commit, run, units, illustrative: false, label, grid_moneyness, grid_dte, cell_flag_names, frames }
+}
+
+// ---------------------------------------------------------------- engine datasets (milestone 3)
+
+/*
+ * blotter.json and positions_timeline.json are two views of one engine run's ledger: every fill and expiry event,
+ * and when each position was open. They carry what the engine did, never how well it did: no P&L, NAV, return or
+ * Sharpe is in either file, and the app computes none (ADR-0001 §6). The checks below are the dataset spec's, one
+ * for one; where the spec is silent the parser is silent too, except where its own sentence needs a value to exist.
+ */
+
+/** The dataset the Blotter page reads: every fill and every expiry or exercise event of one engine run. */
+export const BLOTTER_DATASET = 'blotter'
+
+/** The dataset the Positions page reads: when each position was open, and how many were open at each close. */
+export const POSITIONS_TIMELINE_DATASET = 'positions_timeline'
+
+/** The first schema_version that has a blotter or positions_timeline file; an older file cannot be one. */
+export const ENGINE_DATASETS_MIN_VERSION = '0.4.0'
+
+/** The run block of an engine run, in the order the exporter writes it (ADR-0001 §5; the engine's run record, not the pricing build's RUN_KEYS). */
+export const ENGINE_RUN_KEYS = [
+  'run_id',
+  'config_hash',
+  'data_fingerprint',
+  'engine_commit',
+  'data_source',
+  'execution_mode',
+  'fill_timing',
+  'cap_mode',
+  'chain_mask',
+  'split',
+  'run_purpose',
+  'strategy',
+  'status',
+  'sample_start',
+  'sample_end',
+] as const
+
+export const EXECUTION_MODES = ['quote', 'surface'] as const
+export const FILL_TIMINGS = ['next_close', 'same_close'] as const
+export const CAP_MODES = ['hard_only', 'volume'] as const
+/** The only chain mask a run can name so far. */
+export const CHAIN_MASKS = ['none'] as const
+export const SPLITS = ['development', 'validation', 'holdout'] as const
+export const RUN_PURPOSES = ['trial', 'diagnostic'] as const
+export const RUN_STATUSES = ['ok', 'ruin'] as const
+
+export const FILL_INSTRUMENTS = ['option', 'share'] as const
+/** Where an option fill's price came from; a share fill is always the SPY `close`. */
+export const OPTION_FILL_SOURCES = ['quote', 'surface'] as const
+export const SHARE_FILL_SOURCE = 'close'
+export const FILL_INTENTS = ['open', 'close', 'reduce_risk', 'margin_liquidation', 'share_liquidation'] as const
+/** The one intent a share fill has, and the one an option fill never has. */
+export const SHARE_FILL_INTENT = 'share_liquidation'
+
+export const EVENT_TYPES = ['expired_worthless', 'exercised', 'assigned', 'early_exercised', 'early_assigned'] as const
+/** The events that book on the next session and settle at the strike, so they have no settlement price. */
+export const EARLY_EVENT_TYPES: readonly string[] = ['early_exercised', 'early_assigned']
+/** ADR-0003: a settlement within this many cents of the strike is a pin. */
+const PIN_BAND_CENTS = 50
+/** Shares in one option contract. */
+export const SHARES_PER_CONTRACT = 100
+
+// One array literal on one line: a Python contract test parses it and compares it, as a set, with the engine's exit reasons.
+export const EXIT_REASONS = ['dte', 'expiry', 'assignment', 'exercise', 'signal', 'profit_target', 'stop', 'risk', 'margin', 'ruin'] as const
+
+// Mirrors volbt.engine.settlement.NON_SESSION_EXPIRIES (a contract test keeps them equal; ADR-0003 D16): an expiry that was not
+// a session settles at the close of the session before it. One object literal, which that test parses.
+export const NON_SESSION_EXPIRIES: Readonly<Record<string, string>> = { '2015-12-19': '2015-12-18', '2018-12-05': '2018-12-04' }
+
+export type ExecutionMode = (typeof EXECUTION_MODES)[number]
+export type FillTiming = (typeof FILL_TIMINGS)[number]
+export type CapMode = (typeof CAP_MODES)[number]
+export type Split = (typeof SPLITS)[number]
+export type RunPurpose = (typeof RUN_PURPOSES)[number]
+export type RunStatus = (typeof RUN_STATUSES)[number]
+export type FillInstrument = (typeof FILL_INSTRUMENTS)[number]
+export type FillSource = (typeof OPTION_FILL_SOURCES)[number] | typeof SHARE_FILL_SOURCE
+export type FillIntent = (typeof FILL_INTENTS)[number]
+export type EventType = (typeof EVENT_TYPES)[number]
+export type ExitReason = (typeof EXIT_REASONS)[number]
+
+/** The number fields of blotter.json, each with a unit in `units` so the page never guesses one. */
+export const BLOTTER_UNIT_KEYS = ['qty', 'price', 'mid', 'half_spread', 'fees', 'strike', 'settlement_price', 'shares_delivered'] as const
+
+/** The unit of each, exactly as tools/export_app_data.py writes it: any other string is refused, as SURFACE_UNITS does. */
+export const BLOTTER_UNITS: Record<(typeof BLOTTER_UNIT_KEYS)[number], string> = {
+  qty: 'contracts (options) or shares (SPY), signed: + bought, - sold',
+  price: 'USD per share',
+  mid: 'USD per share',
+  half_spread: 'USD per share',
+  fees: 'USD',
+  strike: 'USD per share',
+  settlement_price: 'USD per share',
+  shares_delivered: 'shares, signed: + received, - delivered',
+}
+
+/** The number fields of positions_timeline.json. */
+export const POSITIONS_TIMELINE_UNIT_KEYS = ['open_count', 'ratio'] as const
+
+export const POSITIONS_TIMELINE_UNITS: Record<(typeof POSITIONS_TIMELINE_UNIT_KEYS)[number], string> = {
+  open_count: "positions open at the session's close",
+  ratio: 'contracts per package, signed: + long, - short',
+}
+
+export interface EngineRunBlock {
+  /** SHA-256 hex of config_hash, data_fingerprint and engine_commit. */
+  run_id: string
+  /** SHA-256, 64 lowercase hex digits. */
+  config_hash: string
+  /** SHA-256, 64 lowercase hex digits. */
+  data_fingerprint: string
+  /** 40 hex digits of the commit the run was made from, then "-dirty" if the tree had uncommitted changes. */
+  engine_commit: string
+  data_source: DataSource
+  execution_mode: ExecutionMode
+  fill_timing: FillTiming
+  cap_mode: CapMode
+  chain_mask: (typeof CHAIN_MASKS)[number]
+  split: Split
+  run_purpose: RunPurpose
+  strategy: string
+  status: RunStatus
+  /** YYYY-MM-DD. */
+  sample_start: string
+  /** YYYY-MM-DD, not before sample_start. */
+  sample_end: string
+}
+
+export interface Fill {
+  /** From 1, strictly increasing along the file. */
+  fill_id: number
+  /** The session the fill was booked on: a weekday inside the run's sample, not before the fill above, and on or before the contract's expiry (option). */
+  date: string
+  instrument: FillInstrument
+  /** The 21-character OSI symbol of an option fill; null for a share fill. */
+  osi_symbol: string | null
+  /** Contracts (option) or shares (SPY), signed: + bought, - sold. Never 0. */
+  qty: number
+  /** USD per share, 4 decimals; an option fill's is a whole number of cents (ADR-0002 §2). */
+  price: number
+  /** USD per share; null for a share fill. */
+  mid: number | null
+  /** USD per share; null for a share fill. */
+  half_spread: number | null
+  /** USD, 2 decimals. */
+  fees: number
+  fill_source: FillSource
+  intent: FillIntent
+}
+
+export interface ExpiryEvent {
+  /** From 1, strictly increasing along the file. */
+  event_id: number
+  /** The session the event was decided or settled on: on or before the contract's expiry; a settlement event is on the contract's settle date. */
+  date: string
+  /** The session it books on: `date`, or the next session for an early event. Never after the contract's expiry. */
+  effective_date: string
+  osi_symbol: string
+  event_type: EventType
+  /** Signed lot quantity: + long, - short. Never 0. */
+  contracts: number
+  /** Signed: + received, - delivered. 0 for expired_worthless, else 100 per contract. */
+  shares_delivered: number
+  /** The OSI symbol's strike. */
+  strike: number
+  /** null for an early event: it settles at the strike, not a close. Otherwise the event type agrees with it: ITM by a cent or more exactly when not expired_worthless (ADR-0003). */
+  settlement_price: number | null
+  /** True only for a short lot settled within the pin band (50 cents) of the strike (ADR-0003). */
+  pin_flag: boolean
+}
+
+export interface Blotter {
+  schema_version: string
+  generated_at: string
+  source_commit: string
+  run: EngineRunBlock
+  units: Record<(typeof BLOTTER_UNIT_KEYS)[number], string>
+  illustrative: false
+  label: string
+  fills: Fill[]
+  events: ExpiryEvent[]
+}
+
+export interface PositionLeg {
+  osi_symbol: string
+  /** Contracts per package, signed: + long, - short. Never 0. */
+  ratio: number
+}
+
+export interface Position {
+  /** From 1, strictly increasing along the file. */
+  position_id: number
+  /** E.g. "short_straddle". */
+  structure: string
+  opened: string
+  /** Not before `opened`; null while the position is open at sample_end, or when the run ended in ruin. */
+  closed: string | null
+  legs: PositionLeg[]
+  /** null exactly while closed is null in a run that did not end in ruin. "expiry" only for a position closed on or after its earliest settle date. */
+  exit_reason: ExitReason | null
+}
+
+export interface PositionsTimeline {
+  schema_version: string
+  generated_at: string
+  source_commit: string
+  run: EngineRunBlock
+  units: Record<(typeof POSITIONS_TIMELINE_UNIT_KEYS)[number], string>
+  illustrative: false
+  label: string
+  positions: Position[]
+  /** The run's sessions (weekdays), strictly increasing. */
+  dates: string[]
+  /** Positions open at each session's close (opened on or before it, not yet closed); same length as `dates`, and checked against `positions`. */
+  open_count: number[]
+}
+
+/** The commit the run was made from: a full SHA-1 in hex, then "-dirty" if the working tree had changes. */
+const ENGINE_COMMIT = /^[0-9a-f]{40}(?:-dirty)?$/
+
+/** A 21-character OSI option symbol: the root padded to 6 characters, YYMMDD, C or P, and the strike times 1000 as 8 digits. */
+const OSI_SYMBOL = /^[A-Z0-9 ]{6}\d{6}[CP]\d{8}$/
+
+function quotedList(allowed: readonly string[]): string {
+  return allowed.map((a) => `"${a}"`).join(', ')
+}
+
+/** `v` as one of `allowed`, or a failure at `at` that lists them. */
+function checkOneOf<T extends string>(v: unknown, at: string, allowed: readonly T[]): T {
+  if (typeof v !== 'string' || !(allowed as readonly string[]).includes(v)) fail(at, `expected one of ${quotedList(allowed)}, got ${JSON.stringify(v)}`)
+  return v as T
+}
+
+function needOneOf<T extends string>(obj: Record<string, unknown>, key: string, path: string, allowed: readonly T[]): T {
+  return checkOneOf(need(obj, key, path), `${path}.${key}`, allowed)
+}
+
+/** A whole number of at least `min`. */
+function checkInteger(v: unknown, at: string, min: number): number {
+  if (typeof v !== 'number' || !Number.isInteger(v) || v < min) fail(at, `expected a whole number of at least ${min}, got ${String(v)}`)
+  return v
+}
+
+function needInteger(obj: Record<string, unknown>, key: string, path: string, min: number): number {
+  return checkInteger(need(obj, key, path), `${path}.${key}`, min)
+}
+
+/** A whole number other than 0: a quantity or a ratio has a sign and a size. */
+function needNonZeroInteger(obj: Record<string, unknown>, key: string, path: string): number {
+  const v = need(obj, key, path)
+  if (typeof v !== 'number' || !Number.isInteger(v) || v === 0) fail(`${path}.${key}`, `expected a whole number other than 0, got ${String(v)}`)
+  return v
+}
+
+/** A finite number above 0. */
+function needPositiveNumber(obj: Record<string, unknown>, key: string, path: string): number {
+  const v = need(obj, key, path)
+  if (typeof v !== 'number' || !Number.isFinite(v) || v <= 0) fail(`${path}.${key}`, `expected a number above 0, got ${String(v)}`)
+  return v
+}
+
+/** A finite number of at least 0. */
+function checkNonNegative(v: unknown, at: string): number {
+  if (typeof v !== 'number' || !Number.isFinite(v) || v < 0) fail(at, `expected a number of at least 0, got ${String(v)}`)
+  return v
+}
+
+function needNonNegativeNumber(obj: Record<string, unknown>, key: string, path: string): number {
+  return checkNonNegative(need(obj, key, path), `${path}.${key}`)
+}
+
+/** An option fill carries the number; a share fill, which has no quote, carries null. */
+function needNumberForOptionOnly(f: Record<string, unknown>, key: string, at: string, isOption: boolean): number | null {
+  const v = need(f, key, at)
+  if (isOption) return checkNonNegative(v, `${at}.${key}`)
+  if (v !== null) fail(`${at}.${key}`, `a share fill has no quote, so this must be null, got ${String(v)}`)
+  return null
+}
+
+function needOsiSymbol(obj: Record<string, unknown>, key: string, path: string): string {
+  const v = need(obj, key, path)
+  if (typeof v !== 'string' || !OSI_SYMBOL.test(v)) {
+    fail(`${path}.${key}`, `${JSON.stringify(v)} is not a 21-character OSI symbol (root padded to 6, YYMMDD, C or P, strike x 1000 as 8 digits)`)
+  }
+  return v
+}
+
+/** The expiry date of an OSI symbol: its YYMMDD, in the 2000s. */
+function osiExpiry(osi: string): string {
+  return `20${osi.slice(6, 8)}-${osi.slice(8, 10)}-${osi.slice(10, 12)}`
+}
+
+/** The session a contract settles on: its expiry, or the session before when the expiry was not one (ADR-0003 D16). */
+function osiSettleDate(osi: string): string {
+  const expiry = osiExpiry(osi)
+  return NON_SESSION_EXPIRIES[expiry] ?? expiry
+}
+
+/** The strike an OSI symbol names: the last 8 digits over 1000. */
+function osiStrike(osi: string): number {
+  return Number(osi.slice(13, 21)) / 1000
+}
+
+/** `date` must not be after the contract's expiry. */
+function assertNotAfterExpiry(date: string, osi: string, at: string, what: string): void {
+  const expiry = osiExpiry(osi)
+  if (date > expiry) fail(at, `${date} is after the expiry ${expiry} of ${JSON.stringify(osi)}: ${what}`)
+}
+
+function assertWeekday(date: string, at: string): void {
+  const weekday = new Date(`${date}T00:00:00Z`).getUTCDay()
+  if (weekday === 0 || weekday === 6) fail(at, `${date} is a ${weekday === 0 ? 'Sunday' : 'Saturday'}: a session is a weekday`)
+}
+
+/** A YYYY-MM-DD date that exists and is a weekday: the app has no exchange calendar, so a weekday is the proxy for a session (a holiday on a weekday is not caught). */
+function needSession(obj: Record<string, unknown>, key: string, path: string): string {
+  const v = needDate(obj, key, path)
+  assertWeekday(v, `${path}.${key}`)
+  return v
+}
+
+/** A session inside the run's sample (both ends included). */
+function needSessionInSample(obj: Record<string, unknown>, key: string, path: string, run: EngineRunBlock): string {
+  const v = needSession(obj, key, path)
+  if (v < run.sample_start || v > run.sample_end) fail(`${path}.${key}`, `${v} is outside the run's sample ${run.sample_start} to ${run.sample_end}`)
+  return v
+}
+
+function needHex(obj: Record<string, unknown>, key: string, path: string): string {
+  const v = needString(obj, key, path)
+  if (!SHA256_HEX.test(v)) fail(`${path}.${key}`, `"${v}" is not a SHA-256 (64 lowercase hex digits)`)
+  return v
+}
+
+/** How each run key is read: the same set of keys as ENGINE_RUN_KEYS, so a key added to the list without a reader does not compile. */
+const ENGINE_RUN_READERS: Record<(typeof ENGINE_RUN_KEYS)[number], (obj: Record<string, unknown>, key: string, at: string) => string> = {
+  run_id: needHex,
+  config_hash: needHex,
+  data_fingerprint: needHex,
+  engine_commit: (obj, key, at) => {
+    const v = needString(obj, key, at)
+    if (!ENGINE_COMMIT.test(v)) fail(`${at}.${key}`, `"${v}" is not 40 lowercase hex digits, optionally followed by -dirty`)
+    return v
+  },
+  data_source: (obj, key, at) => {
+    const v = needString(obj, key, at)
+    if (!isDataSource(v)) fail(`${at}.${key}`, `"${v}" is not a known data source (${Object.keys(DATA_SOURCE_NAMES).join(', ')})`)
+    return v
+  },
+  execution_mode: (obj, key, at) => needOneOf(obj, key, at, EXECUTION_MODES),
+  fill_timing: (obj, key, at) => needOneOf(obj, key, at, FILL_TIMINGS),
+  cap_mode: (obj, key, at) => needOneOf(obj, key, at, CAP_MODES),
+  chain_mask: (obj, key, at) => needOneOf(obj, key, at, CHAIN_MASKS),
+  split: (obj, key, at) => needOneOf(obj, key, at, SPLITS),
+  run_purpose: (obj, key, at) => needOneOf(obj, key, at, RUN_PURPOSES),
+  strategy: needString,
+  status: (obj, key, at) => needOneOf(obj, key, at, RUN_STATUSES),
+  sample_start: needDate,
+  sample_end: needDate,
+}
+
+/** The fifteen run keys of an engine run, in ENGINE_RUN_KEYS order. Unknown extra keys are dropped, as everywhere in this contract. */
+function parseEngineRun(o: Record<string, unknown>, path: string): EngineRunBlock {
+  const at = `${path}.run`
+  const raw = asRecord(need(o, 'run', path), at)
+  const run: Record<string, string> = {}
+  for (const key of ENGINE_RUN_KEYS) run[key] = ENGINE_RUN_READERS[key](raw, key, at)
+  if (run.sample_end < run.sample_start) fail(`${at}.sample_end`, `${run.sample_end} is before sample_start ${run.sample_start}`)
+  return run as unknown as EngineRunBlock
+}
+
+/** The blocks both engine datasets open with, after the envelope: run, units, illustrative and label. */
+function parseEngineHeader<K extends string>(
+  o: Record<string, unknown>,
+  P: string,
+  unitKeys: readonly K[],
+  unitTable: Record<K, string>,
+): { schema_version: string; generated_at: string; source_commit: string; run: EngineRunBlock; units: Record<K, string>; label: string } {
+  const schema_version = needSchemaVersion(o, P)
+  if (isOlderThan(schema_version, ENGINE_DATASETS_MIN_VERSION)) {
+    fail(`${P}.schema_version`, `"${schema_version}" is older than ${ENGINE_DATASETS_MIN_VERSION}, the version that introduced this file`)
+  }
+  const generated_at = needTimestamp(o, P)
+  const source_commit = needSourceCommit(o, P)
+  const run = parseEngineRun(o, P)
+  const units = needUnits(o, P, unitKeys, unitTable)
+  if (need(o, 'illustrative', P) !== false) {
+    fail(`${P}.illustrative`, 'must be false: these are the records of an engine run, so a file flagged illustrative is refused')
+  }
+  const label = needString(o, 'label', P)
+  return { schema_version, generated_at, source_commit, run, units, label }
+}
+
+function parseFill(raw: unknown, at: string, run: EngineRunBlock): Fill {
+  const f = asRecord(raw, at)
+  const fill_id = needInteger(f, 'fill_id', at, 1)
+  const date = needSessionInSample(f, 'date', at, run)
+  const instrument = needOneOf(f, 'instrument', at, FILL_INSTRUMENTS)
+  const isOption = instrument === 'option'
+  let osi_symbol: string | null = null
+  if (isOption) {
+    osi_symbol = needOsiSymbol(f, 'osi_symbol', at)
+  } else if (need(f, 'osi_symbol', at) !== null) {
+    fail(`${at}.osi_symbol`, 'a share fill has no OSI symbol, so this must be null')
+  }
+  const qty = needNonZeroInteger(f, 'qty', at)
+  const price = needPositiveNumber(f, 'price', at)
+  // ADR-0002 §2: the engine rounds an option fill to whole cents.
+  if (isOption && Math.abs(price * 100 - Math.round(price * 100)) > 1e-9) {
+    fail(`${at}.price`, `${price} is not a whole number of cents (ADR-0002 §2)`)
+  }
+  const mid = needNumberForOptionOnly(f, 'mid', at, isOption)
+  const half_spread = needNumberForOptionOnly(f, 'half_spread', at, isOption)
+  const fees = needNonNegativeNumber(f, 'fees', at)
+  const fill_source = isOption ? needOneOf(f, 'fill_source', at, OPTION_FILL_SOURCES) : needOneOf(f, 'fill_source', at, [SHARE_FILL_SOURCE] as const)
+  const intent = needOneOf(f, 'intent', at, FILL_INTENTS)
+  if (isOption && intent === SHARE_FILL_INTENT) {
+    fail(`${at}.intent`, `an option fill never has the intent "${SHARE_FILL_INTENT}"`)
+  }
+  if (!isOption && intent !== SHARE_FILL_INTENT) {
+    fail(`${at}.intent`, `a share fill has the intent "${SHARE_FILL_INTENT}", got "${intent}"`)
+  }
+  if (osi_symbol !== null) assertNotAfterExpiry(date, osi_symbol, `${at}.date`, 'a contract is not traded after it expires')
+  return { fill_id, date, instrument, osi_symbol, qty, price, mid, half_spread, fees, fill_source, intent }
+}
+
+function parseEvent(raw: unknown, at: string, run: EngineRunBlock): ExpiryEvent {
+  const e = asRecord(raw, at)
+  const event_id = needInteger(e, 'event_id', at, 1)
+  const date = needSessionInSample(e, 'date', at, run)
+  // An early event books on the next session, so the effective date is after the decision, never before it; it may fall past the sample's end.
+  const effective_date = needSession(e, 'effective_date', at)
+  if (effective_date < date) fail(`${at}.effective_date`, `${effective_date} is before date ${date}`)
+  const osi_symbol = needOsiSymbol(e, 'osi_symbol', at)
+  const event_type = needOneOf(e, 'event_type', at, EVENT_TYPES)
+  const contracts = needNonZeroInteger(e, 'contracts', at)
+  const shares_delivered = need(e, 'shares_delivered', at)
+  if (typeof shares_delivered !== 'number' || !Number.isInteger(shares_delivered)) {
+    fail(`${at}.shares_delivered`, `expected a whole number, got ${String(shares_delivered)}`)
+  }
+  // ADR-0003's delivery table, checked, not computed for display: we exercise longs and are assigned on shorts, and a
+  // call delivers +100 shares a contract held (a put -100), so the sign follows the right and the side. (M3 review: a
+  // long lot "assigned", or a delivery of the wrong sign, was accepted.)
+  if ((event_type === 'assigned' || event_type === 'early_assigned') && contracts > 0) {
+    fail(`${at}.contracts`, `is ${contracts} but only a short lot (contracts < 0) is assigned`)
+  }
+  if ((event_type === 'exercised' || event_type === 'early_exercised') && contracts < 0) {
+    fail(`${at}.contracts`, `is ${contracts} but only a long lot (contracts > 0) is exercised`)
+  }
+  if (event_type === 'expired_worthless') {
+    if (shares_delivered !== 0) fail(`${at}.shares_delivered`, `is ${shares_delivered} but an option that expired worthless delivers no shares`)
+  } else {
+    const perContract = osi_symbol.charAt(12) === 'C' ? SHARES_PER_CONTRACT : -SHARES_PER_CONTRACT
+    if (shares_delivered !== perContract * contracts) {
+      fail(`${at}.shares_delivered`, `is ${shares_delivered} but ${contracts} contract(s) of a ${osi_symbol.charAt(12) === 'C' ? 'call' : 'put'} deliver ${perContract * contracts} shares (ADR-0003's delivery table)`)
+    }
+  }
+  assertNotAfterExpiry(date, osi_symbol, `${at}.date`, 'an event is not decided after the contract expires')
+  assertNotAfterExpiry(effective_date, osi_symbol, `${at}.effective_date`, 'an event does not book after the contract expires')
+  const strike = needPositiveNumber(e, 'strike', at)
+  // Whole cents, the test the fill price uses, before any comparison in cents: Math.round and Python's round part
+  // ways on a half cent (M3 round-3 review: K = 450.125 against S = 450.13).
+  if (Math.abs(strike * 100 - Math.round(strike * 100)) > 1e-9) {
+    fail(`${at}.strike`, `${strike} is not a whole number of cents`)
+  }
+  if (Math.abs(strike - osiStrike(osi_symbol)) > 1e-9) {
+    fail(`${at}.strike`, `is ${strike} but the OSI symbol ${JSON.stringify(osi_symbol)} names the strike ${osiStrike(osi_symbol)}`)
+  }
+  const settlement = need(e, 'settlement_price', at)
+  let settlement_price: number | null = null
+  if (EARLY_EVENT_TYPES.includes(event_type)) {
+    if (settlement !== null) fail(`${at}.settlement_price`, `an early event settles at the strike, not a close, so this must be null, got ${String(settlement)}`)
+  } else {
+    settlement_price = needPositiveNumber(e, 'settlement_price', at)
+    if (Math.abs(settlement_price * 100 - Math.round(settlement_price * 100)) > 1e-9) {
+      fail(`${at}.settlement_price`, `${settlement_price} is not a whole number of cents (S_set is the unadjusted close)`)
+    }
+  }
+  if (!EARLY_EVENT_TYPES.includes(event_type)) {
+    const settleDate = osiSettleDate(osi_symbol)
+    if (date !== settleDate) fail(`${at}.date`, `is ${date} but a settlement event is on the contract's settle date ${settleDate}`)
+    if (effective_date !== date) fail(`${at}.effective_date`, `is ${effective_date} but a settlement event books on its own date ${date}`)
+  }
+  const pin_flag = needBoolean(e, 'pin_flag', at)
+  // ADR-0003: whether the contract finished in the money, in whole cents, and the one-cent rule; and the pin band.
+  if (settlement_price !== null) {
+    const settleCents = Math.round(settlement_price * 100)
+    const strikeCents = Math.round(strike * 100)
+    const isCall = osi_symbol.charAt(12) === 'C'
+    const itm = isCall ? settleCents - strikeCents >= 1 : strikeCents - settleCents >= 1
+    if (itm !== (event_type !== 'expired_worthless')) {
+      fail(
+        `${at}.event_type`,
+        `is "${event_type}" but the ${isCall ? 'call' : 'put'} struck at ${strike} settled at ${settlement_price}, which is ${itm ? 'in' : 'not in'} the money by a cent or more (ADR-0003)`,
+      )
+    }
+    // The engine's rule, both ways (settlement.settle_lot): a short lot settling within the band is pinned, and
+    // nothing else is. (M3 round-3 review: a short lot inside the band with pin_flag false was accepted.)
+    const pinned = contracts < 0 && Math.abs(settleCents - strikeCents) <= PIN_BAND_CENTS
+    if (pin_flag !== pinned) {
+      fail(
+        `${at}.pin_flag`,
+        `is ${pin_flag} but the ${contracts < 0 ? 'short' : 'long'} lot (contracts ${contracts}) settled at ${settlement_price}, ${Math.abs(settleCents - strikeCents)} cents from the strike ${strike}: only a short lot within ${PIN_BAND_CENTS} cents is pinned (ADR-0003's pin band)`,
+      )
+    }
+  }
+  if (pin_flag && settlement_price === null) fail(`${at}.pin_flag`, 'is true but an early event has no settlement price to pin to')
+  return { event_id, date, effective_date, osi_symbol, event_type, contracts, shares_delivered, strike, settlement_price, pin_flag }
+}
+
+/** Entries of `list` with `id` strictly increasing (and, where `dateOf` is given, the date not before the one above it). */
+function assertOrdered<T>(list: T[], at: string, idKey: string, idOf: (x: T) => number, dateOf?: (x: T) => string): void {
+  list.forEach((item, i) => {
+    if (i === 0) return
+    const before = list[i - 1]
+    if (!(idOf(item) > idOf(before))) fail(`${at}[${i}].${idKey}`, `must be strictly increasing, but ${idOf(item)} follows ${idOf(before)}`)
+    if (dateOf !== undefined && dateOf(item) < dateOf(before)) {
+      fail(`${at}[${i}].date`, `must not go back in time, but ${dateOf(item)} follows ${dateOf(before)}`)
+    }
+  })
+}
+
+/**
+ * Every intent but `open` (and the share fills' `share_liquidation`) only reduces a position. Walking the option fills in
+ * file order, a reduce-only fill may not close more long (or short) contracts of a symbol than the earlier `open` fills
+ * bought (or sold). Events are ignored: they only remove contracts, so ignoring them never refuses a valid file.
+ */
+function assertReduceOnlyFillsHaveSomethingToReduce(fills: Fill[], at: string): void {
+  const book = new Map<string, { openedLong: number; openedShort: number; closedLong: number; closedShort: number }>()
+  fills.forEach((fill, i) => {
+    if (fill.osi_symbol === null) return
+    let row = book.get(fill.osi_symbol)
+    if (row === undefined) {
+      row = { openedLong: 0, openedShort: 0, closedLong: 0, closedShort: 0 }
+      book.set(fill.osi_symbol, row)
+    }
+    if (fill.intent === 'open') {
+      if (fill.qty > 0) row.openedLong += fill.qty
+      else row.openedShort -= fill.qty
+      return
+    }
+    // Reduce-only: a sale reduces a long, a purchase reduces a short.
+    if (fill.qty < 0) row.closedLong -= fill.qty
+    else row.closedShort += fill.qty
+    if (row.closedLong > row.openedLong || row.closedShort > row.openedShort) {
+      fail(
+        `${at}[${i}].intent`,
+        `is "${fill.intent}" (reduce-only) but ${fill.qty} of ${JSON.stringify(fill.osi_symbol)} reduces more ${fill.qty < 0 ? 'long' : 'short'} contracts than the fills before it opened`,
+      )
+    }
+  })
+}
+
+export function parseBlotter(raw: unknown): Blotter {
+  const P = BLOTTER_DATASET
+  const o = asRecord(raw, P)
+  const { schema_version, generated_at, source_commit, run, units, label } = parseEngineHeader(o, P, BLOTTER_UNIT_KEYS, BLOTTER_UNITS)
+  const fills = needArray(o, 'fills', P).map((item, i) => parseFill(item, `${P}.fills[${i}]`, run))
+  assertOrdered(fills, `${P}.fills`, 'fill_id', (x) => x.fill_id, (x) => x.date)
+  assertReduceOnlyFillsHaveSomethingToReduce(fills, `${P}.fills`)
+  const events = needArray(o, 'events', P).map((item, i) => parseEvent(item, `${P}.events[${i}]`, run))
+  assertOrdered(events, `${P}.events`, 'event_id', (x) => x.event_id, (x) => x.date)
+  return { schema_version, generated_at, source_commit, run, units, illustrative: false, label, fills, events }
+}
+
+function parsePosition(raw: unknown, at: string, run: EngineRunBlock): Position {
+  const p = asRecord(raw, at)
+  const position_id = needInteger(p, 'position_id', at, 1)
+  const structure = needString(p, 'structure', at)
+  const opened = needSessionInSample(p, 'opened', at, run)
+  let closed: string | null = null
+  if (need(p, 'closed', at) !== null) {
+    closed = needSessionInSample(p, 'closed', at, run)
+    if (closed < opened) fail(`${at}.closed`, `${closed} is before opened ${opened}`)
+  }
+  const legList = needArray(p, 'legs', at)
+  if (legList.length === 0) fail(`${at}.legs`, 'needs at least 1 leg')
+  const legs = legList.map((item, i): PositionLeg => {
+    const legAt = `${at}.legs[${i}]`
+    const leg = asRecord(item, legAt)
+    return { osi_symbol: needOsiSymbol(leg, 'osi_symbol', legAt), ratio: needNonZeroInteger(leg, 'ratio', legAt) }
+  })
+  // A reason exists once the position is closed, or the run ended in ruin; before that the position is simply still open.
+  const reason = need(p, 'exit_reason', at)
+  let exit_reason: ExitReason | null = null
+  if (closed !== null || run.status === 'ruin') {
+    exit_reason = checkOneOf(reason, `${at}.exit_reason`, EXIT_REASONS)
+  } else if (reason !== null) {
+    fail(`${at}.exit_reason`, `is ${JSON.stringify(reason)} but the position is still open in a run that did not end in ruin, so this must be null`)
+  }
+  if (exit_reason === 'expiry') {
+    const earliest = legs.map((l) => osiSettleDate(l.osi_symbol)).reduce((a, b) => (a < b ? a : b))
+    if (closed === null) fail(`${at}.exit_reason`, 'is "expiry" but the position has no close date')
+    if (closed < earliest) fail(`${at}.exit_reason`, `is "expiry" but the position closed on ${closed}, before its earliest settle date ${earliest}`)
+  }
+  return { position_id, structure, opened, closed, legs, exit_reason }
+}
+
+export function parsePositionsTimeline(raw: unknown): PositionsTimeline {
+  const P = POSITIONS_TIMELINE_DATASET
+  const o = asRecord(raw, P)
+  const { schema_version, generated_at, source_commit, run, units, label } = parseEngineHeader(
+    o,
+    P,
+    POSITIONS_TIMELINE_UNIT_KEYS,
+    POSITIONS_TIMELINE_UNITS,
+  )
+  const positions = needArray(o, 'positions', P).map((item, i) => parsePosition(item, `${P}.positions[${i}]`, run))
+  assertOrdered(positions, `${P}.positions`, 'position_id', (x) => x.position_id)
+  const rawDates = needArray(o, 'dates', P)
+  // The first session is the one the chart starts on, so the list cannot be empty.
+  if (rawDates.length === 0) fail(`${P}.dates`, 'needs at least 1 session')
+  const dates = rawDates.map((x, i) => {
+    const at = `${P}.dates[${i}]`
+    if (typeof x !== 'string' || !isRealDate(x)) fail(at, `${JSON.stringify(x)} is not a calendar date YYYY-MM-DD`)
+    assertWeekday(x, at)
+    return x
+  })
+  dates.forEach((x, i) => {
+    if (i > 0 && !(x > dates[i - 1])) fail(`${P}.dates[${i}]`, `must be strictly increasing, but ${x} follows ${dates[i - 1]}`)
+  })
+  if (dates[0] < run.sample_start) fail(`${P}.dates[0]`, `${dates[0]} is before the run's sample_start ${run.sample_start}`)
+  if (dates[dates.length - 1] > run.sample_end) {
+    fail(`${P}.dates[${dates.length - 1}]`, `${dates[dates.length - 1]} is after the run's sample_end ${run.sample_end}`)
+  }
+  const rawCounts = needArray(o, 'open_count', P)
+  if (rawCounts.length !== dates.length) fail(`${P}.open_count`, `has ${rawCounts.length} values but dates has ${dates.length}`)
+  const open_count = rawCounts.map((x, i) => checkInteger(x, `${P}.open_count[${i}]`, 0))
+  // The engine counts a position as open at a close when it opened on or before that session and has not closed by it.
+  open_count.forEach((n, i) => {
+    const expected = positions.filter((p) => p.opened <= dates[i] && (p.closed === null || p.closed > dates[i])).length
+    if (n !== expected) fail(`${P}.open_count[${i}]`, `is ${n} but ${expected} position(s) are open at the close of ${dates[i]}`)
+  })
+  return { schema_version, generated_at, source_commit, run, units, illustrative: false, label, positions, dates, open_count }
 }
 
 // ---------------------------------------------------------------- small pure helpers

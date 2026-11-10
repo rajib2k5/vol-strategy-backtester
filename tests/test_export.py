@@ -19,7 +19,7 @@ from volbt import build  # noqa: E402
 
 SHA = "0123456789abcdef0123456789abcdef01234567"
 FIXED_NOW = datetime(2026, 10, 27, 12, 0, 0, tzinfo=timezone.utc)
-ENVELOPE = {"schema_version": "0.3.0", "generated_at": "2026-10-27T12:00:00Z", "source_commit": SHA}
+ENVELOPE = {"schema_version": "0.4.0", "generated_at": "2026-10-27T12:00:00Z", "source_commit": SHA}
 
 
 def reject_non_finite(token):
@@ -70,7 +70,7 @@ def test_manifest_content(exported):
             {
                 "name": "illustrative_surface",
                 "path": "illustrative_surface.json",
-                "schema_version": "0.3.0",
+                "schema_version": "0.4.0",
                 "description": (
                     "Illustrative SSVI implied-vol surface for the milestone-0 3D hero. "
                     "Not market data."
@@ -79,7 +79,7 @@ def test_manifest_content(exported):
             {
                 "name": "data_quality",
                 "path": "data_quality.json",
-                "schema_version": "0.3.0",
+                "schema_version": "0.4.0",
                 "description": (
                     "Milestone-1 data-quality aggregates: quote flags per source and year, rows per "
                     "source, the calendar fixes, the cross-vendor agreement and the quality-gate "
@@ -89,7 +89,7 @@ def test_manifest_content(exported):
             {
                 "name": "surface_frames",
                 "path": "surface_frames.json",
-                "schema_version": "0.3.0",
+                "schema_version": "0.4.0",
                 "description": (
                     "Milestone-2 SPY implied-vol surfaces on a fixed grid for a few labelled dates, "
                     "from the de-Americanised OTM smiles of the pricing build. Market data."
@@ -246,17 +246,38 @@ def test_script_runs_as_a_plain_script_from_another_directory(tmp_path):
     store = pricing_store.make_store(tmp_path / "store")
     build.build_pricing(store)
     make_store(tmp_path / "store")
+    run_dir = engine_run(tmp_path / "engine")
     script = REPO / "tools" / "export_app_data.py"
     result = subprocess.run(
-        [sys.executable, str(script), "--out-dir", str(out), "--store", str(store.root), "--frame", "2023-06-15=made up"],
+        [sys.executable, str(script), "--out-dir", str(out), "--store", str(store.root), "--frame", "2023-06-15=made up",
+         "--run-dir", str(run_dir), "--allow-split", "validation"],
         cwd=elsewhere, capture_output=True, text=True,
     )
     assert result.returncode == 0, result.stderr
-    assert sorted(p.name for p in out.iterdir()) == ["data_quality.json", "illustrative_surface.json", "manifest.json",
-                                                     "surface_frames.json"]
+    assert sorted(p.name for p in out.iterdir()) == ["blotter.json", "data_quality.json", "illustrative_surface.json",
+                                                     "manifest.json", "positions_timeline.json", "surface_frames.json"]
     assert read_json(out / "surface_frames.json")["frames"][0]["label"] == "made up"
     # --out-dir was absolute, so nothing may land next to the (different) working directory.
     assert list(elsewhere.iterdir()) == []
+
+
+def engine_run(root):
+    """A reference-strategy run on tests/engine_store.py's made-up store (split 'validation': it is dated 2023)."""
+    sys.path.insert(0, str(REPO / "tests"))
+    import engine_helpers
+    import engine_store
+    from volbt.strategies.reference import RollingShortStraddle
+
+    store = engine_store.built_store(root / "store")
+    return engine_helpers.run(store, root / "runs", RollingShortStraddle()).run_dir
+
+
+def test_an_engine_run_of_another_split_is_refused_unless_allowed(tmp_path):
+    run_dir = engine_run(tmp_path)
+    with pytest.raises(ValueError, match="only a development-split run may feed the app"):
+        export_app_data.engine_bodies(run_dir)
+    blotter, positions = export_app_data.engine_bodies(run_dir, ("development", "validation"))
+    assert blotter["run"]["split"] == positions["run"]["split"] == "validation"
 
 
 def test_default_out_dir_comes_from_the_script_location_not_the_working_directory(tmp_path):
@@ -290,6 +311,13 @@ def committed_frames_body(committed_dir):
     return {key: value for key, value in written.items() if key not in ENVELOPE}
 
 
+def committed_body(committed_dir, name):
+    """An engine dataset's content after the envelope, as committed: its numbers come from a run's ledger, which is
+    git-ignored (tests/test_real_engine.py rebuilds it from the real development run)."""
+    written = read_json(committed_dir / name)
+    return {key: value for key, value in written.items() if key not in ENVELOPE}
+
+
 def committed_quality_body(committed_dir):
     """data_quality.json's content after the envelope, as committed. The default run has no store to
     rebuild it from; tests/test_export_data_quality.py (marked real_data) does that comparison."""
@@ -310,13 +338,15 @@ def assert_matches_a_fresh_export(committed_dir, fresh_dir, name):
     now = datetime.strptime(stamp["generated_at"], "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=timezone.utc)
     export_app_data.build_payloads(fresh_dir, lookup_for(stamp["source_commit"]), now,
                                    quality_body=committed_quality_body(committed_dir),
-                                   frames_body=committed_frames_body(committed_dir))
+                                   frames_body=committed_frames_body(committed_dir),
+                                   blotter_body=committed_body(committed_dir, "blotter.json"),
+                                   positions_body=committed_body(committed_dir, "positions_timeline.json"))
     assert (fresh_dir / name).read_bytes() == (committed_dir / name).read_bytes(), (
         f"app/public/data/{name} is stale; run: uv run python tools/export_app_data.py")
 
 
 @pytest.mark.parametrize("name", ["manifest.json", "illustrative_surface.json", "data_quality.json",
-                                  "surface_frames.json"])
+                                  "surface_frames.json", "blotter.json", "positions_timeline.json"])
 def test_committed_app_data_matches_a_fresh_export_byte_for_byte(tmp_path, name):
     # Catches "changed the model, forgot to re-run the exporter".
     if not (COMMITTED_DIR / name).exists():

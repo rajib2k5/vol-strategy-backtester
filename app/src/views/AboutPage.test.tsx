@@ -2,12 +2,14 @@ import { describe, expect, it, vi } from 'vitest'
 import { render, screen, within } from '@testing-library/react'
 import { AboutPage } from './AboutPage'
 import { DataLoadError } from '../data/loadAppData'
-import { parseDataQuality, parseIllustrativeSurface, parseManifest, parseSurfaceFrames } from '../lib/contract'
+import { parseBlotter, parseDataQuality, parseIllustrativeSurface, parseManifest, parsePositionsTimeline, parseSurfaceFrames } from '../lib/contract'
 import { DATA_SOURCES } from '../content/about'
 import manifestFixture from '../test/fixtures/manifest.json'
 import surfaceFixture from '../test/fixtures/illustrative_surface.json'
 import dataQualityFixture from '../test/fixtures/data_quality.json'
 import surfaceFramesFixture from '../test/fixtures/surface_frames.json'
+import blotterFixture from '../test/fixtures/blotter.json'
+import positionsTimelineFixture from '../test/fixtures/positions_timeline.json'
 
 vi.mock('@react-three/fiber', () => import('../test/mockFiber'))
 vi.mock('@react-three/drei', () => ({ OrbitControls: () => null }))
@@ -16,7 +18,9 @@ const manifest = parseManifest(manifestFixture)
 const surface = parseIllustrativeSurface(surfaceFixture)
 const dataQuality = parseDataQuality(dataQualityFixture)
 const surfaceFrames = parseSurfaceFrames(surfaceFramesFixture)
-const ready = (m = manifest) => ({ status: 'ready' as const, data: { manifest: m, surface, dataQuality, surfaceFrames } })
+const blotter = parseBlotter(blotterFixture)
+const positionsTimeline = parsePositionsTimeline(positionsTimelineFixture)
+const ready = (m = manifest) => ({ status: 'ready' as const, data: { manifest: m, surface, dataQuality, surfaceFrames, blotter, positionsTimeline } })
 
 describe('AboutPage: static content (independent of the data)', () => {
   it.each([

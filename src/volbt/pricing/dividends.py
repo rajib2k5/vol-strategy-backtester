@@ -19,9 +19,13 @@ call/put pairs. In all three, using a dividend that was not yet known would be l
   and the amount is the last one paid. Its limits (M2 round 2, design claim 5; kept, since
   choosing again after seeing the results would be snooping): it ranks first of the four in both
   halves of the sample, but its edge over the trailing four-quarter mean is within noise (paired
-  difference -1.19 points, bootstrap 95% CI [-2.88, +0.51]); and 6 to 8 quarters ahead it is worse
-  than last paid (14.19, 15.58 and 16.95% against 13.92, 14.91 and 15.17%), which matters only
-  beyond 180 days, where ADR-0008's proposed carry-consistent rate would absorb it;
+  difference -1.19 points, bootstrap 95% CI [-2.88, +0.51]); and 6 to 8 dividends ahead, one by
+  one, its rank against last paid depends on the sample (tools/report_m2.py, "dividend projection
+  rules by horizon"): worse for the 71 ex-dates since 2009 (14.19, 15.58 and 16.95% against 13.92,
+  14.91 and 15.17%; those forecasts were made from 2007 on, through the 2008-09 dividend cuts), better
+  for the forecasts made since 2009 (11.27, 11.95 and 12.85% against 12.53, 13.42 and 14.08%). On the
+  sum of the dividends to expiry it is better in both. It matters only beyond 180 days, where
+  ADR-0008's proposed carry-consistent rate would absorb it;
 - the DATES are projected from SPY's rule: the third Friday of March, June, September and
   December, or the session before it when that Friday is a holiday (ADR-0003, Context). A test
   marked real_data checks the rule against every ex-date SPY has paid since 2009. Past the last

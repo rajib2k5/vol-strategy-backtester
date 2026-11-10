@@ -1,0 +1,36 @@
+{
+  "schema_version": "0.4.0",
+  "generated_at": "2026-10-30T06:27:15Z",
+  "source_commit": "a1b2c3d4e5f6",
+  "run": {
+    "run_id": "ab9492048d5308c5d0d3087eb7d7cde5c88d915879cccf1931e5413979811caf",
+    "config_hash": "98f6f515bdbb0d85ab72030d3ce5cd65d999942ee20737eff019e9d419e2946f",
+    "data_fingerprint": "d9450cc036a5ffbc3fd5af4a9bc7c671f02e2ba65692b8d855da79191841c0b7",
+    "engine_commit": "e1067ebdfbded211745ed7a12f08b7c80b6ca029",
+    "data_source": "optionsdx",
+    "execution_mode": "quote",
+    "fill_timing": "next_close",
+    "cap_mode": "hard_only",
+    "chain_mask": "none",
+    "split": "development",
+    "run_purpose": "diagnostic",
+    "strategy": "RollingShortStraddle",
+    "status": "ok",
+    "sample_start": "2015-01-02",
+    "sample_end": "2015-03-20"
+  },
+  "units": {
+    "open_count": "positions open at the session's close",
+    "ratio": "contracts per package, signed: + long, - short"
+  },
+  "illustrative": false,
+  "label": "Test fixture (OptionsDX): the 4 positions of the made-up diagnostic run; not a strategy result",
+  "positions": [
+    {"position_id": 1, "structure": "short_straddle", "opened": "2015-01-02", "closed": "2015-01-16", "legs": [{"osi_symbol": "SPY   150123C00205000", "ratio": -1}, {"osi_symbol": "SPY   150123P00205000", "ratio": -1}], "exit_reason": "dte"},
+    {"position_id": 2, "structure": "short_straddle", "opened": "2015-01-09", "closed": "2015-02-20", "legs": [{"osi_symbol": "SPY   150220C00205000", "ratio": -1}, {"osi_symbol": "SPY   150220P00205000", "ratio": -1}], "exit_reason": "expiry"},
+    {"position_id": 3, "structure": "short_straddle", "opened": "2015-02-20", "closed": "2015-03-06", "legs": [{"osi_symbol": "SPY   150320C00207000", "ratio": -1}, {"osi_symbol": "SPY   150320P00207000", "ratio": -1}], "exit_reason": "assignment"},
+    {"position_id": 4, "structure": "short_straddle", "opened": "2015-03-06", "closed": null, "legs": [{"osi_symbol": "SPY   150417C00209000", "ratio": -1}, {"osi_symbol": "SPY   150417P00209000", "ratio": -1}], "exit_reason": null}
+  ],
+  "dates": ["2015-01-02", "2015-01-09", "2015-01-16", "2015-01-23", "2015-01-30", "2015-02-06", "2015-02-13", "2015-02-20", "2015-02-27", "2015-03-06", "2015-03-13", "2015-03-20"],
+  "open_count": [1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
+}

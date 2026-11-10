@@ -76,6 +76,68 @@ def test_pricing_core_notebook_runs_top_to_bottom_without_volbt_and_shows_the_ad
     assert abs(namespace["raw"]["forward"] / namespace["truth_F"] - 1) > 4e-4           # raw: 4.3 bp low
 
 
+DAILY_ENGINE = REPO / "notebooks" / "03_daily_engine.ipynb"
+
+
+def test_committed_daily_engine_notebook_equals_a_fresh_build():
+    assert DAILY_ENGINE.exists(), "run: uv run python tools/build_notebooks.py"
+    fresh = build_notebooks.render_notebooks()["03_daily_engine.ipynb"]
+    assert DAILY_ENGINE.read_bytes() == fresh.encode("utf-8"), (
+        "notebooks/03_daily_engine.ipynb is stale; run: uv run python tools/build_notebooks.py")
+
+
+def run_daily_engine_notebook() -> dict:
+    """Execute every code cell of notebook 03 in an empty namespace; return the namespace."""
+    nb = json.loads(DAILY_ENGINE.read_text(encoding="utf-8"))
+    sources = ["".join(c["source"]) for c in nb["cells"] if c["cell_type"] == "code"]
+    assert not any("import volbt" in s or "from volbt" in s for s in sources)
+    namespace = {}
+    for source in sources:
+        exec(source, namespace)
+    return namespace
+
+
+def test_daily_engine_notebook_runs_top_to_bottom_without_volbt_and_shows_the_adr_numbers(capsys):
+    namespace = run_daily_engine_notebook()
+    printed = capsys.readouterr().out
+    # ADR-0007 test 1: the interest on $1,000,000 and on -$100,000 over three days
+    assert "earns $428.80" in printed and "pays $46.99" in printed
+    # ADR-0002 test 1 (the 2.00 / 2.10 table) and test 8 (the float-dollar 1.99)
+    assert "k = 1: buy 2.10  sell 2.00" in printed
+    assert "k = 1/2: buy 2.08  sell 2.02" in printed
+    assert "k = 0: buy 2.05  sell 2.05" in printed
+    assert "1.9999999999999998 1.99" in printed
+    # ADR-0002 test 5 (85 and 60 -> 60 packages, $84.00), test 6 (618 + 618 cents against round()'s 6.17)
+    assert "85 60 60 fees $84.00" in printed
+    assert "(618, 618) cents; round() on floats gives 6.17" in printed
+    # ADR-0005: round_half_away(1234.5) = 1235 against round()'s 1234, and the hedge trade
+    assert "1235 1234 -1235 1235" in printed
+    assert namespace["shares"] == -1235
+    assert namespace["n"] == 60
+    # the zero-bid buy to close pays the ask; the sale to open is refused
+    assert "zero_bid (5, 'quote', None) (None, None, 'ZERO_BID')" in printed
+    # the 25% edge: passes in cents, fails in float dollars
+    assert "True False False\nTrue\n" in printed
+
+
+def test_daily_engine_notebook_copies_of_the_config_and_flags_equal_the_real_ones():
+    # The notebook cannot import volbt, so it holds its own `cfg` and `quality`. They must be the RunConfig
+    # defaults and the flag constants, with the same types (Decimal('0.005') is not 0.005).
+    from datetime import date
+
+    from volbt.data import flags
+    from volbt.engine.run_config import RunConfig
+
+    namespace = run_daily_engine_notebook()
+    real = RunConfig(sample_start=date(2010, 1, 4), sample_end=date(2010, 1, 5), split="development")
+    assert vars(namespace["cfg"])
+    for name, value in vars(namespace["cfg"]).items():
+        assert getattr(real, name) == value and type(getattr(real, name)) is type(value), name
+    assert vars(namespace["quality"])
+    for name, value in vars(namespace["quality"]).items():
+        assert getattr(flags, name) == value, name
+
+
 def test_the_prefix_keeps_ids_of_two_modules_apart(tmp_path):
     path = write_module(tmp_path, """
         import os
@@ -146,7 +208,7 @@ def test_check_names_a_notebook_that_changed_by_one_character(tmp_path):
 
 def test_check_names_a_missing_notebook(tmp_path):
     assert build_notebooks.drifted_notebooks(tmp_path) == ["00_scaffold_tour.ipynb", "01_data_layer.ipynb",
-                                                           "02_pricing_core.ipynb"]
+                                                           "02_pricing_core.ipynb", "03_daily_engine.ipynb"]
 
 
 def test_check_cli_exits_nonzero_and_names_the_notebook_on_drift(tmp_path, monkeypatch, capsys):
@@ -339,6 +401,63 @@ def test_decorators_are_copied_with_the_function(tmp_path):
         "@functools.cache\n@functools.wraps(print)\ndef f():\n    return 1")
 
 
+def test_skip_leaves_out_a_named_class_with_its_decorator_and_keeps_the_rest(tmp_path):
+    path = write_module(tmp_path, """
+        from dataclasses import dataclass
+
+        A = 1
+
+        @dataclass
+        class Row:
+            x: int
+
+        B = 2
+
+        def f():
+            return A
+    """)
+    cells = dict(build_notebooks.module_cells(path, skip=("Row",)))
+    assert list(cells) == ["code-imports", "code-constants", "code-constants-2", "code-f"]
+    assert cells["code-constants"] == "A = 1"
+    assert cells["code-constants-2"] == "B = 2"          # nothing of the skipped class, decorator included
+    assert all("Row" not in source and "@dataclass\nclass" not in source for source in cells.values())
+
+
+def test_skip_can_name_a_function_too(tmp_path):
+    path = write_module(tmp_path, """
+        def f():
+            return 1
+
+        def g():
+            return 2
+    """)
+    assert [i for i, _ in build_notebooks.module_cells(path, skip=("f",))] == ["code-g"]
+
+
+def test_a_class_that_is_not_skipped_still_raises(tmp_path):
+    path = write_module(tmp_path, """
+        class Row:
+            pass
+
+        class Other:
+            pass
+    """)
+    with pytest.raises(build_notebooks.UnsupportedModuleError) as caught:
+        build_notebooks.module_cells(path, skip=("Row",))
+    assert "mod.py:5" in str(caught.value) and "ClassDef" in str(caught.value)
+
+
+def test_a_skip_name_that_is_not_in_the_module_raises(tmp_path):
+    # A rename in src/ must not turn the skip into a silent no-op (which would copy the class, or fail later).
+    path = write_module(tmp_path, """
+        def f():
+            return 1
+    """)
+    with pytest.raises(build_notebooks.UnsupportedModuleError) as caught:
+        build_notebooks.module_cells(path, skip=("Gone", "f"))
+    assert "Gone" in str(caught.value) and "'f'" not in str(caught.value)
+
+
 def test_a_module_without_assignments_is_fine(tmp_path):
     path = write_module(tmp_path, """
         import numpy as np
@@ -438,7 +557,7 @@ def test_a_module_with_different_content_still_builds_with_stable_ids(tmp_path):
 # --- .gitattributes: line endings are pinned by git itself -----------------------------------
 
 @pytest.mark.parametrize("path", [
-    "notebooks/00_scaffold_tour.ipynb", "app/public/data/manifest.json",
+    "notebooks/00_scaffold_tour.ipynb", "notebooks/03_daily_engine.ipynb", "app/public/data/manifest.json",
     "tools/build_notebooks.py", "src/volbt/contract.py",
     "docs/architecture/out/architecture.svg", "docs/architecture/out/architecture.mmd",
     "README.md", "app/src/lib/contract.ts", "app/src/App.tsx"])

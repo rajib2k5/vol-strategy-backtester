@@ -2,12 +2,23 @@ import { describe, expect, it } from 'vitest'
 import { fireEvent, render, screen, within } from '@testing-library/react'
 import { DataQualityPage } from './DataQualityPage'
 import { DataLoadError } from '../data/loadAppData'
-import { CALENDAR_ACTION_NAMES, FLAG_NAMES, parseDataQuality, parseIllustrativeSurface, parseManifest, parseSurfaceFrames } from '../lib/contract'
+import {
+  CALENDAR_ACTION_NAMES,
+  FLAG_NAMES,
+  parseBlotter,
+  parseDataQuality,
+  parseIllustrativeSurface,
+  parseManifest,
+  parsePositionsTimeline,
+  parseSurfaceFrames,
+} from '../lib/contract'
 import { BY_YEAR_NOTE, CALENDAR_ACTIONS, CHART_FLAGS, CROSSVENDOR_NOTE } from '../content/dataQuality'
 import manifestFixture from '../test/fixtures/manifest.json'
 import surfaceFixture from '../test/fixtures/illustrative_surface.json'
 import dataQualityFixture from '../test/fixtures/data_quality.json'
 import surfaceFramesFixture from '../test/fixtures/surface_frames.json'
+import blotterFixture from '../test/fixtures/blotter.json'
+import positionsTimelineFixture from '../test/fixtures/positions_timeline.json'
 
 const manifest = parseManifest(manifestFixture)
 const surface = parseIllustrativeSurface(surfaceFixture)
@@ -23,7 +34,9 @@ function dataQuality(edit: (d: Doc) => void = () => {}) {
   return parseDataQuality(d)
 }
 const surfaceFrames = parseSurfaceFrames(surfaceFramesFixture)
-const ready = (dq = dataQuality()) => ({ status: 'ready' as const, data: { manifest, surface, dataQuality: dq, surfaceFrames } })
+const blotter = parseBlotter(blotterFixture)
+const positionsTimeline = parsePositionsTimeline(positionsTimelineFixture)
+const ready = (dq = dataQuality()) => ({ status: 'ready' as const, data: { manifest, surface, dataQuality: dq, surfaceFrames, blotter, positionsTimeline } })
 
 /** The rows of a table as arrays of cell texts, header row first (row-header cells included). */
 function cells(table: HTMLElement): string[][] {

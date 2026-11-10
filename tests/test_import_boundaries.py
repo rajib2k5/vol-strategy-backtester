@@ -23,8 +23,15 @@ imports nothing), and it fails if:
     or as an attribute (`g = getattr` is the same back door, and `enum.bltns.exec` is builtins'
     exec); `__builtins__`, `__loader__` or `__spec__` is named;
   - an attribute named in BANNED_ATTRIBUTES is used, on any object, `self` included: `sys`,
-    `modules`, the dunders that reach a namespace, a class or a frame, `load_module`, and the
-    modules that allowed modules carry as attributes (`dataclasses.inspect`, `enum.bltns`);
+    `modules`, the dunders that reach a namespace, a class or a frame, `load_module`, the
+    modules that allowed modules carry as attributes (`dataclasses.inspect`, `enum.bltns`), and
+    numpy's `lib`, `stride_tricks`, `as_strided` and `.base`, which read memory past an array's
+    end (M3 round-2 review), also as a module path (`import numpy.lib.stride_tricks`); and numpy's
+    `.ctypes` and the array protocol `__array_interface__`, `__array_struct__`, `__array__`, which
+    read memory at an address (M3 round-3 review);
+  - ctypes or numpy.ctypeslib as a module path, and the array protocol's names defined at all (a
+    method, a class attribute, a dict key, a keyword): an object that defines one makes numpy read
+    whatever address it names;
   - a file is opened: `open`, `read_parquet`, `read_csv`, `connect`, or a numpy file reader
     (`np.load`, `np.fromfile`...) on an imported name;
   - anything is written through an imported name, or a name assigned from one: an assignment,
@@ -108,12 +115,21 @@ BANNED_NAMES = {"__builtins__", "__loader__", "__spec__"}
 # Attribute names refused on ANY object in strategies and signals, a method's own first parameter
 # included. sys and modules: sys.modules under any route (`os.sys`, `typing.sys`, `S = sys`). The
 # dunders reach a namespace, a class, its subclasses or a loader; f_back and f_globals walk the
-# frames; load_module imports a file. The last line: modules that the allowed modules carry as
-# attributes (dataclasses.inspect, dataclasses.types, enum.bltns is builtins) and builtins'
-# own names reached as attributes (`enum.bltns.exec`).
+# frames; load_module imports a file. Then modules that the allowed modules carry as attributes
+# (dataclasses.inspect, dataclasses.types, enum.bltns is builtins) and builtins' own names reached as
+# attributes (`enum.bltns.exec`). The last line (M3 round-2 review): numpy's way to read memory past
+# an array's end (`np.lib.stride_tricks.as_strided`) and to the memory an array is a view of (`.base`);
+# a module path through the first three (`import numpy.lib.stride_tricks`) is refused too.
+STRIDE_TRICKS = {"lib", "stride_tricks", "as_strided"}
+# M3 round-3 review: memory read at an address. A strategy took a frame array's address from `.ctypes.data` and
+# handed numpy an object whose `__array_interface__` named an address past the array's end. Refused as attributes,
+# and the protocol's names refused when defined at all; ctypes and numpy.ctypeslib refused as module paths too.
+ARRAY_PROTOCOL = {"__array_interface__", "__array_struct__", "__array__"}
+BY_ADDRESS_MODULES = {"ctypes", "ctypeslib"}
 BANNED_ATTRIBUTES = {"sys", "modules", "__loader__", "__spec__", "__builtins__", "__globals__", "__dict__",
                      "__class__", "__subclasses__", "f_back", "f_globals", "f_locals", "load_module",
-                     "inspect", "types", "bltns", "builtins", "__import__", *DYNAMIC_CALLS, *CODE_FROM_TEXT}
+                     "inspect", "types", "bltns", "builtins", "__import__", *DYNAMIC_CALLS, *CODE_FROM_TEXT,
+                     *STRIDE_TRICKS, "base", "ctypes", *ARRAY_PROTOCOL}
 # Reading a file reaches the store's parquet with no view in between.
 FILE_READERS = {"open", "read_parquet", "read_csv", "connect"}
 # numpy's file readers, refused as an attribute of an imported name (`np.load`) or by name in an import.
@@ -285,6 +301,9 @@ def guarded_import_problems(tree: ast.AST, package: str, where: str, row: str) -
         if not isinstance(node, (ast.Import, ast.ImportFrom)):
             continue
         names = [alias.name for alias in node.names]
+        paths = [node.module or ""] if isinstance(node, ast.ImportFrom) else names
+        problems += [f"{where}:{node.lineno}: {row} may not import {path}" for path in paths
+                     if set(path.split(".")) & (STRIDE_TRICKS | BY_ADDRESS_MODULES)]
         if isinstance(node, ast.ImportFrom):
             if "*" in names:
                 problems.append(f"{where}:{node.lineno}: star import is banned in {row}: name what you use")
@@ -403,6 +422,13 @@ def guarded_problems(tree: ast.AST, where: str, row: str) -> list[str]:
             root = chain_root(node, through_items=True)
             if root in imported:
                 problems.append(f"{where}:{node.lineno}: {row} may not write through an imported name ({root})")
+        defined = (node.name if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)) else
+                   node.id if isinstance(node, ast.Name) else
+                   node.arg if isinstance(node, (ast.keyword, ast.arg)) else
+                   node.value if isinstance(node, ast.Constant) and isinstance(node.value, str) else None)
+        if defined in ARRAY_PROTOCOL:
+            problems.append(f"{where}:{getattr(node, 'lineno', '?')}: {defined} makes numpy read memory at any "
+                            f"address; it is banned in {row}")
         if isinstance(node, ast.MatchClass):
             for attr in (a for a in node.kwd_attrs if a.startswith("_")):
                 problems.append(f"{where}:{node.lineno}: private attribute .{attr} read in {row} (class pattern)")
@@ -541,6 +567,34 @@ def test_each_mutant_is_caught(mutable_src, relative, line, expected):
     ("strategies/__init__.py", "class S:\n    def peek(self, view):\n        return (lambda self: self._read)(view)",
      "private attribute ._read read in strategies"),
     ("signals/__init__.py", "class S:\n    def peek(self, view):\n        return view._read", "private attribute ._read read in signals"),
+    # M3 round-2 review: as_strided on a frame's array read the cached year past as_of
+    ("strategies/__init__.py", "import numpy as np\ndef f(a):\n    return np.lib.stride_tricks.as_strided(a, (9,), (8,))",
+     "attribute .lib is banned in strategies"),
+    ("signals/__init__.py", "import numpy\ndef f(a, n):\n    return numpy.lib.stride_tricks.as_strided(a, (n,))",
+     "attribute .stride_tricks is banned in signals"),
+    ("strategies/__init__.py", "from numpy.lib.stride_tricks import as_strided", "strategies may not import numpy.lib.stride_tricks"),
+    ("signals/__init__.py", "from numpy.lib import stride_tricks", "signals may not import stride_tricks"),
+    ("strategies/__init__.py", "import numpy.lib.stride_tricks as st", "strategies may not import numpy.lib.stride_tricks"),
+    ("strategies/__init__.py", "def f(st, a):\n    return st.as_strided(a, (9,))", "attribute .as_strided is banned in strategies"),
+    ("signals/__init__.py", "def f(frame):\n    return frame['nodes'].iloc[0].base", "attribute .base is banned in signals"),
+    # M3 round-3 review: an address from .ctypes.data and an __array_interface__ property read past a frame's array
+    ("strategies/__init__.py", "def f(a):\n    return a.ctypes.data", "attribute .ctypes is banned in strategies"),
+    ("strategies/__init__.py", "class P:\n    def __init__(self, address):\n        self.address = address\n"
+     "    @property\n    def __array_interface__(self):\n        return {'data': (self.address, True), 'shape': (9,), "
+     "'typestr': '<f8', 'version': 3}", "__array_interface__ makes numpy read memory at any address; it is banned in strategies"),
+    ("signals/__init__.py", "class P:\n    __array_interface__ = {'data': (0, True), 'shape': (9,), 'typestr': '<f8'}",
+     "__array_interface__ makes numpy read memory at any address; it is banned in signals"),
+    ("strategies/__init__.py", "class P:\n    def __array__(self, dtype=None, copy=None):\n        return None",
+     "__array__ makes numpy read memory at any address; it is banned in strategies"),
+    ("strategies/__init__.py", "P = type('P', (), {'__array_interface__': {}})",
+     "__array_interface__ makes numpy read memory at any address; it is banned in strategies"),
+    ("signals/__init__.py", "P = type('P', (), dict(__array_struct__=None))",
+     "__array_struct__ makes numpy read memory at any address; it is banned in signals"),
+    ("strategies/__init__.py", "def f(a):\n    return a.__array_interface__['data'][0]",
+     "attribute .__array_interface__ is banned in strategies"),
+    ("signals/__init__.py", "def f(a):\n    return a.__array_struct__", "attribute .__array_struct__ is banned in signals"),
+    ("strategies/__init__.py", "from ctypes import string_at", "strategies may not import ctypes"),
+    ("signals/__init__.py", "import numpy.ctypeslib as npc", "signals may not import numpy.ctypeslib"),
 ])
 def test_each_review_probe_is_caught(mutable_src, relative, line, expected):
     assert violations(mutable_src) == []

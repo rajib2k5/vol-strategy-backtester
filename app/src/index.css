@@ -10,6 +10,11 @@
   --blue: #7d9bd1;
   --up: #3fa66a;
   --down: #c25450;
+  /* exit-reason colours of the Positions timeline, beside the five above */
+  --exit-purple: #a58fd1;
+  --exit-sky: #6fc3e0;
+  --exit-pink: #d98bb3;
+  --exit-orange: #e0805a;
   --mono: 'SF Mono', ui-monospace, Menlo, Consolas, monospace;
 }
 * { box-sizing: border-box; }
@@ -79,6 +84,10 @@ a { color: var(--teal); }
   --blue: #3B5B9A;
   --up: #1F7A48;
   --down: #A63E3A;
+  --exit-purple: #6a4fa3;
+  --exit-sky: #1f78a0;
+  --exit-pink: #a8467a;
+  --exit-orange: #b4521f;
 }
 
 h3 { font-size: .95rem; margin: 0 0 .5rem; }
@@ -128,3 +137,20 @@ table.dense td, table.dense th.num { padding-right: .45rem; }
 .frame-picker { display: flex; flex-wrap: wrap; gap: .5rem; margin: 0 0 1rem; }
 .frame-label { margin: .8rem 0; }
 .stat .k.unit { text-transform: none; letter-spacing: 0; margin-top: .3rem; }
+
+/* ---- Blotter and Positions pages ---- */
+td.osi, li.osi { font-family: var(--mono); font-size: .8rem; white-space: pre; }
+ul.legs { list-style: none; margin: 0; padding: 0; }
+ul.legs li { margin: 0; }
+dl.meta.units .unit-row { display: contents; }
+dl.meta.units dd { font-size: .8rem; }
+.show-more { margin-top: .8rem; }
+ul.legend { list-style: none; display: flex; flex-wrap: wrap; gap: .3rem 1.4rem; margin: 0 0 .8rem; padding: 0; font-size: .8rem; }
+ul.legend li { margin: 0; display: flex; align-items: center; gap: .4rem; }
+.swatch { display: inline-block; width: .9rem; height: .55rem; border-radius: 1px; flex: none; }
+.swatch.open { background: transparent; border: 1px dashed var(--muted); }
+figure.chart { margin: 0; }
+figure.chart figcaption { margin: .4rem 0 0; }
+/* The run's hashes are 40 to 64 characters with no break: let them wrap, so a phone-width page does not scroll sideways. */
+.blotter-page dl.meta, .positions-page dl.meta { grid-template-columns: max-content minmax(0, 1fr); }
+.blotter-page dl.meta dd, .positions-page dl.meta dd { overflow-wrap: anywhere; }

@@ -2,7 +2,9 @@ import { AppShell } from './lib/shell'
 import { useAppData } from './data/useAppData'
 import { AboutPage } from './views/AboutPage'
 import { ArchitecturePage } from './views/ArchitecturePage'
+import { BlotterPage } from './views/BlotterPage'
 import { DataQualityPage } from './views/DataQualityPage'
+import { PositionsPage } from './views/PositionsPage'
 import { SurfacePage } from './views/SurfacePage'
 import { PITCH, TITLE } from './content/about'
 
@@ -19,6 +21,8 @@ export default function App() {
       pages={[
         { id: 'about', label: 'About', render: () => <AboutPage state={data} /> },
         { id: 'surface', label: 'Surface', render: () => <SurfacePage state={data} /> },
+        { id: 'blotter', label: 'Blotter', render: () => <BlotterPage state={data} /> },
+        { id: 'positions', label: 'Positions', render: () => <PositionsPage state={data} /> },
         { id: 'data-quality', label: 'Data quality', render: () => <DataQualityPage state={data} /> },
         { id: 'architecture', label: 'Architecture', render: () => <ArchitecturePage /> },
       ]}

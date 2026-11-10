@@ -110,3 +110,22 @@ class MarketView(Protocol):
     def vix(self) -> Any:
         """Cboe VIX daily history up to and including as_of."""
         ...
+
+    # Milestone 3: one session's quotes and the pricing build's tables for it. Each raises LookAheadError
+    # for a date after as_of, like chain().
+
+    def quotes(self, quote_date: date, osi_symbols: Any = None, source: str = "optionsdx") -> Any:
+        """option_quotes of one session (bid, ask, volume, quality_flags, ...), optionally only some symbols."""
+        ...
+
+    def quote_ivs(self, quote_date: date, osi_symbols: Any = None, source: str = "optionsdx") -> Any:
+        """quote_iv of one session: log_moneyness, is_otm, in_smile, iv, iv_flags."""
+        ...
+
+    def forwards(self, quote_date: date, source: str = "optionsdx") -> Any:
+        """expiry_forwards of one session: tau_years, r_cc, the de-Americanised parity forward, method, flags."""
+        ...
+
+    def smiles(self, quote_date: date, source: str = "optionsdx") -> Any:
+        """smile_fits of one session: each expiry's nodes in total variance."""
+        ...

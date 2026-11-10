@@ -23,8 +23,9 @@ from pathlib import Path
 
 # 0.1.0: the manifest and illustrative_surface.json. 0.2.0: data_quality.json added (a new file is a
 # MINOR bump, because a viewer that does not know it still reads the others). 0.3.0: surface_frames.json
-# added (milestone 2), MINOR for the same reason.
-SCHEMA_VERSION = "0.3.0"
+# added (milestone 2), MINOR for the same reason. 0.4.0: blotter.json and positions_timeline.json added
+# (milestone 3), MINOR again.
+SCHEMA_VERSION = "0.4.0"
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 

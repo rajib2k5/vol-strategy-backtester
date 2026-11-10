@@ -14,6 +14,12 @@ The adversarial review (`docs/validation/00-design-research-ledger.md`, claims 6
 
 Also corrected: Santa-Clara & Saretto's −1.0% a month is for the portfolio containing the short near-maturity 5% strangle, not for "the best strangle" (WP, Nov 2004, checked in the text).
 
+## M3 amendments (default taken 2026-10-30, owner can override; recorded 2026-11-09)
+
+The M3 build took this decision on 2026-10-30 (`docs/milestones/03-daily-engine.md`, decision D9; `LEARNING_LOG.md`, default 46). The round-2 design review (2026-11-09, finding DS-2) found it departs from §2's text without an amendment. The original text stays in place.
+
+1. **§2, the borrow fee's basis** (decision D9). §2 says short-stock proceeds earn `r_cc − 0.25%`, the 0.25% being ADR-0005's borrow fee. **Changed:** the engine pays interest on the whole cash balance, short-sale proceeds included, at §2's rate, and charges the borrow fee as a separate cash flow, `borrow_fee`: 0.25% a year on the short shares' market value at the prior close (|shares| × the prior close), compounded over the calendar days since that close and rounded once to cents (`volbt.engine.cash.borrow_fee_cents`, booked at step 2 of the daily loop). A flat or long book pays none. **Why:** the proceeds of each short sale need a per-trade record that the book does not keep, while the prior-close value is on the book, and ADR-0005 §1 names the market value. On a hedge that has traded at many prices the two bases differ by the change in SPY since the sales. The level stays an unverified assumption (`RunConfig.borrow_fee`). Tests: `tests/test_engine_cash.py` (the borrow-fee cases) and `tests/test_engine_audit.py`, which recomputes every `borrow_fee` flow of a run from the store.
+
 ## Context
 
 A short option needs no cash up front, so a "return" needs a stated denominator. The background doc (§4, "The capital base") lists three:

@@ -40,3 +40,15 @@ def frames_body(tmp_path_factory):
     store = pricing_store.make_store(tmp_path_factory.mktemp("frames_store"))
     build.build_pricing(store)
     return export_app_data.surface_frames_body(store, frames=((date(2023, 6, 15), "made-up date"),))
+
+
+@pytest.fixture(scope="session")
+def engine_store(tmp_path_factory):
+    """tests/engine_store.py's made-up store, priced by the M2 build once per test session. Read-only for tests:
+    a test that needs other quotes builds its own with engine_store.built_store(root, edits=...)."""
+    import sys
+
+    sys.path.insert(0, str(Path(__file__).resolve().parent))
+    import engine_store as es
+
+    return es.built_store(tmp_path_factory.mktemp("engine_store"))

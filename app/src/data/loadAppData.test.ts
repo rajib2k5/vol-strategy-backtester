@@ -5,14 +5,25 @@ import manifestFixture from '../test/fixtures/manifest.json'
 import surfaceFixture from '../test/fixtures/illustrative_surface.json'
 import dataQualityFixture from '../test/fixtures/data_quality.json'
 import surfaceFramesFixture from '../test/fixtures/surface_frames.json'
+import blotterFixture from '../test/fixtures/blotter.json'
+import positionsTimelineFixture from '../test/fixtures/positions_timeline.json'
 
 const FILES = {
   './data/manifest.json': manifestFixture,
   './data/illustrative_surface.json': surfaceFixture,
   './data/data_quality.json': dataQualityFixture,
   './data/surface_frames.json': surfaceFramesFixture,
+  './data/blotter.json': blotterFixture,
+  './data/positions_timeline.json': positionsTimelineFixture,
 }
-const URLS = ['./data/manifest.json', './data/illustrative_surface.json', './data/data_quality.json', './data/surface_frames.json']
+const URLS = [
+  './data/manifest.json',
+  './data/illustrative_surface.json',
+  './data/data_quality.json',
+  './data/surface_frames.json',
+  './data/blotter.json',
+  './data/positions_timeline.json',
+]
 
 afterEach(() => {
   vi.unstubAllGlobals()
@@ -39,6 +50,10 @@ describe('loadAppData: happy path', () => {
     expect(data.surface.iv).toEqual(surfaceFixture.iv)
     expect(data.dataQuality.sources.rows).toEqual(dataQualityFixture.sources.rows)
     expect(data.surfaceFrames.frames.map((f) => f.date)).toEqual(['2020-01-03', '2020-03-16'])
+    expect(data.blotter.fills.map((f) => f.fill_id)).toEqual(blotterFixture.fills.map((f) => f.fill_id))
+    expect(data.blotter.events).toHaveLength(3)
+    expect(data.positionsTimeline.positions.map((p) => p.position_id)).toEqual([1, 2, 3, 4])
+    expect(data.positionsTimeline.run).toEqual(data.blotter.run)
   })
 
   it('takes each dataset path from the manifest, not from a hard-coded name', async () => {
@@ -46,6 +61,8 @@ describe('loadAppData: happy path', () => {
     moved.datasets[0].path = 'surfaces/v1/s.json'
     moved.datasets[1].path = 'quality/q.json'
     moved.datasets[2].path = 'real/frames.json'
+    moved.datasets[3].path = 'engine/blotter.json'
+    moved.datasets[4].path = 'engine/timeline/positions.json'
     const requested: string[] = []
     await loadAppData(
       fakeFetch(
@@ -54,11 +71,20 @@ describe('loadAppData: happy path', () => {
           './data/surfaces/v1/s.json': surfaceFixture,
           './data/quality/q.json': dataQualityFixture,
           './data/real/frames.json': surfaceFramesFixture,
+          './data/engine/blotter.json': blotterFixture,
+          './data/engine/timeline/positions.json': positionsTimelineFixture,
         },
         requested,
       ),
     )
-    expect(requested).toEqual(['./data/manifest.json', './data/surfaces/v1/s.json', './data/quality/q.json', './data/real/frames.json'])
+    expect(requested).toEqual([
+      './data/manifest.json',
+      './data/surfaces/v1/s.json',
+      './data/quality/q.json',
+      './data/real/frames.json',
+      './data/engine/blotter.json',
+      './data/engine/timeline/positions.json',
+    ])
   })
 
   it('uses the global fetch when none is injected', async () => {
@@ -93,6 +119,20 @@ describe('loadAppData: transport failures (kind = fetch)', () => {
     const e = await failure(fakeFetch(rest))
     expect(e.kind).toBe('fetch')
     expect(e.message).toBe('./data/surface_frames.json answered HTTP 404')
+  })
+  it('the blotter file missing (HTTP 404) after the other four', async () => {
+    const { './data/blotter.json': _missing, ...rest } = FILES
+    void _missing
+    const e = await failure(fakeFetch(rest))
+    expect(e.kind).toBe('fetch')
+    expect(e.message).toBe('./data/blotter.json answered HTTP 404')
+  })
+  it('the positions-timeline file missing (HTTP 404) after the other five', async () => {
+    const { './data/positions_timeline.json': _missing, ...rest } = FILES
+    void _missing
+    const e = await failure(fakeFetch(rest))
+    expect(e.kind).toBe('fetch')
+    expect(e.message).toBe('./data/positions_timeline.json answered HTTP 404')
   })
   it('network error, keeping the underlying reason', async () => {
     const e = await failure(async () => {
@@ -140,10 +180,58 @@ describe('loadAppData: contract failures (kind = contract)', () => {
   })
   it('a manifest that does not list the surface-frames dataset', async () => {
     const m = JSON.parse(JSON.stringify(manifestFixture)) as { datasets: unknown[] }
-    m.datasets.pop()
+    m.datasets.splice(2, 1)
     const e = await failure(fakeFetch({ ...FILES, './data/manifest.json': m }))
     expect(e.kind).toBe('contract')
     expect(e.message).toContain('does not list the "surface_frames" dataset')
+  })
+  it('a manifest that does not list the blotter dataset', async () => {
+    const m = JSON.parse(JSON.stringify(manifestFixture)) as { datasets: unknown[] }
+    m.datasets.splice(3, 1)
+    const e = await failure(fakeFetch({ ...FILES, './data/manifest.json': m }))
+    expect(e.kind).toBe('contract')
+    expect(e.message).toContain('does not list the "blotter" dataset')
+  })
+  it('a manifest that does not list the positions-timeline dataset', async () => {
+    const m = JSON.parse(JSON.stringify(manifestFixture)) as { datasets: unknown[] }
+    m.datasets.pop()
+    const e = await failure(fakeFetch({ ...FILES, './data/manifest.json': m }))
+    expect(e.kind).toBe('contract')
+    expect(e.message).toContain('does not list the "positions_timeline" dataset')
+  })
+  it('a blotter file that breaks its contract, naming the file and the field', async () => {
+    const bad = JSON.parse(JSON.stringify(blotterFixture)) as { fills: { qty: number }[] }
+    bad.fills[2].qty = 0
+    const e = await failure(fakeFetch({ ...FILES, './data/blotter.json': bad }))
+    expect(e.kind).toBe('contract')
+    expect(e.message).toBe('blotter.json: blotter.fills[2].qty: expected a whole number other than 0, got 0')
+  })
+  it('a positions-timeline file that breaks its contract, naming the file and the field', async () => {
+    const bad = JSON.parse(JSON.stringify(positionsTimelineFixture)) as { open_count: number[] }
+    bad.open_count.pop()
+    const e = await failure(fakeFetch({ ...FILES, './data/positions_timeline.json': bad }))
+    expect(e.kind).toBe('contract')
+    expect(e.message).toBe('positions_timeline.json: positions_timeline.open_count: has 11 values but dates has 12')
+  })
+  it('a blotter file whose schema_version differs from its manifest entry', async () => {
+    const other = { ...blotterFixture, schema_version: '0.4.1' }
+    const e = await failure(fakeFetch({ ...FILES, './data/blotter.json': other }))
+    expect(e.kind).toBe('contract')
+    expect(e.message).toBe('manifest.json: blotter: the manifest lists schema_version "0.4.0" but blotter.json says "0.4.1"')
+  })
+  it('a positions-timeline file whose schema_version differs from its manifest entry', async () => {
+    const other = { ...positionsTimelineFixture, schema_version: '0.5.0' }
+    const e = await failure(fakeFetch({ ...FILES, './data/positions_timeline.json': other }))
+    expect(e.kind).toBe('contract')
+    expect(e.message).toBe('manifest.json: positions_timeline: the manifest lists schema_version "0.4.0" but positions_timeline.json says "0.5.0"')
+  })
+  it('a blotter file older than the schema that introduced it, even when its manifest entry says the same', async () => {
+    const old = { ...blotterFixture, schema_version: '0.3.0' }
+    const m = JSON.parse(JSON.stringify(manifestFixture)) as { datasets: { name: string; schema_version: string }[] }
+    m.datasets.find((d) => d.name === 'blotter')!.schema_version = '0.3.0'
+    const e = await failure(fakeFetch({ ...FILES, './data/manifest.json': m, './data/blotter.json': old }))
+    expect(e.kind).toBe('contract')
+    expect(e.message).toBe('blotter.json: blotter.schema_version: "0.3.0" is older than 0.4.0, the version that introduced this file')
   })
   it('a surface-frames file that breaks its contract, naming the file and the field', async () => {
     const bad = JSON.parse(JSON.stringify(surfaceFramesFixture)) as { illustrative: boolean }

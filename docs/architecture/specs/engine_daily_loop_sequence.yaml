@@ -1,72 +1,103 @@
-# One trading session t of the daily engine (ADR-0001 step order).
-# Orders created on day t fill at the t+1 snapshot (ADR-0002). Hedges trade at the same close (ADR-0005).
-# Revised after the M0 review: start-of-day cancels, order-date volume cap, causal signals from the view,
-# stress budget and net margin, lattice early-exercise test for puts.
-# Converted from the hand-written engine-daily-loop.sequence.mmd (since removed). Two things the kit has no syntax for:
-#  - "Note over Eng,View" and "Note over Eng,Exp" become a note on the message that follows (drawn right of the to lifeline);
-#  - the shaded "rect" block around the five start-of-day messages is dropped; its heading is the note on the first of them.
+# One trading session t of the daily engine, as built in milestone 3: the eleven steps of volbt.engine.loop.Run.session, in the
+# order the code runs them (ADR-0001 section 1). Orders created on day t fill at the next session's snapshot (ADR-0002); hedges
+# trade at the same close (ADR-0005). Message labels start with the step function that runs them.
+# Rewritten after M3 (2026-10-30) against src/volbt/engine/loop.py. What is NOT drawn because it is not built: signals (M4); the
+# pre-trade check, the end-of-day budgets, margin and the hedge sweep (M5); greeks_snapshots and P&L attribution (M5, M6).
+# The earlier version of this spec (the ADR design, with a Signals and a Risk participant) was converted from a hand-written Mermaid file.
+# The kit has no syntax for "Note over" or a shaded "rect", so a note rides on the message it describes (drawn right of the to lifeline).
+# The ledger is held in memory during the run and written once at the end, in run_backtest (the last two messages), not per session.
 kind: sequence
 title: "Engine daily loop: one trading session t"
-subtitle: "Orders created on day t fill at the t+1 snapshot (ADR-0002); hedges trade at the same close (ADR-0005)"
+subtitle: "The eleven steps of volbt.engine.loop.Run.session, in order. Orders created on day t fill at the next session's snapshot (ADR-0002); hedges trade at the same close (ADR-0005)"
 autonumber: true
 participants:
-  - {id: Eng, label: "Engine", type: process}
-  - {id: Store, label: "Chain store", type: store}
-  - {id: View, label: "MarketView as_of t", type: process}
-  - {id: Fill, label: "Fill model", type: process}
-  - {id: Exp, label: "Expiry and assignment", type: process}
-  - {id: Mark, label: "Marker", type: process}
-  - {id: Hedge, label: "Hedger", type: process}
-  - {id: Risk, label: "Risk and margin", type: process}
-  - {id: Sig, label: "Signals", type: process}
-  - {id: Strat, label: "Strategy", type: process}
+  - {id: Eng, label: "Run (loop.py)", type: process}
+  - {id: Cache, label: "YearCache (parquet, 2 years in memory)", type: store}
+  - {id: View, label: "StoreView as_of t", type: process}
+  - {id: Cash, label: "cash.py", type: process}
+  - {id: Fill, label: "fills.py", type: process}
+  - {id: Settle, label: "settlement.py", type: process}
+  - {id: Mark, label: "marks.py", type: process}
+  - {id: Hedge, label: "hedge.py", type: process}
+  - {id: Strat, label: "Strategy (RollingShortStraddle)", type: process}
+  - {id: Early, label: "early.py", type: process}
   - {id: Led, label: "Ledger", type: store}
 messages:
-  - {from: Eng, to: Store, label: "load snapshot t: option_quotes, quote_iv, smile_fits, S_t, r_t, dividends, VIX"}
-  - {from: Store, to: Eng, label: "snapshot t, or none on a missing session", kind: return}
-  - {from: Eng, to: View, label: "create view with as_of = t and the run's split", note: "A read dated after t raises LookAheadError, and as_of past the split end raises SplitError"}
-  # start of day: events decided at t-1 (was a rect block)
-  - {from: Eng, to: Exp, label: "book early assignments and exercises decided at t-1", note: "Start of day: events decided at t-1"}
-  - {from: Exp, to: Eng, label: "share deliveries at strike K", kind: return}
-  - {from: Eng, to: Eng, label: "cancel pending orders on lots these events removed (LOT_REMOVED)"}
-  - {from: Eng, to: Eng, label: "dividends with ex-date t on share positions"}
-  - {from: Eng, to: Eng, label: "cash interest from t-1 to t at r_cc of t-1"}
-  - {from: Eng, to: Fill, label: "pending orders created at t-1"}
+  # step 1
+  - {from: Eng, to: View, label: "step_01_load: create the view with as_of = t and the run's split", note: "A read dated after t raises LookAheadError, and as_of past the split end raises SplitError. Every market read goes through the view; the one exception is the session calendar, dates only (D3)"}
+  - {from: View, to: Cache, label: "slice the rows dated t: SPY bar, rates, dividends up to t, and the day tables"}
+  - {from: Cache, to: View, label: "option_quotes, quote_iv, expiry_forwards, smile_fits of t", kind: return}
+  - {from: Eng, to: Eng, label: "S_t, r(t) = the last DGS3MO dated before t, dividends paid by t; the day's surface, or the previous one copied when t has no usable smile", note: "A copy is counted as stale_surface_days in run_meta.json"}
+  # step 2
+  - {from: Eng, to: Eng, label: "step_02_start_of_day: book the early events decided at t-1 (shares at K, cash -/+ 100 K)"}
+  - {from: Eng, to: Cash, label: "dividends with ex-date t on the shares held; interest from t-1 to t on the prior-close cash at r(t-1); borrow fee on short shares"}
+  - {from: Cash, to: Eng, label: "signed integer cents, each rounded once: cash_flows rows dividend, interest, borrow_fee", kind: return}
+  - {from: Eng, to: Eng, label: "cancel every pending order with a leg on a lot those events removed (LOT_REMOVED)"}
+  # step 3
+  - {from: Eng, to: Eng, label: "step_03_fill: a next_open hedge from t-1 trades at today's open; share orders fill at this close whatever the snapshot (D15)"}
   - alt:
       - when: "snapshot t exists"
         messages:
-          - {from: Fill, to: View, label: "quote for each leg"}
-          - {from: Fill, to: Eng, label: "fills at mid plus or minus k times half-spread in integer cents, fees", kind: return}
-          - {from: Fill, to: Eng, label: "cap from the order-date volume V_t (hard cap of record), remainder cancelled with reason", kind: return}
+          - {from: Eng, to: View, label: "quotes and quote_iv of the legs' contracts at t"}
+          - {from: View, to: Eng, label: "bid, ask, quality_flags, volume, IV", kind: return}
+          - {from: Eng, to: Fill, label: "option orders created before t: quote state, price in integer cents at mid plus or minus k half-spreads, cap, whole packages, fees"}
+          - {from: Fill, to: Eng, label: "fills, and cash_flows option_premium and option_fee; a remainder is cancelled (NO_QUOTE, ZERO_BID, ILLIQUID, CAP)", kind: return}
       - when: "no snapshot on t"
         messages:
-          - {from: Fill, to: Eng, label: "orders wait for the next snapshot", kind: return}
-  - {from: Eng, to: Exp, label: "contracts expiring at t"}
-  - {from: Exp, to: View, label: "SPY official close S_t"}
-  - {from: Exp, to: Eng, label: "ITM by at least 0.01 settles into shares at K, else expires, pin flags", kind: return}
-  - {from: Eng, to: Mark, label: "mark every open lot"}
-  - {from: Mark, to: View, label: "quote mid, zero-bid mid, surface IV or stale surface"}
-  - {from: Mark, to: Eng, label: "mark_price, mark_source, surface flags, Black-76 greeks per lot", kind: return}
-  - {from: Eng, to: Eng, label: "NAV_mid and NAV_liq"}
-  - {from: Eng, to: Hedge, label: "net delta including delivered shares"}
+          - {from: Eng, to: Eng, label: "option orders wait for the next snapshot"}
+  # step 4
+  - {from: Eng, to: Settle, label: "step_04_settle: lots whose settle_date is t, against the SPY close S_t", note: "settle_date is the expiry, or D16's map for the two mapped non-session expiries (2015-12-19 to 12-18, 2018-12-05 to 12-04); any other raises UnmappedExpiry"}
+  - {from: Settle, to: Eng, label: "ITM by 0.01 or more: shares at K, else expired worthless; pin flag; expiry_events and cash_flows settlement", kind: return}
+  - {from: Eng, to: Eng, label: "cancel pending orders on the settled lots (LOT_REMOVED, D12)"}
+  - opt: "hedge mode never and shares were delivered"
+    messages:
+      - {from: Eng, to: Eng, label: "new_order: share_liquidation for the delivered shares, filled at the t+1 close (ADR-0003 section 3, D15)"}
+  # step 5
+  - {from: Eng, to: View, label: "step_05_mark: quotes and quote_iv of the open lots' contracts at t"}
+  - {from: View, to: Eng, label: "bid, ask, quality_flags, own IV, in_smile", kind: return}
+  - {from: Eng, to: Mark, label: "mark_lots: one mark per open lot, plus an INTRINSIC row for each lot settled today, kept out of NAV (D11)", note: "QUOTE_MID, ZERO_BID_MID, else the CRR American price at the surface IV (SURFACE_MODEL; STALE_SURFACE with no snapshot). Never a carried last mid"}
+  - {from: Mark, to: Eng, label: "mark_price, mark_source, mark_flags (MARK_JUMP, IV_FAIL, GREEKS_OTM_IV), Black-76 greeks, value_mid and value_liq per lot", kind: return}
+  # step 6
+  - {from: Eng, to: Hedge, label: "step_06_hedge: net delta in shares, delivered shares included; due on the schedule or the band, or never", note: "With hedge_timing next_open the plan is kept and trades at the next open, in step 3. Implemented, but no test exercises it"}
   - alt:
-      - when: "schedule or band says hedge"
+      - when: "hedge due"
         messages:
-          - {from: Hedge, to: Eng, label: "SPY trade at S_t with commission and slippage", kind: return}
-      - when: "no hedge today"
+          - {from: Hedge, to: Eng, label: "hedge_shares: minus round_half_away(net delta), at S_t", kind: return}
+          - {from: Eng, to: Fill, label: "stock_cost_cents: commission and slippage, Decimal ROUND_HALF_UP"}
+          - {from: Fill, to: Eng, label: "cash_flows hedge_trade, hedge_commission, hedge_slippage; a hedges row, a zero-share trade included", kind: return}
+      - when: "not due"
         messages:
           - {from: Hedge, to: Eng, label: "no trade", kind: return}
-  - {from: Eng, to: Led, label: "greeks_snapshots and P&L attribution against t-1"}
-  - {from: Eng, to: Risk, label: "end-of-day greek budgets, stress grid cells, net margin requirement"}
-  - {from: Risk, to: Eng, label: "reduce-only orders for t+1 on breach or margin call", kind: return}
-  - {from: Eng, to: Sig, label: "compute signals from the view, refitting on schedule"}
-  - {from: Sig, to: View, label: "SPY bars, VIX and surface dated up to t"}
-  - {from: Sig, to: Eng, label: "IV30, RV forecast, VRP spread, regime, model_fit_date", kind: return}
-  - {from: Eng, to: Strat, label: "view, signals, open positions"}
-  - {from: Strat, to: Eng, label: "exits and entries as order intents", kind: return}
-  - {from: Eng, to: Risk, label: "pre-trade check of each intent: greeks, stress cells, net margin"}
-  - {from: Risk, to: Eng, label: "scaled, rejected or accepted orders queued for t+1", kind: return}
-  - {from: Eng, to: Exp, label: "early-exercise test for t+1: calls by closed form before an ex-date, puts on the CRR lattice"}
-  - {from: Exp, to: Eng, label: "assignments and exercises effective at t+1", kind: return}
-  - {from: Eng, to: Led, label: "orders, fills, position_marks, hedges, expiry_events, risk_events, signals, daily_pnl"}
-  - {from: Led, to: Eng, label: "rows appended for session t", kind: return}
+  # step 7
+  - {from: Eng, to: Mark, label: "step_07_snapshot: NAV_mid, NAV_liq, the model-marked share of gross option value"}
+  - {from: Mark, to: Eng, label: "OK, or DEGRADED above 20%", kind: return}
+  - {from: Eng, to: Led, label: "daily_pnl row for t (the attribution and margin columns stay null until M5 and M6)"}
+  # step 8
+  - alt:
+      - when: "step_08_eod_risk: NAV_mid above 0"
+        messages:
+          # step 9
+          - {from: Eng, to: Strat, label: "step_09_decide: decide(view, book.state(t), ctx)", note: "book.state is a frozen copy: the strategy cannot move the book"}
+          - {from: Strat, to: View, label: "forwards and quotes at t, up to as_of only"}
+          - {from: View, to: Strat, label: "the chain of t", kind: return}
+          - {from: Strat, to: Eng, label: "order intents: open a short straddle when flat; close when DTE at the next session is at most exit_dte (0 holds to expiry)", kind: return}
+          - {from: Eng, to: Eng, label: "check_intent, stamp the order-date volume V_t on each leg, create the orders for t+1"}
+          - opt: "fill_timing is same_close"
+            messages:
+              - {from: Eng, to: Fill, label: "pass 9b: today's new option orders against snapshot t, stamped t (D17)"}
+              - {from: Fill, to: Eng, label: "fills dated t; the new lots are marked at t and the daily_pnl row of t is recomputed", kind: return}
+          # step 10
+          - {from: Eng, to: Early, label: "step_10_early: each open lot not settling today, at the surface IV", note: "Calls: before a projected ex-date t+1, by the closed form (the lattice with two ex-dates). Puts: every day, a pre-filter and then the CRR lattice, N = 500"}
+          - {from: Early, to: Eng, label: "exercise or assign at t+1: an expiry_events row (early_exercised, early_assigned), booked in step 2 of t+1", kind: return}
+          - opt: "hedge mode never and shares will be delivered"
+            messages:
+              - {from: Eng, to: Eng, label: "new_order: share_liquidation, decided at t, filled at the t+1 close (ADR-0003 section 5)"}
+      - when: "NAV_mid at or below 0 (ruin)"
+        messages:
+          - {from: Eng, to: Led, label: "a risk_events row kind ruin, the open positions get exit_reason ruin, the run stops after step 11"}
+  # step 11
+  - {from: Eng, to: Led, label: "step_11_write: position_marks rows of t; keep the close (cash, shares, NAV, surface, marks) for t+1"}
+  - {from: Eng, to: Eng, label: "on_session_end(t, book)"}
+  # after the last session
+  - {from: Eng, to: Led, label: "run_backtest, after the last session: runs, positions, orders, order_legs and lots rows; all 12 tables written to a .tmp folder", note: "Once per run, not per session. The store is checked again first: an input file that changed while the run read it raises StoreChanged and no ledger is written"}
+  - {from: Led, to: Eng, label: "SHA-256 of each file in run_meta.json; the folder is renamed to runs/run_id=ID, with ID = SHA-256(config_hash, data_fingerprint, commit, code_fingerprint)", kind: return}

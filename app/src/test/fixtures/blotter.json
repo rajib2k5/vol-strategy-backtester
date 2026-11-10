@@ -1,0 +1,54 @@
+{
+  "schema_version": "0.4.0",
+  "generated_at": "2026-10-30T06:27:15Z",
+  "source_commit": "a1b2c3d4e5f6",
+  "run": {
+    "run_id": "ab9492048d5308c5d0d3087eb7d7cde5c88d915879cccf1931e5413979811caf",
+    "config_hash": "98f6f515bdbb0d85ab72030d3ce5cd65d999942ee20737eff019e9d419e2946f",
+    "data_fingerprint": "d9450cc036a5ffbc3fd5af4a9bc7c671f02e2ba65692b8d855da79191841c0b7",
+    "engine_commit": "e1067ebdfbded211745ed7a12f08b7c80b6ca029",
+    "data_source": "optionsdx",
+    "execution_mode": "quote",
+    "fill_timing": "next_close",
+    "cap_mode": "hard_only",
+    "chain_mask": "none",
+    "split": "development",
+    "run_purpose": "diagnostic",
+    "strategy": "RollingShortStraddle",
+    "status": "ok",
+    "sample_start": "2015-01-02",
+    "sample_end": "2015-03-20"
+  },
+  "units": {
+    "qty": "contracts (options) or shares (SPY), signed: + bought, - sold",
+    "price": "USD per share",
+    "mid": "USD per share",
+    "half_spread": "USD per share",
+    "fees": "USD",
+    "strike": "USD per share",
+    "settlement_price": "USD per share",
+    "shares_delivered": "shares, signed: + received, - delivered"
+  },
+  "illustrative": false,
+  "label": "Test fixture (OptionsDX): a made-up diagnostic run of 4 straddles, 13 fills and 3 events; not a strategy result",
+  "fills": [
+    {"fill_id": 1, "date": "2015-01-02", "instrument": "option", "osi_symbol": "SPY   150123C00205000", "qty": -10, "price": 3.12, "mid": 3.145, "half_spread": 0.025, "fees": 7.0, "fill_source": "quote", "intent": "open"},
+    {"fill_id": 2, "date": "2015-01-02", "instrument": "option", "osi_symbol": "SPY   150123P00205000", "qty": -10, "price": 2.92, "mid": 2.95, "half_spread": 0.03, "fees": 7.0, "fill_source": "quote", "intent": "open"},
+    {"fill_id": 3, "date": "2015-01-09", "instrument": "option", "osi_symbol": "SPY   150220C00205000", "qty": -10, "price": 4.12, "mid": 4.15, "half_spread": 0.03, "fees": 7.0, "fill_source": "quote", "intent": "open"},
+    {"fill_id": 4, "date": "2015-01-09", "instrument": "option", "osi_symbol": "SPY   150220P00205000", "qty": -10, "price": 3.87, "mid": 3.9, "half_spread": 0.03, "fees": 7.0, "fill_source": "quote", "intent": "open"},
+    {"fill_id": 5, "date": "2015-01-16", "instrument": "option", "osi_symbol": "SPY   150123C00205000", "qty": 10, "price": 1.05, "mid": 1.025, "half_spread": 0.025, "fees": 7.0, "fill_source": "quote", "intent": "close"},
+    {"fill_id": 6, "date": "2015-01-16", "instrument": "option", "osi_symbol": "SPY   150123P00205000", "qty": 10, "price": 2.76, "mid": 2.735, "half_spread": 0.025, "fees": 7.0, "fill_source": "quote", "intent": "close"},
+    {"fill_id": 7, "date": "2015-02-20", "instrument": "option", "osi_symbol": "SPY   150320C00207000", "qty": -10, "price": 3.45, "mid": 3.475, "half_spread": 0.025, "fees": 7.0, "fill_source": "quote", "intent": "open"},
+    {"fill_id": 8, "date": "2015-02-20", "instrument": "option", "osi_symbol": "SPY   150320P00207000", "qty": -10, "price": 3.3, "mid": 3.325, "half_spread": 0.025, "fees": 7.0, "fill_source": "quote", "intent": "open"},
+    {"fill_id": 9, "date": "2015-02-23", "instrument": "share", "osi_symbol": null, "qty": 1000, "price": 205.25, "mid": null, "half_spread": null, "fees": 10.0, "fill_source": "close", "intent": "share_liquidation"},
+    {"fill_id": 10, "date": "2015-03-06", "instrument": "option", "osi_symbol": "SPY   150320C00207000", "qty": 10, "price": 1.95, "mid": 1.925, "half_spread": 0.025, "fees": 7.0, "fill_source": "quote", "intent": "reduce_risk"},
+    {"fill_id": 11, "date": "2015-03-06", "instrument": "share", "osi_symbol": null, "qty": -1000, "price": 207.12, "mid": null, "half_spread": null, "fees": 10.0, "fill_source": "close", "intent": "share_liquidation"},
+    {"fill_id": 12, "date": "2015-03-06", "instrument": "option", "osi_symbol": "SPY   150417C00209000", "qty": -10, "price": 2.25, "mid": 2.275, "half_spread": 0.025, "fees": 7.0, "fill_source": "quote", "intent": "open"},
+    {"fill_id": 13, "date": "2015-03-06", "instrument": "option", "osi_symbol": "SPY   150417P00209000", "qty": -10, "price": 3.02, "mid": 3.05, "half_spread": 0.03, "fees": 7.0, "fill_source": "quote", "intent": "open"}
+  ],
+  "events": [
+    {"event_id": 1, "date": "2015-02-20", "effective_date": "2015-02-20", "osi_symbol": "SPY   150220C00205000", "event_type": "assigned", "contracts": -10, "shares_delivered": -1000, "strike": 205, "settlement_price": 205.25, "pin_flag": true},
+    {"event_id": 2, "date": "2015-02-20", "effective_date": "2015-02-20", "osi_symbol": "SPY   150220P00205000", "event_type": "expired_worthless", "contracts": -10, "shares_delivered": 0, "strike": 205, "settlement_price": 205.25, "pin_flag": true},
+    {"event_id": 3, "date": "2015-03-05", "effective_date": "2015-03-06", "osi_symbol": "SPY   150320P00207000", "event_type": "early_assigned", "contracts": -10, "shares_delivered": 1000, "strike": 207, "settlement_price": null, "pin_flag": false}
+  ]
+}

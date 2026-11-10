@@ -106,6 +106,42 @@ def dividend_rules(store: Store) -> dict:
     return {name: np.array(values) for name, values in errors.items()}
 
 
+def dividend_horizons(store: Store, horizons=range(1, 9), sums=(1, 2, 4, 6, 8)) -> list[tuple]:
+    """The rule against last paid further ahead, with no look-ahead, on two samples of SPY's ex-dates.
+
+    A forecast of the dividends at positions first..last (a window of n = last - first + 1; one dividend h ahead is
+    the window last - h + 1 .. last read at its end) is made on the day before ex-date `first`, from the dividends
+    paid by then: the rule's projection of each, against the last paid amount. Sample "target": the windows that END
+    on an ex-date since 2009 (71 of them; the M2 walkthrough's definition, its forecasts made from 2007 on, through the
+    2008-09 dividend cuts). Sample "origin": the windows whose forecast is MADE since 2009. Rows: (sample, kind, h or
+    n, count, mean absolute % error of the rule, of last paid); kind "dividend" scores the window's last dividend
+    alone, "sum" the window's sum (what a long expiry's lattice carries).
+    """
+    paid = store.read_table("dividends", order_by="ex_date")
+    days = [d.date() for d in paid["ex_date"]]
+    amount = paid["amount"].to_numpy(float)
+    since = date(2009, 1, 1)
+
+    def score(first: int, last: int, kind: str) -> tuple[float, float]:
+        as_of, window = days[first] - timedelta(days=1), range(first, last + 1)
+        if kind == "dividend":
+            return (dividends.projected_amount(days, list(amount), as_of, days[last]) / amount[last] - 1,
+                    amount[first - 1] / amount[last] - 1)
+        actual = amount[first:last + 1].sum()
+        return (sum(dividends.projected_amount(days, list(amount), as_of, days[j]) for j in window) / actual - 1,
+                len(window) * amount[first - 1] / actual - 1)
+
+    rows = []
+    for sample in ("target", "origin"):
+        for kind, sizes in (("dividend", horizons), ("sum", sums)):
+            for n in sizes:
+                windows = [(last - n + 1, last) for last in range(n, len(days))
+                           if (days[last] if sample == "target" else days[last - n + 1]) >= since]
+                errors = np.array([score(first, last, kind) for first, last in windows])
+                rows.append((sample, kind, n, len(windows), *np.mean(np.abs(errors), axis=0)))
+    return rows
+
+
 def boundary(strike, rate, sigma, tau, tol) -> float:
     """The spot below which ADR-0003's put rule exercises (continuation - (K - S) <= tol), by bisection."""
     lo, hi = 300.0, strike
@@ -414,6 +450,12 @@ def main(argv: list[str] | None = None) -> int:
     for name, err in dividend_rules(store).items():
         print(f"{name}: {err.size} ex-dates, mean absolute error {np.mean(np.abs(err)):.2%}, largest {np.max(np.abs(err)):.1%}, "
               f"mean signed {np.mean(err):+.2%}")
+
+    block("dividend projection rules by horizon: the rule against last paid (no look-ahead)")
+    for sample, kind, n, count, rule, last in dividend_horizons(store):
+        what = f"the dividend {n} ahead" if kind == "dividend" else f"the sum of the next {n}"
+        when = "ending on an ex-date since 2009" if sample == "target" else "made since 2009"
+        print(f"{what}, forecasts {when}: {count}, mean absolute error the rule {rule:.2%}, last paid {last:.2%}")
 
     block("theta: F held fixed against S held fixed (one long ATM call, S = K = 400, sigma 0.20, 30 days, r 5%)")
     spot, strike, tau, rate, sigma = 400.0, 400.0, 30 / 365, 0.05, 0.20

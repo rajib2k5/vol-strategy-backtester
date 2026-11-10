@@ -4,13 +4,15 @@ import { fireEvent, render, screen, within } from '@testing-library/react'
 import { SurfacePage } from './SurfacePage'
 import { SceneContents } from './SurfaceHero'
 import { DataLoadError } from '../data/loadAppData'
-import { parseDataQuality, parseIllustrativeSurface, parseManifest, parseSurfaceFrames } from '../lib/contract'
+import { parseBlotter, parseDataQuality, parseIllustrativeSurface, parseManifest, parsePositionsTimeline, parseSurfaceFrames } from '../lib/contract'
 import { EXTRAPOLATION_NOTE, FRAME_STATS } from '../content/surface'
 import { canvasControl } from '../test/mockFiberControl'
 import manifestFixture from '../test/fixtures/manifest.json'
 import surfaceFixture from '../test/fixtures/illustrative_surface.json'
 import dataQualityFixture from '../test/fixtures/data_quality.json'
 import surfaceFramesFixture from '../test/fixtures/surface_frames.json'
+import blotterFixture from '../test/fixtures/blotter.json'
+import positionsTimelineFixture from '../test/fixtures/positions_timeline.json'
 
 // jsdom has no WebGL: swap fiber's Canvas for a marker div, and drei for no-ops.
 vi.mock('@react-three/fiber', () => import('../test/mockFiber'))
@@ -24,6 +26,8 @@ const ready = () => ({
     surface: parseIllustrativeSurface(surfaceFixture),
     dataQuality: parseDataQuality(dataQualityFixture),
     surfaceFrames,
+    blotter: parseBlotter(blotterFixture),
+    positionsTimeline: parsePositionsTimeline(positionsTimelineFixture),
   },
 })
 

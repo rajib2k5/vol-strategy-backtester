@@ -60,4 +60,4 @@ DoltHub's strikes are about 2.2% of spot apart against OptionsDX's dollar strike
 
 - `src/volbt/pricing/smile.py:73` `smile_nodes`, `:81` `wing_slope` (the [0, 2] clip), `:86` `smile_variance` (steps 2-3), `:101` `smile_iv`, `:152` `calendar_variance` (step 6 at and between expiries), `:196` `surface_iv` (steps 2-6), `:129` `_envelope` (step 5's running extremum).
 - `src/volbt/pricing/chain.py:275`: each expiry's smile from its `in_smile` quotes (valid, not WIDE, OTM, with an IV); stored in `smile_fits` (`k_nodes`, `total_var_nodes`, `atm_iv`, `fit_flags`).
-- `src/volbt/build.py:619-620` the fixed grid of `surface_frames.json`, `:634` `surface_frame` (every cell read with `surface_iv`, rounded so that w still never falls, refused if rounding cannot mend it, `atm_iv_30d` copied from its cell), and the leave-one-out query in `SUMMARY_SQL`.
+- `src/volbt/build.py:627-628` the fixed grid of `surface_frames.json`, `:642` `surface_frame` (every cell read with `surface_iv`, rounded so that w still never falls, refused if rounding cannot mend it, `atm_iv_30d` copied from its cell), and the leave-one-out query in `SUMMARY_SQL`.

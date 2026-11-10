@@ -18,6 +18,16 @@ Also corrected: the Aug-2024 hole is 2024-07-30 → 2024-08-09, and 07-29 and 08
 
 Round 2 (`docs/validation/00-round2-ledger.md`, claims 7 and 12): PSR 0.9433 and DSR 0.6319 reproduce. The weekly clip shares above are corrected. `n_trials` is now N_raw, with N_eff reported as `n_trials_eff`, because in a null simulation with correlated variants `dsr_eff` alone had a false-positive rate of up to 35.7% (§2). PSR is stated on the per-period Sharpe ratio (§2).
 
+## M3 amendments (default taken 2026-10-30, owner can override)
+
+The M3 build (`docs/milestones/03-daily-engine.md`; `LEARNING_LOG.md`, default 56) applied this ADR's splits to its own runs. The original text stays in place.
+
+1. **§1, what a run after 2019 may report** (decision D19). The reference strategy of M3 is a diagnostic that exercises the engine; it is not a strategy under test. To keep the validation and holdout data from steering M4, M3 follows these rules:
+   - **Health metrics only after 2019.** A run whose sample ends after 2019-12-31 reports mechanics: cash reconciliation, one mark per lot per session, the hedge residual, fills against quotes, mark-source shares, `DEGRADED` counts and timings. No P&L, NAV level, return or Sharpe ratio appears anywhere for it: not in the docs, the notebook, the committed logs or the app. `tools/run_backtest.py` prints timings only, and `tools/report_m3.py` prints no P&L for a run that ends after 2019.
+   - **No holdout run in M3.** A 2020-26 short-straddle result would steer the design of M4's short-vol strategies.
+   - **The 60-second run spans 2010-2023** (development and validation, split `validation`), `run_purpose = diagnostic`, `trial_group = m3_engine_reference`, with its P&L redacted. It measures ADR-0001's 60 s trigger and the engine's health, not a strategy.
+   - **The committed engine datasets** (`blotter.json`, `positions_timeline.json`) come from the development run (2010-2019) only, are labelled as a diagnostic run that "is not a strategy result", and hold no P&L, NAV, return or Sharpe. The development run's P&L is not headlined either (risk 11 of the M3 plan). `tools/export_app_data.py` refuses a run whose split is not `development` unless `--allow-split` is given, which is meant only for runs on made-up stores.
+
 ## Context
 
 - **Many trials.** We will try many strikes, tenors, thresholds and vol models. The best Sharpe among N trials is biased upwards (Bailey & López de Prado 2014; `docs/concepts/00-background.md` §7).

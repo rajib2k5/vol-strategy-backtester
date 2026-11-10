@@ -9,19 +9,25 @@
  * Not in src/lib/ because it does I/O; `fetch` is injected so tests never touch the network.
  */
 import {
+  BLOTTER_DATASET,
   ContractError,
   DATA_QUALITY_DATASET,
+  POSITIONS_TIMELINE_DATASET,
   SURFACE_DATASET,
   SURFACE_FRAMES_DATASET,
   assertDatasetMatchesEntry,
   findDataset,
+  parseBlotter,
   parseDataQuality,
   parseIllustrativeSurface,
   parseManifest,
+  parsePositionsTimeline,
   parseSurfaceFrames,
+  type Blotter,
   type DataQuality,
   type IllustrativeSurface,
   type Manifest,
+  type PositionsTimeline,
   type SurfaceFrames,
 } from '../lib/contract'
 
@@ -34,6 +40,10 @@ export interface AppData {
   dataQuality: DataQuality
   /** The real SPY surfaces of the Surface page (milestone 2). */
   surfaceFrames: SurfaceFrames
+  /** Every fill and expiry event of one engine run, for the Blotter page (milestone 3). */
+  blotter: Blotter
+  /** When each position of that run was open, for the Positions page (milestone 3). */
+  positionsTimeline: PositionsTimeline
 }
 
 /** `fetch` = the request itself failed or returned junk; `contract` = valid JSON that breaks the contract. */
@@ -101,7 +111,9 @@ export async function loadAppData(fetchFn: FetchLike = (url) => fetch(url)): Pro
   const surface = await loadDataset(manifest, SURFACE_DATASET, parseIllustrativeSurface, fetchFn)
   const dataQuality = await loadDataset(manifest, DATA_QUALITY_DATASET, parseDataQuality, fetchFn)
   const surfaceFrames = await loadDataset(manifest, SURFACE_FRAMES_DATASET, parseSurfaceFrames, fetchFn)
-  return { manifest, surface, dataQuality, surfaceFrames }
+  const blotter = await loadDataset(manifest, BLOTTER_DATASET, parseBlotter, fetchFn)
+  const positionsTimeline = await loadDataset(manifest, POSITIONS_TIMELINE_DATASET, parsePositionsTimeline, fetchFn)
+  return { manifest, surface, dataQuality, surfaceFrames, blotter, positionsTimeline }
 }
 
 /** Plain-language explanation for the UI, always ending with how to regenerate the files. */

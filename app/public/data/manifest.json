@@ -1,25 +1,37 @@
 {
-  "schema_version": "0.3.0",
-  "generated_at": "2026-10-30T06:27:15Z",
-  "source_commit": "248d200ea742834a0891389ec869aa535aaca61e",
+  "schema_version": "0.4.0",
+  "generated_at": "2026-11-09T23:40:37Z",
+  "source_commit": "f5cc66b751813e1233fc0aeb39fff6fb8522f82f-dirty",
   "datasets": [
     {
       "name": "illustrative_surface",
       "path": "illustrative_surface.json",
-      "schema_version": "0.3.0",
+      "schema_version": "0.4.0",
       "description": "Illustrative SSVI implied-vol surface for the milestone-0 3D hero. Not market data."
     },
     {
       "name": "data_quality",
       "path": "data_quality.json",
-      "schema_version": "0.3.0",
+      "schema_version": "0.4.0",
       "description": "Milestone-1 data-quality aggregates: quote flags per source and year, rows per source, the calendar fixes, the cross-vendor agreement and the quality-gate result. Counts and quantiles only; no quotes."
     },
     {
       "name": "surface_frames",
       "path": "surface_frames.json",
-      "schema_version": "0.3.0",
+      "schema_version": "0.4.0",
       "description": "Milestone-2 SPY implied-vol surfaces on a fixed grid for a few labelled dates, from the de-Americanised OTM smiles of the pricing build. Market data."
+    },
+    {
+      "name": "blotter",
+      "path": "blotter.json",
+      "description": "Milestone-3 fills and expiry events of one diagnostic engine run of the reference strategy on the development split. Exercises the engine; not a strategy result; no P&L.",
+      "schema_version": "0.4.0"
+    },
+    {
+      "name": "positions_timeline",
+      "path": "positions_timeline.json",
+      "description": "Milestone-3 positions of the same run, from open to close, and the count open each session. Not a strategy result; no P&L.",
+      "schema_version": "0.4.0"
     }
   ]
 }
