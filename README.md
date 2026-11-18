@@ -12,7 +12,7 @@ The design goal is to show how much of the premium survives:
 > strategy is profitable.
 
 **Status: milestones 0 to 3 are committed, and so are parts A and B1 of milestone 4 (signals,
-strategies, and a forecast test that is pre-registered and not yet scored).** Milestones 0 and 1
+strategies, and a pre-registered forecast test, scored once on 2026-11-17).** Milestones 0 and 1
 built the scaffold, the design and decision records, and the option-chain data layer with its
 quality flags. Milestone 2 prices
 every quote (Black-76 on a de-Americanised parity forward, implied vols, smiles); the findings of
@@ -28,8 +28,10 @@ and not a result: no P&L, NAV or Sharpe ratio is reported for it, and none for a
 ([walkthrough](docs/milestones/03-daily-engine.md), [ledger](docs/validation/03-ledger.md)).
 Milestone 4 adds the signals (realised variance, a HAR forecast of it, 30-day implied vol and their
 log ratio), four strategy structures with their entry and exit rules, and a test of the HAR forecast
-against a naive one whose threshold and data were fixed before it is scored
-([ledger](docs/validation/04-ledger.md)). Its walkthrough comes with part B2. Until
+against a naive one whose threshold and data were fixed before it was scored. It was scored once:
+HAR, p = 0.0139 against the threshold 0.025, on QLIKE, a proxy loss, over 2010-2019 development data.
+At that threshold the test rejects simulated true nulls about 5% of the time (weighted over the
+nulls nearest the data; 19% on the worst one), so read it as roughly 5%-level evidence ([ledger](docs/validation/04-ledger.md)). Its walkthrough comes with part B2. Until
 the owner decides on ADR-0008's proposed per-expiry rate, strategies trade expiries of at most 180
 days ([milestone 2](docs/milestones/02-pricing-core.md), [its ledger](docs/validation/02-ledger.md)).
 No strategy results exist yet. The results table below fills in at milestone 6, and every number in

@@ -12,6 +12,8 @@ still says "written, not committed, not scored": the file is pinned by its sha25
 is still not scored: `spent.jsonl` is empty, and the 9 lines of `runs_of_record.jsonl` are diagnostic runs with no
 `prereg_id` (8 smoke runs, 2020-01-02 to 2023-12-29, and 1 budget run, 2010-01-04 to 2023-12-29).
 
+**Status after the scoring (added 2026-11-17).** The forecast test was scored once on 2026-11-17: HAR, p = 0.0139 against 0.025. See "The one-shot scoring of the forecast test (2026-11-17)" at the end of this ledger. The two status notes above describe the state before it.
+
 **Data policy (D19).** No P&L, NAV, return, Sharpe, exit-reason count or signal value dated after 2019-12-31 is here; such figures read "[withheld: D19]". No mean, sign, t, p, CI or QLIKE of the real d is here; none was computed [review A's report; review D's report].
 
 ## Who built and who checked
@@ -670,3 +672,47 @@ The orchestrator ran the gates on 2026-11-10, dolt off `PATH`, on the working tr
 - The real setup path, `uv run python tools/score_prereg.py 2026-11-09-forecast-har-vs-naive`: exit 2, `refused: .../tools/export_app_data.py is not committed as it is (7 more entries of tools/ are not either)`. Nothing was scored.
 - `npm run verify`: `Test Files 37 passed (37)`, `Tests 1696 passed (1696)`; coverage (statements, branches, functions, lines) 99.48, 98.6, 99.43, 99.79.
 - The ledgers are byte-equal before and after the run: `runs_of_record.jsonl` 9 lines, 3,456 bytes, `ee7a6cd2…`; `spent.jsonl` 0 bytes.
+
+## The one-shot scoring of the forecast test (2026-11-17)
+
+`route: rows 5 (proxy) | primary: hash-frozen pre-registration -> one-shot scoring (k = 1) -> one-sided EWC moving-block bootstrap-t | complement: verifier (Sonnet): clean-room reimplementation from the .md, the repo function on the saved d, metamorphic controls; adversarial (Opus) on 9 procedure claims; the orchestrator's spot check | not-run: EGV (no pipeline change since the seal: the closure hash is unchanged), row 6 (no stake or spend rides on this), any second scoring (the window is spent) | stop: met`
+
+**Result, by the pre-registered rule: HAR.** p = 0.0139 against the threshold 0.025 (one-sided H0 mean(d) <= 0; EWC bootstrap-t with q 4, block 21, 9,999 draws, seed 20261109; k = 1, so p_holm = p). mean(d) = 0.2477, CI [0.0401, 0.5991], EWC t 2.691, se 0.0921. n = 2,495 sessions, 2010-01-04 to 2019-11-29; n / block = 118.8. p is not in the fragile band [0.02, 0.05). Files: `docs/validation/prereg/2026-11-09-forecast-har-vs-naive.result.json` (SHA-256 `66e07390…`) and `.sessions.csv`, committed in `a57640723e2ccbb4af8e6824e65aaf5b10f0cbca` and pushed on 2026-11-17 at 18:11:55 -06:00.
+
+How to read it:
+- **About 5%-level evidence, not 2.5%.** At the 0.025 line, the test rejects mean-0 nulls at 0.0508 and 0.0502 (ABC-weighted, two seeds), at 0.011 to 0.083 across the matched null-sides, and at 0.189 on the worst battery null. The result carries these sizes next to p. A plain "significant at 0.025" overstates it (adversarial claim 8, refuted as wording).
+- **QLIKE is a proxy.** Realised variance from daily closes stands in for the true variance. A lower QLIKE ranks forecast loss. It says nothing about the value of the signal or of any strategy. The decision it feeds is the signal's RV model (HAR or naive). No stake rides on it.
+- **Development data, fresh for this loss, not unseen.** The window is on the development split. The M4 budget run (`tools/smoke_m4.py --budget`, the 9th line of `runs_of_record.jsonl`, 2010-01-04 to 2023-12-29) computed HAR forecasts on these sessions. It printed only the run id, status, sessions and timings, then deleted its run folder (`smoke_m4.py:137-150`). It computed no naive series, no target and no loss. The store's SPY bars made the loss computable at any time; no committed or surviving artefact computed it. The build session's scratchpads of 2026-11-09 and 2026-11-10 were not kept, so the check cannot cover them.
+- **Block 21 is the targets' overlap, fixed in advance; it was not measured.** The 2002-2009 moving-block SE sweep did not settle (row A9). q = 4 and the EWC bootstrap-t were chosen on simulated nulls set from the 2002-2009 lag-1 ACF (0.8865). Review A named the 0.025 threshold before the matching rule was coded. The rule's size cap (0.055) was set with review A's sizes in view, and the power requirement moved from falsifier (c)'s power to the ABC-weighted power after the threshold was named. The .md discloses both. Falsifier (c)'s power at 0.025 is 0.8265, under the first revision's 0.9.
+
+### The run
+The owner approved the scoring in the build session on 2026-11-17. Before it, on HEAD `4c9782905d3b0f4f0576ee1673784548056bf074` (clean tree, equal to origin/main): `spent.jsonl` 0 bytes, no side ledger, no result files; the store tables, library versions and closure hash matched the pins (read-only checks). The scorer ran once: `.venv/bin/python tools/score_prereg.py 2026-11-09-forecast-har-vs-naive`, exit 0, empty stderr, from 17:59:52 to 17:59:54 -06:00. This is the interpreter that the .md's `uv run python` names. The .venv equals `uv.lock` (65 packages, 0 version differences), so `uv run` would have synced nothing (adversarial claim 9).
+
+### Validation
+Adversarial pass (Opus), claim by claim:
+
+| # | Claim | Verdict | Evidence |
+|---|---|---|---|
+| 1 | Sealed before the look | CONFIRMED | The .json, .md and .sha256 are byte-identical in every commit from `16513ca` to `a576407`; `sha256sum -c` OK. All 27 commits that `git rev-list --all --reflog` returns: the result files appear only in `a576407`; `spent.jsonl` is the empty blob in every earlier one. The history rewrite of 2026-11-09 and its backup hold no `validation/prereg` path. GitHub records the push of `16513ca` on 2026-11-10 at 15:07:37 UTC. Correction: `prereg_sha256` (`e2c98fe4…`) is the hash of the .sha256 file, which pins the .json and .md: the binding is transitive |
+| 2 | Window fresh for this loss | CONFIRMED (not computed); computable at any time | See "How to read it" above |
+| 3 | k = 1 is honest | CONFIRMED | The scorer computes one test (`score_prereg.py:228-252`); the 9 revisions predate the commit; the screen, variants, combinations and conditional runs use simulated nulls only |
+| 4 | Selection on tuning data only | PARTIALLY-CORRECT | No 2010-2019 data. Block 21 was not chosen from 2002-2009 (see above). The claim as the build session wrote it was wrong on the block |
+| 5 | Metric labelled proxy | CONFIRMED | `metric.proxy` is true in the .json, and the result's label says proxy |
+| 6 | Spend before compute; record consistent | CONFIRMED | `append_both` writes the side ledger, then `spent.jsonl`, each fsynced under the lock, before `forecast_series` (`score_prereg.py:288-299`; this order is shown by the code, not by a timestamp). sha256(result.json) equals the result line's `result_sha256`; the side ledger equals `spent.jsonl`. The closure hash rebuilt from the 14 files at `16513ca`, `4c97829`, `a576407` and the work tree: `218a4bba…` each time |
+| 7 | Decision follows the written rule | CONFIRMED | d recomputed from the forecasts and y matches exactly; `dates_sha256` matches; the repo function reproduces t, p and the CI; 0.0139 < 0.025 gives HAR; 0.0139 < 0.02 gives fragile false; n / block = 118.8, far above the block-count floor |
+| 8 | "Significant at 0.025" is honest wording | REFUTED (wording) | The size figures above |
+| 9 | The command deviation changes nothing | CONFIRMED | See "The run" |
+
+Verifier re-measurement (Sonnet). Step A was written from the .md alone, before it opened the scorer or the inference code:
+- QLIKE and d recomputed from `yhat_*` and y: max abs difference 0.0. Dates: 2,495, strictly increasing, none after 2019-11-29, `fit_date <= t` on every row.
+- n and mean(d): exact. The clean-room EWC se and t agree to 1e-15 relative.
+- The clean-room bootstrap-t, on 4 seeds of its own RNG: p 0.0136 to 0.0147, against a Monte Carlo SE of 0.0012. The CI ends agree within Monte Carlo error.
+- `ewc_bootstrap` on the saved d with the registered arguments equals result.json exactly. The orchestrator re-ran it and got the same: p, ci, se, t, mean and n equal.
+- Metamorphic controls on the repo function: -d gives p 0.9862 (naive); d - mean(d) gives p 0.4820; d + c gives p 0.0068, 0.0013 and 0.0001 for c = 0.05, 0.2 and 1.0, so p does not rise. d identically 0 makes `ewc_bootstrap` raise ("no low-frequency variation"). The scorer gives p = 1 for it before the call (`score_prereg.py:238-240`). The .md's sentence puts p = 1 next to the function call, so it reads as the function's behaviour. This is a wording point only.
+- Monte Carlo spread, not a test: the repo function at seeds 1, 2 and 3 gives p 0.0171, 0.0132 and 0.0125.
+
+Disclosed, post hoc, not tests and not decision inputs: after the scoring, the adversarial reviewer computed unregistered statistics on the published d. These were block sign-flip p at blocks 21 to 168, NW t, and EWC t at q = 2 to 8. All had the same sign as the registered test.
+
+Open, not fixed here: `spent_by` compares window dates only. The spent window ends on 2019-11-29, but its targets run to 2019-12-31, so a later window that starts on 2019-12-02 would not be refused. The tripwire's other limits are in `tools/prereg.py`'s docstring.
+
+Next: set the signal's `rv_model` to `"har"` by the decision rule, in part B2.
