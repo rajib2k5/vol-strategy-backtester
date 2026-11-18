@@ -1,0 +1,55 @@
+{
+ "alpha": 0.025,
+ "block": 21,
+ "ci": [
+  0.04006455243300616,
+  0.5990798712497689
+ ],
+ "decision": "har",
+ "draws": 9999,
+ "effective_size": {
+  "abc_size_battery_seed": 0.0507525,
+  "abc_size_second_seed": 0.05016166666666667,
+  "lowest_matched_battery_seed": {
+   "null_side": "orch long s=1.5 +d",
+   "rate": 0.011
+  },
+  "lowest_matched_second_seed": {
+   "null_side": "S3 +d",
+   "rate": 0.013
+  },
+  "note": "the rejection rate of p < threshold on mean-0 nulls: ABC-weighted over the null-sides nearest the 2002-2009 d-series in its twelve centred summaries (matched), and the lowest and the worst matched and the worst battery null-side; a rejection is evidence at this size, not at a nominal 0.05. Nearest in those summaries is not alike in what drives size: the matched null-sides' sizes spread from the lowest to the worst",
+  "threshold": 0.025,
+  "worst_battery": {
+   "null": "orch long s=1.5",
+   "rate": 0.189,
+   "side": "-d"
+  },
+  "worst_matched_battery_seed": {
+   "null_side": "S4 f=0.15 right rhos=.99/.997/.999 +d",
+   "rate": 0.0815
+  },
+  "worst_matched_second_seed": {
+   "null_side": "S4 f=0.1 left rhos=.99/.997/.999 -d",
+   "rate": 0.083
+  }
+ },
+ "ewc_t": 2.691016797410469,
+ "fragile": false,
+ "fragile_band": [
+  0.02,
+  0.05
+ ],
+ "label": "proxy: realised variance from daily closes stands in for the true variance (Patton 2011: QLIKE ranks forecasts correctly under it)",
+ "mean_d": 0.24771821150797682,
+ "n": 2495,
+ "p": 0.0139,
+ "p_holm": 0.0139,
+ "prereg_id": "2026-11-09-forecast-har-vs-naive",
+ "prereg_sha256": "e2c98fe48899db5bed2c315807525fffe6058f5ce89ddc55b79235f9398c32b7",
+ "q": 4,
+ "se": 0.09205375891609183,
+ "threshold": 0.025,
+ "window": "forecast-2010-2019",
+ "worst_simulated_size": 0.189
+}

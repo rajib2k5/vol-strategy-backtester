@@ -1,0 +1,2 @@
+{"candidates":["har"],"date":"2026-11-17","event":"spent","prereg_id":"2026-11-09-forecast-har-vs-naive","prereg_sha256":"e2c98fe48899db5bed2c315807525fffe6058f5ce89ddc55b79235f9398c32b7","window":{"end":"2019-11-29","name":"forecast-2010-2019","split":"development","start":"2010-01-04"}}
+{"date":"2026-11-17","event":"result","prereg_id":"2026-11-09-forecast-har-vs-naive","prereg_sha256":"e2c98fe48899db5bed2c315807525fffe6058f5ce89ddc55b79235f9398c32b7","result_sha256":"66e07390c6772cd0a5c852aaff5176b5a336c2be90f0d94e2c829e2fa0c00fcc"}
