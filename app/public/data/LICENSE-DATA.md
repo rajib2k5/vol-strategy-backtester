@@ -40,6 +40,20 @@ The data is not covered by this repository's MIT licence.
 
 The owner's decision of 2026-10-29 keeps the real data the app and docs need in the repository, results and series built from the OptionsDX/Kaggle option chains included (DATA.md, "What is committed, and what is never").
 
+## `signals_timeline.json` and `strategy_positions.json`: OptionsDX-derived and Yahoo-derived
+
+Both files come from development runs of the milestone-4 grid (OptionsDX SPY option chains, 2010-01-04 to 2019-12-31). They are in-sample development diagnostics, not a strategy result. They hold no P&L, NAV, return or Sharpe ratio, and no date after 2019-12-31.
+
+- **`signals_timeline.json`**: the VRP signal of one run on its 2,516 session dates, its 120 HAR fits and the forecast test's result.
+  - **IV30** was computed by our signal from OptionsDX end-of-day SPY option quotes, obtained through the Kaggle dataset `dudesurfin/spy-options-eod-volatility-surface-2010-2023`. Kaggle lists that dataset under the MIT licence. We know of no OptionsDX terms (<https://www.optionsdx.com/terms-of-service/> returned HTTP 404 when checked on 2026-10-29), so we treat the quotes as vendor data as a precaution: the file holds a value derived from them, never a quote, price or chain row.
+  - **The forecast and the ex-post realised vol, and the HAR coefficients,** are derived from SPY daily total log returns, which we built from Yahoo Finance closes and dividends downloaded with yfinance. Yahoo's terms of use apply (<https://policies.yahoo.com/us/en/yahoo/terms/product-atos/apiforydn/index.htm>); the yfinance README says the Yahoo! finance API is "intended for personal use only" (<https://github.com/ranaroussi/yfinance>). The file holds this derived series, not the closes or the bars.
+  - **The log variance ratio** combines the two.
+- **`strategy_positions.json`**: the positions of four runs, one per structure: dates, legs (OSI symbol and ratio), the signal at entry and the exit reason. The contract choices are OptionsDX-derived: our engine picked each contract from the OptionsDX chains. The OSI symbols name contracts, which are public terms, and no price appears in this file.
+- Neither file holds a SPY close, a VIX value or any DoltHub data, so no figure in them carries CC BY-SA 4.0.
+- **The test fixtures are made up.** The files of the same names under `app/src/test/fixtures/` hold invented values and are labelled so.
+
+The data is not covered by this repository's MIT licence.
+
 ## The other files here
 
 - `illustrative_surface.json`: a made-up SSVI surface, not market data. MIT, like the rest of the repository.

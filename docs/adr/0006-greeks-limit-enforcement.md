@@ -14,6 +14,13 @@ The adversarial review (`docs/validation/00-design-research-ledger.md`, claim 7)
 2. **The 15% in "Why these levels" was presented as a bound.** It is a second-order estimate, and only for near-ATM books, where it is conservative: a full-vega-budget book of 24 ATM straddles loses 8.8% on full revaluation.
 3. **Changed:** a full-revaluation **stress-loss budget** is now a binding constraint, both pre-trade and at the end of the day. It has two limits: 15% of NAV at (−10%, +20) and 35% at the worst of the 63 cells of the ADR-0010 grid.
 
+## M4 amendments (default taken 2026-11-17, owner can override)
+
+1. **Sizing is fixed until M5.** The M4 strategies open every position with `FixedPackages(10)`: ten packages of a straddle, strangle or calendar, whatever the market. Ten is inside the 7 to 12 straddles that ADR-0002 §Consequences expects at the default capital and the budgets of this ADR. No greek budget, stress-loss budget, margin cap or vega-notional sizing acts in M4: the pre-trade check and the end-of-day breach pass through (M3 already does), and `Sizer` is the interface through which M5 adds `VegaNotional`.
+2. **Why now and not tuned.** A tuned size would be one more design choice to count, and M4's development grid already carries 36 trials ([ADR-0011](0011-vrp-signal-and-strategy-rules.md)). A fixed size keeps the 36 configurations comparable with each other.
+3. **What it costs.** Two positions may be open at once (one per expiry, at most two), so the exposure can double with no budget acting. That is a known bias of the development diagnostics. The budgets of this ADR and the packages they allow are set in M5, and the strategy pre-registration freezes only after M5.
+4. **No change to the budgets, the stress budget or the units.** The original text stays as it is.
+
 ## Context
 
 "Vega $2,500" means nothing until the unit is pinned down. Vendors disagree on units: OptionsDX vega is per 1 vol point, and its theta convention did not reconcile (ADR-0004).

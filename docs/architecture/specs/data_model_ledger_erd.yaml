@@ -1,5 +1,5 @@
 # The per-run ledger: one parquet file per table, written by volbt.engine.ledger from milestone 3.
-# Types are DuckDB/Parquet types. Column names, order and types of the 12 built tables are those of volbt.engine.ledger.SCHEMAS
+# Types are DuckDB/Parquet types. Column names, order and types of the 14 built tables are those of volbt.engine.ledger.SCHEMAS
 # (pa.date32 = DATE, pa.string = VARCHAR, pa.int16/int32/int64 = SMALLINT/INTEGER/BIGINT, pa.float64 = DOUBLE, pa.bool_ = BOOLEAN).
 # Enums and ADR numbers follow ADR-0002..0010. Diagram-kit schema (see ../README.md).
 # The kit's erd schema has no entity description or column note field, so the notes are kept as comments.
@@ -27,9 +27,20 @@
 #  - daily_pnl: adds the NAV inputs (has_snapshot, spot, cash_cents, option_value_liq/gross, model_marked_value_gross, n_open_lots),
 #    pnl_borrow, rate and delta_after_hedge_shares; the attribution and margin columns are typed and null (M5, M6).
 #  - cash_flows is new: every cash movement in integer cents, so cash_cents = initial + sum(amount_cents) exactly.
+#
+# Revised after M4 (2026-11-17) against volbt.engine.ledger and loop.update_signals. Built in M4: signals and position_daily, and
+# positions.entry_signal is filled. The ledger now has 14 tables; greeks_snapshots (M5) is the only one still planned. A run of a
+# strategy with no signals writes an empty signals table, and every M3 table keeps its bytes. Changes against the pre-M4 spec
+# (ADR-0011, ADR-0001 amendment 16):
+#  - signals: no longer planned. Adds iv30_flags, log_var_ratio (the signal s_t), n_window and flags, last in the table. rv_model is
+#    'har' or 'naive' (GARCH and GJR are not built). zscore stays null. A number that is not defined is stored as null.
+#  - position_daily is new: one row per position per session from its opening fill to its close, the hedged position P&L and its
+#    parts (volbt.engine.positions), cumulative, and the position's delta at the close.
+#  - positions: entry_signal holds the signal s_t of the session the opening order was created; exit_reason gains 'profit_target',
+#    'stop' and 'signal' as built values.
 kind: erd
 title: "vol-strategy-backtester data model: per-run ledger"
-subtitle: "Built in M3: 12 tables, written once per run. run_id is the run's folder name (runs/run_id=<id>/), not a column. Planned: signals (M4), greeks_snapshots (M5)."
+subtitle: "Built in M4: 14 tables, written once per run. run_id is the run's folder name (runs/run_id=<id>/), not a column. Planned: greeks_snapshots (M5)."
 entities:
   # One row per backtest run, and the trial log for DSR (ADR-0010). No run_id column: the folder is the id.
   - id: runs
@@ -55,20 +66,24 @@ entities:
       - {name: sample_end, type: DATE}  # the config's sample_end, or the date the run was stopped at (stop_after): a stopped run has its own config_hash and run id
       - {name: last_session, type: DATE}  # the last session run: earlier than sample_end after a ruin
       - {name: status, type: VARCHAR}  # 'ok' or 'ruin'
-  # Signal values per session, computed in the daily loop from MarketView(as_of = session); never from a full-sample fit (ADR-0001).
+  # Signal values per session, computed in the daily loop (step 9) from MarketView(as_of = session); never from a full-sample fit (ADR-0001, test 6).
   - id: signals
-    label: "signals (planned, M4)"
+    label: "signals"
     columns:
       - {name: session_date, type: DATE, pk: true}
-      - {name: signal_name, type: VARCHAR, pk: true}
-      - {name: iv30, type: DOUBLE, nullable: true}
-      - {name: rv_forecast, type: DOUBLE, nullable: true}
-      - {name: rv_model, type: VARCHAR}  # 'har' or 'garch' or 'gjr'
-      - {name: model_fit_date, type: DATE, nullable: true}  # last scheduled refit on or before session_date; the fit used only data up to it
+      - {name: signal_name, type: VARCHAR, pk: true}  # e.g. 'vrp_har'
+      - {name: iv30, type: DOUBLE, nullable: true}  # the ATM-forward IV at 30 calendar days; null with no snapshot, no usable smile, or a tenor that needs extrapolation
+      - {name: iv30_flags, type: INTEGER}  # the SURFACE_* bits of that read (4 SURFACE_EXTRAP_TENOR); 0 with no snapshot or no usable smile
+      - {name: rv_forecast, type: DOUBLE, nullable: true}  # RV^ = sqrt(n_window y^ 365/30), annualised for display
+      - {name: rv_model, type: VARCHAR}  # 'har' or 'naive'
+      - {name: model_fit_date, type: DATE, nullable: true}  # the first session of the month: the fit used only pairs whose target ended on or before it; null for 'naive' and with too few pairs
       - {name: vrp_spread, type: DOUBLE, nullable: true}  # iv30 - rv_forecast
-      - {name: zscore, type: DOUBLE, nullable: true}
-      - {name: vix_bucket, type: VARCHAR}  # previous-session VIX bucket
-      - {name: vol_regime, type: VARCHAR}  # 'shock', 'post_shock' or 'calm'
+      - {name: zscore, type: DOUBLE, nullable: true}  # always null in M4
+      - {name: vix_bucket, type: VARCHAR, nullable: true}  # the previous VIX session's bucket (ADR-0010 section 3); null before the second VIX close
+      - {name: vol_regime, type: VARCHAR, nullable: true}  # 'shock', 'post_shock' or 'calm', lagged one session
+      - {name: log_var_ratio, type: DOUBLE, nullable: true}  # the signal s_t = ln(IV30^2 / RV^2) over the same 30 calendar days
+      - {name: n_window, type: INTEGER}  # sessions in (t, t + 30 days], from the session calendar (D3)
+      - {name: flags, type: INTEGER}  # 1 RV_FALLBACK, 2 RV_MISSING, 4 IV30_MISSING, 8 WINDOW_EMPTY
   # A strategy position: one structure (straddle, strangle, calendar, vol-arb) made of lots.
   - id: positions
     label: "positions"
@@ -80,8 +95,24 @@ entities:
       - {name: opened_date, type: DATE, nullable: true}  # null while pending, and for good when the opening order never filled (status not_opened, decision B4)
       - {name: closed_date, type: DATE, nullable: true}
       - {name: status, type: VARCHAR}  # 'pending', 'open', 'closed' or 'not_opened'
-      - {name: entry_signal, type: DOUBLE, nullable: true}  # always null in M3 (no signals until M4)
-      - {name: exit_reason, type: VARCHAR, nullable: true}  # 'dte', 'expiry', 'exercise', 'assignment', 'ruin' in M3; 'profit_target', 'stop', 'signal', 'risk', 'margin' from M4/M5
+      - {name: entry_signal, type: DOUBLE, nullable: true}  # the signal s_t of the session the opening order was created; null for a strategy that gives none, and for an 'always' entry when s is not a number
+      - {name: exit_reason, type: VARCHAR, nullable: true}  # 'dte', 'profit_target', 'stop', 'signal' (a strategy's, M4); 'expiry', 'exercise', 'assignment', 'ruin' (the engine's); 'risk', 'margin' from M5
+  # The hedged P&L of each position, cumulative, one row per session from its opening fill to its close (volbt.engine.positions). Written for the
+  # development grid's stop and target rules; no result is read from it before M6 (decision D19).
+  - id: position_daily
+    label: "position_daily"
+    columns:
+      - {name: session_date, type: DATE, pk: true}
+      - {name: position_id, type: BIGINT, pk: true, fk: positions.position_id}
+      - {name: status, type: VARCHAR}  # the position's status that session
+      - {name: n_open_lots, type: INTEGER}
+      - {name: premium_usd, type: DOUBLE}  # credit > 0: the sum of -qty x 100 x price over the opening fills
+      - {name: fills_usd, type: DOUBLE}  # cumulative option fills: -qty x 100 x price, less fees
+      - {name: open_value_usd, type: DOUBLE}  # the open lots at this close: qty x 100 x mark
+      - {name: settled_usd, type: DOUBLE}  # what the settled lots delivered, valued at the session it was booked
+      - {name: hedge_usd, type: DOUBLE, nullable: true}  # H: the position's share of the daily delta hedge, -Delta(u-1) (S(u) + D(u) - S(u-1)) summed; null when the run's hedge is not the daily one at the close
+      - {name: pnl_usd, type: DOUBLE, nullable: true}  # fills + open + settled + H; null where hedge_usd is
+      - {name: delta_shares, type: DOUBLE, nullable: true}  # the position's delta at this close, in shares
   # Orders created after snapshot t; filled against the next session's snapshot (ADR-0002).
   - id: orders
     label: "orders"
@@ -335,6 +366,7 @@ entities:
       - {name: total_var_nodes, type: "DOUBLE[]"}
 relations:
   - {from: daily_pnl.session_date, to: spy_bars.date, cardinality: "0..*", label: "session of"}
+  - {from: position_daily.position_id, to: positions.position_id, cardinality: "0..*", label: "valued daily"}
   - {from: lots.position_id, to: positions.position_id, cardinality: "0..*", label: "holds"}
   - {from: orders.position_id, to: positions.position_id, cardinality: "0..*", label: "opened and closed by"}
   - {from: order_legs.order_id, to: orders.order_id, cardinality: "0..*", label: "has legs"}  # composite key (order_id, leg_no): the order_id column carries the fk

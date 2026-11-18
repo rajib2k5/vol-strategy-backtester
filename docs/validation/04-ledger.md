@@ -716,3 +716,34 @@ Disclosed, post hoc, not tests and not decision inputs: after the scoring, the a
 Open, not fixed here: `spent_by` compares window dates only. The spent window ends on 2019-11-29, but its targets run to 2019-12-31, so a later window that starts on 2019-12-02 would not be refused. The tripwire's other limits are in `tools/prereg.py`'s docstring.
 
 Next: set the signal's `rv_model` to `"har"` by the decision rule, in part B2.
+
+## Part B2: the RV model, the development grid, the trial log, the export and the docs (2026-11-17)
+
+`route: rows 2, 6, 10, 13 (+ row 5 procedure) | primary: Tier 0 gates + one hand mutant per new or changed test; adversarial (Opus) on 10 claims about the B2a code and data; verifier (Sonnet) on every figure in the docs | complement: the orchestrator's re-measurement of the export and grid figures and its own re-run of two mutants | not-run: EGV (no new library or API claim), a second adversarial pass after the fixes (row 6 does not route one; the refuted claims were re-checked by mutants and the reviewer's forgeries), the M3 regression after the fix pass (src/volbt untouched; the engine's code fingerprint is still f2ad18d7…, the grid's) | stop: met`
+
+**What part B2 holds.** Part B2a sets the RV model by the decision rule (`tools/run_m4_grid.py decided_rv_model`). It runs the development grid once: 36 configurations of `m4_grid("har")`, 2010-01-04 to 2019-12-31, OptionsDX quote mode, 4 workers, 278.6 s. It writes the trial log `docs/validation/trials/m4.jsonl` (37 lines: the 36 grid runs and one measurement run with the same run id as its grid twin). It writes `tools/report_m4.py` (diagnostics only, no P&L), and builds the real `signals_timeline.json` and `strategy_positions.json`. Part B2b writes the walkthrough `docs/milestones/04-strategies-and-signal.md`, concept notes 19-24, notebook 04, ADR-0011, amendments to ADR-0001, 0003, 0006, 0008 and 0010, and the redrawn ERD and loop diagrams. LEARNING_LOG rows 171-182 hold the defaults taken.
+
+**Trials.** 36 trials; N_raw = 36 + 10 design choices = 46. A trial is a distinct (config_hash, code_fingerprint, data_fingerprint) among the group's development lines (`docs/validation/trials/README.md`). The 9 diagnostic runs of `runs_of_record.jsonl` are not trials (the README says why; the owner can override).
+
+**Adversarial review of B2a (Opus), claim by claim:**
+
+| # | Claim | Verdict | Fix |
+|---|---|---|---|
+| 1 | `decided_rv_model` refuses a wrong or forged decision | PARTIALLY-CORRECT (MINOR). A new repository holding a forged result (p 0.03, naive), a rewritten clone with its reflog expired, and p = -1.0 were each accepted. Six hand mutants of the checks survived the tests (T1-T6), so LEARNING_LOG row 171's "the threshold and side-ledger checks are tested" was false | `PINNED_RESULTS` pins the scored result's SHA-256 (`66e07390…`, the record of commit `a576407`); p must be in (0, 1] and the threshold in (0, 1); one test per check. T1-T6 and the new checks' mutants are killed; the forgeries S1-S7 refuse. The orchestrator re-ran T6 (`p <= threshold`): `1 failed, 52 passed` |
+| 2 | The trial log is complete | CONFIRMED | 55 run folders searched; 37 VolStrategy runs, all in the log; 0 folders without a line, 0 lines without a folder |
+| 3 | The trial key counts every trial | **REFUTED (MAJOR).** The builder's key, (trial_hash, code_fingerprint), undercounts: trial_hash drops the split, the sample dates, execution_mode and data_source, so a re-run on another window, mode or rebuilt store counted as the same trial | Key changed to (config_hash, code_fingerprint, data_fingerprint), with tests. The orchestrator re-ran the old key as a mutant: `2 failed, 44 passed`. The real log still gives 36 and 46 |
+| 4 | Parallel runs are safe and deterministic | PARTIALLY-CORRECT (MINOR). A second configuration (short strangle) is byte-equal serial and pooled. A crash mid-grid left 3 run folders and 0 log lines, and two invocations had no lock | On an error, `run_grid` cancels pending runs, logs every completed one, re-raises, and prints recovery steps; an O_EXCL lock refuses a second invocation; 13 mutants killed |
+| 5 | The exported signal has no look-ahead | CONFIRMED | Recomputed in numpy from the store: 0 mismatches on 2,516 dates; rv_realised on (t, t+30], 21 nulls exactly where the window passes 2019-12-31; 120 fits use only targets ending by their fit date |
+| 6 | No P&L, NAV, return or Sharpe in any committed file | CONFIRMED (QUESTION on exit reasons) | A `profit_target` or `stop` exit reason shows that the hedged P&L crossed its threshold. Plan section 8 allows exit reasons for development data; the walkthrough and ADR-0010 now say so |
+| 7 | The four exported runs are the gated configurations with every exit on | CONFIRMED | 50/116/50/55 positions, 271 in all, 652 legs, equal to the run ledgers |
+| 8 | No short-straddle profit_target or stop is a defect | CONFIRMED real, not a defect | In the five short-straddle runs with those exits, pnl/|premium| stayed within the thresholds before every close; the 45 recorded crossings in the other runs each fall on the close order's date; sign checks 902 of 902 |
+| 9 | The forecast_test block equals result.json | CONFIRMED | Every carried key equal; k from the pre-registration |
+| 10 | The M3 regression holds | CONFIRMED | A fresh M3 development run: 13 of 14 files equal to run `d63cfca65d1e…`, only `runs` differs; the 11 M3 tables equal |
+
+**Docs (verifier, Sonnet).** About 150 figures in the walkthrough, concept notes, ADR-0011 and the amendments were re-measured with the verifier's own code (HAR and the signal rebuilt in numpy from the store, listing counts by DuckDB, the run read with pyarrow). There were 0 disagreements. Three citations into `tools/run_m4_grid.py` had drifted after the fix pass and are corrected. Two wording points are fixed:
+- the walkthrough now says what a `profit_target` or `stop` exit reason shows;
+- ADR-0010 now gives the trial log's UTC date.
+
+The docs writer's 8 notebook mutants were killed.
+
+**Provenance.** The grid ran from the uncommitted B2 tree, so its runs name `3dd868e…-dirty`. The engine's code fingerprint, `f2ad18d7…`, pins the code of every run, and the fix pass did not change `src/volbt`. Re-running the grid at the commit would add no trial under the key above. It was not re-run.

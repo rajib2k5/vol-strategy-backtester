@@ -16,6 +16,8 @@ import {
   BLOTTER_DATASET,
   DATA_QUALITY_DATASET,
   POSITIONS_TIMELINE_DATASET,
+  SIGNALS_TIMELINE_DATASET,
+  STRATEGY_POSITIONS_DATASET,
   SURFACE_DATASET,
   SURFACE_FRAMES_DATASET,
   assertDatasetMatchesEntry,
@@ -26,6 +28,8 @@ import {
   parseIllustrativeSurface,
   parseManifest,
   parsePositionsTimeline,
+  parseSignalsTimeline,
+  parseStrategyPositions,
   parseSurfaceFrames,
 } from '../lib/contract'
 import { loadAppData } from '../data/loadAppData'
@@ -49,7 +53,7 @@ function committedJson(fileName: string): unknown {
 }
 
 describe('the committed app/public/data files', () => {
-  it('include the manifest, the illustrative surface, the data-quality aggregates, the real surfaces and the engine run', () => {
+  it('include the manifest, the illustrative surface, the data-quality aggregates, the real surfaces, the engine run and the M4 files', () => {
     // Guards the guard: an empty glob would make every test below pass vacuously.
     expect(Object.keys(committed).map((k) => k.split('/').pop()).sort()).toEqual([
       'blotter.json',
@@ -57,11 +61,13 @@ describe('the committed app/public/data files', () => {
       'illustrative_surface.json',
       'manifest.json',
       'positions_timeline.json',
+      'signals_timeline.json',
+      'strategy_positions.json',
       'surface_frames.json',
     ])
   })
 
-  it('pass the manifest parser, which lists the five datasets', () => {
+  it('pass the manifest parser, which lists the seven datasets', () => {
     const manifest = parseManifest(committedJson('manifest.json'))
     expect(manifest.datasets.map((d) => d.name)).toEqual([
       SURFACE_DATASET,
@@ -69,6 +75,8 @@ describe('the committed app/public/data files', () => {
       SURFACE_FRAMES_DATASET,
       BLOTTER_DATASET,
       POSITIONS_TIMELINE_DATASET,
+      SIGNALS_TIMELINE_DATASET,
+      STRATEGY_POSITIONS_DATASET,
     ])
   })
 
@@ -154,6 +162,40 @@ describe('the committed app/public/data files', () => {
     }
   })
 
+  it('pass the signals-timeline parser: the HAR signal of a development run to 2019-12-31, the checked forecast test, no result', () => {
+    const file = parseSignalsTimeline(committedJson('signals_timeline.json'))
+    expect(file.illustrative).toBe(false)
+    expect(file.run).toMatchObject({ data_source: 'optionsdx', split: 'development', run_purpose: 'trial', strategy: 'VolStrategy', sample_start: '2010-01-04', sample_end: '2019-12-31' })
+    expect(file.signal).toMatchObject({ name: 'vrp_har', rv_model: 'har' })
+    expect(file.forecast_test).not.toBeNull()
+    expect(file.forecast_test!.decision).toBe('har')
+    expect(file.forecast_test!.p).toBeLessThan(file.forecast_test!.threshold)
+    expect(file.dates.length).toBeGreaterThan(2000)
+    expect(file.dates.at(-1)! <= '2019-12-31').toBe(true)
+    // The ex-post RV of a window that ends after 2019-12-31 is not shown (decision D19).
+    expect(file.rv_realised.at(-1)).toBeNull()
+    expect(file.fits.length).toBeGreaterThan(0)
+    const raw = committedJson('signals_timeline.json') as Record<string, unknown>
+    for (const key of Object.keys(raw)) expect(key).not.toMatch(NO_RESULT_KEY)
+  })
+
+  it('pass the strategy-positions parser: one development run per structure, the trial count, no result', () => {
+    const file = parseStrategyPositions(committedJson('strategy_positions.json'))
+    expect(file.illustrative).toBe(false)
+    expect(file.banner).toBe('36 development trials; no performance shown before M6')
+    expect(file.runs.map((r) => r.params.structure)).toEqual(['short_straddle', 'long_straddle', 'short_strangle', 'straddle_calendar'])
+    for (const run of file.runs) {
+      expect(run.run).toMatchObject({ split: 'development', run_purpose: 'trial', sample_end: '2019-12-31' })
+      expect(run.trial_group).toBe('m4_vol')
+      expect(run.n_trials_group).toBe(36)
+      expect(run.positions.length).toBeGreaterThan(0)
+    }
+    const raw = committedJson('strategy_positions.json') as { runs: (Record<string, unknown> & { positions: object[] })[] }
+    for (const body of [raw, ...raw.runs, ...raw.runs.map((r) => r.positions[0])]) {
+      for (const key of Object.keys(body)) expect(key).not.toMatch(NO_RESULT_KEY)
+    }
+  })
+
   it('agree with each other: same schema_version in each manifest entry and in its file', () => {
     const manifest = parseManifest(committedJson('manifest.json'))
     const files = {
@@ -162,6 +204,8 @@ describe('the committed app/public/data files', () => {
       [SURFACE_FRAMES_DATASET]: parseSurfaceFrames(committedJson('surface_frames.json')),
       [BLOTTER_DATASET]: parseBlotter(committedJson('blotter.json')),
       [POSITIONS_TIMELINE_DATASET]: parsePositionsTimeline(committedJson('positions_timeline.json')),
+      [SIGNALS_TIMELINE_DATASET]: parseSignalsTimeline(committedJson('signals_timeline.json')),
+      [STRATEGY_POSITIONS_DATASET]: parseStrategyPositions(committedJson('strategy_positions.json')),
     }
     for (const [name, file] of Object.entries(files)) {
       const entry = findDataset(manifest, name)
@@ -187,6 +231,8 @@ describe('the committed app/public/data files', () => {
       './data/surface_frames.json': committedJson('surface_frames.json'),
       './data/blotter.json': committedJson('blotter.json'),
       './data/positions_timeline.json': committedJson('positions_timeline.json'),
+      './data/signals_timeline.json': committedJson('signals_timeline.json'),
+      './data/strategy_positions.json': committedJson('strategy_positions.json'),
     }
     const data = await loadAppData(fakeFetch(files, requested))
     expect(requested).toEqual([
@@ -196,10 +242,14 @@ describe('the committed app/public/data files', () => {
       './data/surface_frames.json',
       './data/blotter.json',
       './data/positions_timeline.json',
+      './data/signals_timeline.json',
+      './data/strategy_positions.json',
     ])
     expect(data.surface.params).toMatchObject({ model: 'SSVI' })
     expect(data.dataQuality.gate.passed).toBe(true)
     expect(data.surfaceFrames.frames).toHaveLength(4)
     expect(data.blotter.run.run_id).toBe(data.positionsTimeline.run.run_id)
+    expect(data.signalsTimeline?.signal.rv_model).toBe('har')
+    expect(data.strategyPositions?.runs).toHaveLength(4)
   })
 })

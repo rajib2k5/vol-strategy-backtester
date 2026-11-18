@@ -1,0 +1,5553 @@
+{
+  "schema_version": "0.5.0",
+  "generated_at": "2026-11-18T01:07:26Z",
+  "source_commit": "3dd868e11683480f2a9dcc921df83cbb69d955a3-dirty",
+  "units": {
+    "ratio": "contracts per package, signed: + long, - short",
+    "entry_signal": "ln(IV30^2 / RV^2) at the entry decision, dimensionless"
+  },
+  "illustrative": false,
+  "label": "Development trials of the milestone-4 strategies: entries and exits only, in-sample, no P&L",
+  "banner": "36 development trials; no performance shown before M6",
+  "runs": [
+    {
+      "run": {
+        "run_id": "10d433dd0b1c28c5d1a116200e682c1f48928eab9eec2ff801d60810427bf0e8",
+        "config_hash": "9be0f97eac5f3691cec6399871525b34e3aa9fa25da57abe5039228e9d97dea8",
+        "data_fingerprint": "e9462197b8358236fa2a1ad7c89d19dc681ef47ffa6df74c6d54a3bdf5565f98",
+        "engine_commit": "3dd868e11683480f2a9dcc921df83cbb69d955a3-dirty",
+        "data_source": "optionsdx",
+        "execution_mode": "quote",
+        "fill_timing": "next_close",
+        "cap_mode": "hard_only",
+        "chain_mask": "none",
+        "split": "development",
+        "run_purpose": "trial",
+        "strategy": "VolStrategy",
+        "status": "ok",
+        "sample_start": "2010-01-04",
+        "sample_end": "2019-12-31"
+      },
+      "strategy": "VolStrategy",
+      "params": {
+        "entry": {
+          "gate": "above",
+          "theta": 0.0
+        },
+        "entry_dte": [
+          50,
+          60
+        ],
+        "exits": {
+          "exit_dte": 14,
+          "signal_above": null,
+          "signal_below": -0.4,
+          "stop": 1.0,
+          "target": 0.5
+        },
+        "max_open": 2,
+        "side": "short",
+        "signal": {
+          "horizon": 21,
+          "min_pairs": 504,
+          "rv_model": "har",
+          "source": "optionsdx",
+          "window_days": 30
+        },
+        "sizer": {
+          "n": 10,
+          "name": "FixedPackages"
+        },
+        "structure": "short_straddle"
+      },
+      "trial_group": "m4_vol",
+      "n_trials_group": 36,
+      "positions": [
+        {
+          "position_id": 1,
+          "structure": "short_straddle",
+          "opened": "2010-01-22",
+          "closed": "2010-03-05",
+          "legs": [
+            {
+              "osi_symbol": "SPY   100319C00111000",
+              "ratio": -1
+            },
+            {
+              "osi_symbol": "SPY   100319P00111000",
+              "ratio": -1
+            }
+          ],
+          "entry_signal": 0.082858,
+          "exit_reason": "dte"
+        },
+        {
+          "position_id": 2,
+          "structure": "short_straddle",
+          "opened": "2010-02-24",
+          "closed": "2010-04-05",
+          "legs": [
+            {
+              "osi_symbol": "SPY   100416C00109000",
+              "ratio": -1
+            },
+            {
+              "osi_symbol": "SPY   100416P00109000",
+              "ratio": -1
+            }
+          ],
+          "entry_signal": 0.045415,
+          "exit_reason": "dte"
+        },
+        {
+          "position_id": 3,
+          "structure": "short_straddle",
+          "opened": "2010-03-23",
+          "closed": "2010-05-07",
+          "legs": [
+            {
+              "osi_symbol": "SPY   100521C00117000",
+              "ratio": -1
+            },
+            {
+              "osi_symbol": "SPY   100521P00117000",
+              "ratio": -1
+            }
+          ],
+          "entry_signal": 0.018325,
+          "exit_reason": "dte"
+        },
+        {
+          "position_id": 4,
+          "structure": "short_straddle",
+          "opened": "2010-04-27",
+          "closed": "2010-05-11",
+          "legs": [
+            {
+              "osi_symbol": "SPY   100618C00121000",
+              "ratio": -1
+            },
+            {
+              "osi_symbol": "SPY   100618P00121000",
+              "ratio": -1
+            }
+          ],
+          "entry_signal": 0.027711,
+          "exit_reason": "signal"
+        },
+        {
+          "position_id": 5,
+          "structure": "short_straddle",
+          "opened": "2010-05-18",
+          "closed": "2010-07-02",
+          "legs": [
+            {
+              "osi_symbol": "SPY   100716C00113000",
+              "ratio": -1
+            },
+            {
+              "osi_symbol": "SPY   100716P00113000",
+              "ratio": -1
+            }
+          ],
+          "entry_signal": 0.213049,
+          "exit_reason": "dte"
+        },
+        {
+          "position_id": 6,
+          "structure": "short_straddle",
+          "opened": "2010-06-23",
+          "closed": "2010-08-06",
+          "legs": [
+            {
+              "osi_symbol": "SPY   100820C00110000",
+              "ratio": -1
+            },
+            {
+              "osi_symbol": "SPY   100820P00110000",
+              "ratio": -1
+            }
+          ],
+          "entry_signal": 0.186766,
+          "exit_reason": "dte"
+        },
+        {
+          "position_id": 7,
+          "structure": "short_straddle",
+          "opened": "2010-07-20",
+          "closed": "2010-09-03",
+          "legs": [
+            {
+              "osi_symbol": "SPY   100917C00107000",
+              "ratio": -1
+            },
+            {
+              "osi_symbol": "SPY   100917P00107000",
+              "ratio": -1
+            }
+          ],
+          "entry_signal": 0.078735,
+          "exit_reason": "dte"
+        },
+        {
+          "position_id": 8,
+          "structure": "short_straddle",
+          "opened": "2010-08-17",
+          "closed": "2010-10-01",
+          "legs": [
+            {
+              "osi_symbol": "SPY   101015C00108000",
+              "ratio": -1
+            },
+            {
+              "osi_symbol": "SPY   101015P00108000",
+              "ratio": -1
+            }
+          ],
+          "entry_signal": 0.286112,
+          "exit_reason": "dte"
+        },
+        {
+          "position_id": 9,
+          "structure": "short_straddle",
+          "opened": "2010-09-21",
+          "closed": "2010-11-05",
+          "legs": [
+            {
+              "osi_symbol": "SPY   101119C00114000",
+              "ratio": -1
+            },
+            {
+              "osi_symbol": "SPY   101119P00114000",
+              "ratio": -1
+            }
+          ],
+          "entry_signal": 0.019343,
+          "exit_reason": "dte"
+        },
+        {
+          "position_id": 10,
+          "structure": "short_straddle",
+          "opened": "2010-10-19",
+          "closed": "2010-12-03",
+          "legs": [
+            {
+              "osi_symbol": "SPY   101217C00118000",
+              "ratio": -1
+            },
+            {
+              "osi_symbol": "SPY   101217P00118000",
+              "ratio": -1
+            }
+          ],
+          "entry_signal": 0.177891,
+          "exit_reason": "dte"
+        },
+        {
+          "position_id": 11,
+          "structure": "short_straddle",
+          "opened": "2010-11-24",
+          "closed": "2011-01-07",
+          "legs": [
+            {
+              "osi_symbol": "SPY   110121C00118000",
+              "ratio": -1
+            },
+            {
+              "osi_symbol": "SPY   110121P00118000",
+              "ratio": -1
+            }
+          ],
+          "entry_signal": 0.135552,
+          "exit_reason": "dte"
+        },
+        {
+          "position_id": 12,
+          "structure": "short_straddle",
+          "opened": "2010-12-28",
+          "closed": "2011-02-04",
+          "legs": [
+            {
+              "osi_symbol": "SPY   110218C00126000",
+              "ratio": -1
+            },
+            {
+              "osi_symbol": "SPY   110218P00126000",
+              "ratio": -1
+            }
+          ],
+          "entry_signal": 0.090101,
+          "exit_reason": "dte"
+        },
+        {
+          "position_id": 13,
+          "structure": "short_straddle",
+          "opened": "2011-01-27",
+          "closed": "2011-03-04",
+          "legs": [
+            {
+              "osi_symbol": "SPY   110318C00129000",
+              "ratio": -1
+            },
+            {
+              "osi_symbol": "SPY   110318P00129000",
+              "ratio": -1
+            }
+          ],
+          "entry_signal": 0.05302,
+          "exit_reason": "dte"
+        },
+        {
+          "position_id": 14,
+          "structure": "short_straddle",
+          "opened": "2011-02-23",
+          "closed": "2011-04-01",
+          "legs": [
+            {
+              "osi_symbol": "SPY   110415C00131000",
+              "ratio": -1
+            },
+            {
+              "osi_symbol": "SPY   110415P00131000",
+              "ratio": -1
+            }
+          ],
+          "entry_signal": 0.012859,
+          "exit_reason": "dte"
+        },
+        {
+          "position_id": 15,
+          "structure": "short_straddle",
+          "opened": "2011-03-29",
+          "closed": "2011-04-21",
+          "legs": [
+            {
+              "osi_symbol": "SPY   110520C00131000",
+              "ratio": -1
+            },
+            {
+              "osi_symbol": "SPY   110520P00131000",
+              "ratio": -1
+            }
+          ],
+          "entry_signal": 0.034743,
+          "exit_reason": "signal"
+        },
+        {
+          "position_id": 16,
+          "structure": "short_straddle",
+          "opened": "2011-05-18",
+          "closed": "2011-07-01",
+          "legs": [
+            {
+              "osi_symbol": "SPY   110715C00132000",
+              "ratio": -1
+            },
+            {
+              "osi_symbol": "SPY   110715P00132000",
+              "ratio": -1
+            }
+          ],
+          "entry_signal": 0.214927,
+          "exit_reason": "signal"
+        },
+        {
+          "position_id": 17,
+          "structure": "short_straddle",
+          "opened": "2011-06-21",
+          "closed": "2011-07-01",
+          "legs": [
+            {
+              "osi_symbol": "SPY   110819C00128000",
+              "ratio": -1
+            },
+            {
+              "osi_symbol": "SPY   110819P00128000",
+              "ratio": -1
+            }
+          ],
+          "entry_signal": 0.048476,
+          "exit_reason": "signal"
+        },
+        {
+          "position_id": 18,
+          "structure": "short_straddle",
+          "opened": "2011-07-19",
+          "closed": "2011-08-10",
+          "legs": [
+            {
+              "osi_symbol": "SPY   110916C00130000",
+              "ratio": -1
+            },
+            {
+              "osi_symbol": "SPY   110916P00130000",
+              "ratio": -1
+            }
+          ],
+          "entry_signal": 0.230628,
+          "exit_reason": "signal"
+        },
+        {
+          "position_id": 19,
+          "structure": "short_straddle",
+          "opened": "2011-08-26",
+          "closed": "2011-08-30",
+          "legs": [
+            {
+              "osi_symbol": "SPY   111021C00116000",
+              "ratio": -1
+            },
+            {
+              "osi_symbol": "SPY   111021P00116000",
+              "ratio": -1
+            }
+          ],
+          "entry_signal": 0.060817,
+          "exit_reason": "signal"
+        },
+        {
+          "position_id": 20,
+          "structure": "short_straddle",
+          "opened": "2011-09-20",
+          "closed": "2011-10-28",
+          "legs": [
+            {
+              "osi_symbol": "SPY   111118C00120000",
+              "ratio": -1
+            },
+            {
+              "osi_symbol": "SPY   111118P00120000",
+              "ratio": -1
+            }
+          ],
+          "entry_signal": 0.305344,
+          "exit_reason": "signal"
+        },
+        {
+          "position_id": 21,
+          "structure": "short_straddle",
+          "opened": "2011-10-18",
+          "closed": "2011-10-28",
+          "legs": [
+            {
+              "osi_symbol": "SPY   111216C00119000",
+              "ratio": -1
+            },
+            {
+              "osi_symbol": "SPY   111216P00119000",
+              "ratio": -1
+            }
+          ],
+          "entry_signal": 0.231742,
+          "exit_reason": "signal"
+        },
+        {
+          "position_id": 22,
+          "structure": "short_straddle",
+          "opened": "2011-11-22",
+          "closed": "2011-12-01",
+          "legs": [
+            {
+              "osi_symbol": "SPY   120120C00119000",
+              "ratio": -1
+            },
+            {
+              "osi_symbol": "SPY   120120P00119000",
+              "ratio": -1
+            }
+          ],
+          "entry_signal": 0.394152,
+          "exit_reason": "signal"
+        },
+        {
+          "position_id": 23,
+          "structure": "short_straddle",
+          "opened": "2011-12-20",
+          "closed": "2012-02-03",
+          "legs": [
+            {
+              "osi_symbol": "SPY   120217C00120000",
+              "ratio": -1
+            },
+            {
+              "osi_symbol": "SPY   120217P00120000",
+              "ratio": -1
+            }
+          ],
+          "entry_signal": 0.327204,
+          "exit_reason": "dte"
+        },
+        {
+          "position_id": 24,
+          "structure": "short_straddle",
+          "opened": "2012-01-18",
+          "closed": "2012-03-02",
+          "legs": [
+            {
+              "osi_symbol": "SPY   120316C00129000",
+              "ratio": -1
+            },
+            {
+              "osi_symbol": "SPY   120316P00129000",
+              "ratio": -1
+            }
+          ],
+          "entry_signal": 0.269717,
+          "exit_reason": "dte"
+        },
+        {
+          "position_id": 25,
+          "structure": "short_straddle",
+          "opened": "2012-02-22",
+          "closed": "2012-03-14",
+          "legs": [
+            {
+              "osi_symbol": "SPY   120420C00136000",
+              "ratio": -1
+            },
+            {
+              "osi_symbol": "SPY   120420P00136000",
+              "ratio": -1
+            }
+          ],
+          "entry_signal": 0.059853,
+          "exit_reason": "signal"
+        },
+        {
+          "position_id": 26,
+          "structure": "short_straddle",
+          "opened": "2012-04-17",
+          "closed": "2012-06-01",
+          "legs": [
+            {
+              "osi_symbol": "SPY   120615C00136000",
+              "ratio": -1
+            },
+            {
+              "osi_symbol": "SPY   120615P00136000",
+              "ratio": -1
+            }
+          ],
+          "entry_signal": 0.010692,
+          "exit_reason": "dte"
+        },
+        {
+          "position_id": 27,
+          "structure": "short_straddle",
+          "opened": "2012-05-22",
+          "closed": "2012-07-02",
+          "legs": [
+            {
+              "osi_symbol": "SPY   120720C00131000",
+              "ratio": -1
+            },
+            {
+              "osi_symbol": "SPY   120720P00131000",
+              "ratio": -1
+            }
+          ],
+          "entry_signal": 0.187421,
+          "exit_reason": "signal"
+        },
+        {
+          "position_id": 28,
+          "structure": "short_straddle",
+          "opened": "2012-07-25",
+          "closed": "2012-07-30",
+          "legs": [
+            {
+              "osi_symbol": "SPY   120921C00133000",
+              "ratio": -1
+            },
+            {
+              "osi_symbol": "SPY   120921P00133000",
+              "ratio": -1
+            }
+          ],
+          "entry_signal": 0.056646,
+          "exit_reason": "signal"
+        },
+        {
+          "position_id": 29,
+          "structure": "short_straddle",
+          "opened": "2012-08-29",
+          "closed": "2012-09-14",
+          "legs": [
+            {
+              "osi_symbol": "SPY   121019C00141000",
+              "ratio": -1
+            },
+            {
+              "osi_symbol": "SPY   121019P00141000",
+              "ratio": -1
+            }
+          ],
+          "entry_signal": 0.106523,
+          "exit_reason": "signal"
+        },
+        {
+          "position_id": 30,
+          "structure": "short_straddle",
+          "opened": "2012-10-26",
+          "closed": "2012-11-20",
+          "legs": [
+            {
+              "osi_symbol": "SPY   121221C00141000",
+              "ratio": -1
+            },
+            {
+              "osi_symbol": "SPY   121221P00141000",
+              "ratio": -1
+            }
+          ],
+          "entry_signal": 0.023223,
+          "exit_reason": "signal"
+        },
+        {
+          "position_id": 31,
+          "structure": "short_straddle",
+          "opened": "2012-12-21",
+          "closed": "2013-01-03",
+          "legs": [
+            {
+              "osi_symbol": "SPY   130215C00144000",
+              "ratio": -1
+            },
+            {
+              "osi_symbol": "SPY   130215P00144000",
+              "ratio": -1
+            }
+          ],
+          "entry_signal": 0.056892,
+          "exit_reason": "signal"
+        },
+        {
+          "position_id": 32,
+          "structure": "short_straddle",
+          "opened": "2013-08-30",
+          "closed": "2013-09-23",
+          "legs": [
+            {
+              "osi_symbol": "SPY   131018C00163000",
+              "ratio": -1
+            },
+            {
+              "osi_symbol": "SPY   131018P00163000",
+              "ratio": -1
+            }
+          ],
+          "entry_signal": 0.061254,
+          "exit_reason": "signal"
+        },
+        {
+          "position_id": 33,
+          "structure": "short_straddle",
+          "opened": "2015-01-21",
+          "closed": "2015-02-04",
+          "legs": [
+            {
+              "osi_symbol": "SPY   150320C00201000",
+              "ratio": -1
+            },
+            {
+              "osi_symbol": "SPY   150320P00201000",
+              "ratio": -1
+            }
+          ],
+          "entry_signal": 0.039595,
+          "exit_reason": "signal"
+        },
+        {
+          "position_id": 34,
+          "structure": "short_straddle",
+          "opened": "2015-06-30",
+          "closed": "2015-07-14",
+          "legs": [
+            {
+              "osi_symbol": "SPY   150821C00206000",
+              "ratio": -1
+            },
+            {
+              "osi_symbol": "SPY   150821P00206000",
+              "ratio": -1
+            }
+          ],
+          "entry_signal": 0.040316,
+          "exit_reason": "signal"
+        },
+        {
+          "position_id": 35,
+          "structure": "short_straddle",
+          "opened": "2015-08-21",
+          "closed": "2015-08-27",
+          "legs": [
+            {
+              "osi_symbol": "SPY   151016C00203000",
+              "ratio": -1
+            },
+            {
+              "osi_symbol": "SPY   151016P00203000",
+              "ratio": -1
+            }
+          ],
+          "entry_signal": 0.083541,
+          "exit_reason": "signal"
+        },
+        {
+          "position_id": 36,
+          "structure": "short_straddle",
+          "opened": "2015-09-28",
+          "closed": "2015-10-16",
+          "legs": [
+            {
+              "osi_symbol": "SPY   151120C00193000",
+              "ratio": -1
+            },
+            {
+              "osi_symbol": "SPY   151120P00193000",
+              "ratio": -1
+            }
+          ],
+          "entry_signal": 0.085868,
+          "exit_reason": "signal"
+        },
+        {
+          "position_id": 37,
+          "structure": "short_straddle",
+          "opened": "2016-01-20",
+          "closed": "2016-03-02",
+          "legs": [
+            {
+              "osi_symbol": "SPY   160318C00187000",
+              "ratio": -1
+            },
+            {
+              "osi_symbol": "SPY   160318P00187000",
+              "ratio": -1
+            }
+          ],
+          "entry_signal": 0.009496,
+          "exit_reason": "signal"
+        },
+        {
+          "position_id": 38,
+          "structure": "short_straddle",
+          "opened": "2016-02-25",
+          "closed": "2016-03-02",
+          "legs": [
+            {
+              "osi_symbol": "SPY   160415C00192000",
+              "ratio": -1
+            },
+            {
+              "osi_symbol": "SPY   160415P00192000",
+              "ratio": -1
+            }
+          ],
+          "entry_signal": 0.023261,
+          "exit_reason": "signal"
+        },
+        {
+          "position_id": 39,
+          "structure": "short_straddle",
+          "opened": "2016-05-18",
+          "closed": "2016-05-31",
+          "legs": [
+            {
+              "osi_symbol": "SPY   160715C00204000",
+              "ratio": -1
+            },
+            {
+              "osi_symbol": "SPY   160715P00204000",
+              "ratio": -1
+            }
+          ],
+          "entry_signal": 0.026195,
+          "exit_reason": "signal"
+        },
+        {
+          "position_id": 40,
+          "structure": "short_straddle",
+          "opened": "2016-06-21",
+          "closed": "2016-06-29",
+          "legs": [
+            {
+              "osi_symbol": "SPY   160819C00208000",
+              "ratio": -1
+            },
+            {
+              "osi_symbol": "SPY   160819P00208000",
+              "ratio": -1
+            }
+          ],
+          "entry_signal": 0.322178,
+          "exit_reason": "signal"
+        },
+        {
+          "position_id": 41,
+          "structure": "short_straddle",
+          "opened": "2016-10-18",
+          "closed": "2016-11-10",
+          "legs": [
+            {
+              "osi_symbol": "SPY   161216C00211000",
+              "ratio": -1
+            },
+            {
+              "osi_symbol": "SPY   161216P00211000",
+              "ratio": -1
+            }
+          ],
+          "entry_signal": 0.088102,
+          "exit_reason": "signal"
+        },
+        {
+          "position_id": 42,
+          "structure": "short_straddle",
+          "opened": "2018-03-26",
+          "closed": "2018-03-27",
+          "legs": [
+            {
+              "osi_symbol": "SPY   180518C00259000",
+              "ratio": -1
+            },
+            {
+              "osi_symbol": "SPY   180518P00259000",
+              "ratio": -1
+            }
+          ],
+          "entry_signal": 0.01687,
+          "exit_reason": "signal"
+        },
+        {
+          "position_id": 43,
+          "structure": "short_straddle",
+          "opened": "2018-06-28",
+          "closed": "2018-07-09",
+          "legs": [
+            {
+              "osi_symbol": "SPY   180817C00270000",
+              "ratio": -1
+            },
+            {
+              "osi_symbol": "SPY   180817P00270000",
+              "ratio": -1
+            }
+          ],
+          "entry_signal": 0.017834,
+          "exit_reason": "signal"
+        },
+        {
+          "position_id": 44,
+          "structure": "short_straddle",
+          "opened": "2018-10-24",
+          "closed": "2018-11-02",
+          "legs": [
+            {
+              "osi_symbol": "SPY   181221C00273000",
+              "ratio": -1
+            },
+            {
+              "osi_symbol": "SPY   181221P00273000",
+              "ratio": -1
+            }
+          ],
+          "entry_signal": 0.088574,
+          "exit_reason": "signal"
+        },
+        {
+          "position_id": 45,
+          "structure": "short_straddle",
+          "opened": "2018-12-18",
+          "closed": "2018-12-27",
+          "legs": [
+            {
+              "osi_symbol": "SPY   190215C00255000",
+              "ratio": -1
+            },
+            {
+              "osi_symbol": "SPY   190215P00255000",
+              "ratio": -1
+            }
+          ],
+          "entry_signal": 0.111566,
+          "exit_reason": "signal"
+        },
+        {
+          "position_id": 46,
+          "structure": "short_straddle",
+          "opened": "2019-05-28",
+          "closed": "2019-06-06",
+          "legs": [
+            {
+              "osi_symbol": "SPY   190719C00282000",
+              "ratio": -1
+            },
+            {
+              "osi_symbol": "SPY   190719P00282000",
+              "ratio": -1
+            }
+          ],
+          "entry_signal": 0.003281,
+          "exit_reason": "signal"
+        },
+        {
+          "position_id": 47,
+          "structure": "short_straddle",
+          "opened": "2019-06-28",
+          "closed": "2019-07-02",
+          "legs": [
+            {
+              "osi_symbol": "SPY   190816C00293000",
+              "ratio": -1
+            },
+            {
+              "osi_symbol": "SPY   190816P00293000",
+              "ratio": -1
+            }
+          ],
+          "entry_signal": 0.00276,
+          "exit_reason": "signal"
+        },
+        {
+          "position_id": 48,
+          "structure": "short_straddle",
+          "opened": "2019-08-02",
+          "closed": "2019-08-09",
+          "legs": [
+            {
+              "osi_symbol": "SPY   190920C00295000",
+              "ratio": -1
+            },
+            {
+              "osi_symbol": "SPY   190920P00295000",
+              "ratio": -1
+            }
+          ],
+          "entry_signal": 0.273105,
+          "exit_reason": "signal"
+        },
+        {
+          "position_id": 49,
+          "structure": "short_straddle",
+          "opened": "2019-09-25",
+          "closed": "2019-10-15",
+          "legs": [
+            {
+              "osi_symbol": "SPY   191115C00297000",
+              "ratio": -1
+            },
+            {
+              "osi_symbol": "SPY   191115P00297000",
+              "ratio": -1
+            }
+          ],
+          "entry_signal": 0.042642,
+          "exit_reason": "signal"
+        },
+        {
+          "position_id": 50,
+          "structure": "short_straddle",
+          "opened": "2019-12-31",
+          "closed": null,
+          "legs": [
+            {
+              "osi_symbol": "SPY   200221C00322000",
+              "ratio": -1
+            },
+            {
+              "osi_symbol": "SPY   200221P00322000",
+              "ratio": -1
+            }
+          ],
+          "entry_signal": 0.042883,
+          "exit_reason": null
+        }
+      ]
+    },
+    {
+      "run": {
+        "run_id": "55391c09a08233d2efb0250f5d1f0d44504e0ee81a10eda20d4b998d49024fc1",
+        "config_hash": "422ed5d2557f8ea6835d0e7fbea775353196856ed40e7985b84ebc54c854ac69",
+        "data_fingerprint": "e9462197b8358236fa2a1ad7c89d19dc681ef47ffa6df74c6d54a3bdf5565f98",
+        "engine_commit": "3dd868e11683480f2a9dcc921df83cbb69d955a3-dirty",
+        "data_source": "optionsdx",
+        "execution_mode": "quote",
+        "fill_timing": "next_close",
+        "cap_mode": "hard_only",
+        "chain_mask": "none",
+        "split": "development",
+        "run_purpose": "trial",
+        "strategy": "VolStrategy",
+        "status": "ok",
+        "sample_start": "2010-01-04",
+        "sample_end": "2019-12-31"
+      },
+      "strategy": "VolStrategy",
+      "params": {
+        "entry": {
+          "gate": "below",
+          "theta": 0.0
+        },
+        "entry_dte": [
+          50,
+          60
+        ],
+        "exits": {
+          "exit_dte": 14,
+          "signal_above": 0.4,
+          "signal_below": null,
+          "stop": 1.0,
+          "target": 0.5
+        },
+        "max_open": 2,
+        "side": "long",
+        "signal": {
+          "horizon": 21,
+          "min_pairs": 504,
+          "rv_model": "har",
+          "source": "optionsdx",
+          "window_days": 30
+        },
+        "sizer": {
+          "n": 10,
+          "name": "FixedPackages"
+        },
+        "structure": "long_straddle"
+      },
+      "trial_group": "m4_vol",
+      "n_trials_group": 36,
+      "positions": [
+        {
+          "position_id": 1,
+          "structure": "long_straddle",
+          "opened": "2010-01-21",
+          "closed": "2010-03-05",
+          "legs": [
+            {
+              "osi_symbol": "SPY   100319C00113000",
+              "ratio": 1
+            },
+            {
+              "osi_symbol": "SPY   100319P00113000",
+              "ratio": 1
+            }
+          ],
+          "entry_signal": -0.137197,
+          "exit_reason": "dte"
+        },
+        {
+          "position_id": 2,
+          "structure": "long_straddle",
+          "opened": "2010-02-17",
+          "closed": "2010-04-05",
+          "legs": [
+            {
+              "osi_symbol": "SPY   100416C00109000",
+              "ratio": 1
+            },
+            {
+              "osi_symbol": "SPY   100416P00109000",
+              "ratio": 1
+            }
+          ],
+          "entry_signal": -0.03798,
+          "exit_reason": "dte"
+        },
+        {
+          "position_id": 3,
+          "structure": "long_straddle",
+          "opened": "2010-03-24",
+          "closed": "2010-05-07",
+          "legs": [
+            {
+              "osi_symbol": "SPY   100521C00117000",
+              "ratio": 1
+            },
+            {
+              "osi_symbol": "SPY   100521P00117000",
+              "ratio": 1
+            }
+          ],
+          "entry_signal": -0.025421,
+          "exit_reason": "dte"
+        },
+        {
+          "position_id": 4,
+          "structure": "long_straddle",
+          "opened": "2010-04-22",
+          "closed": "2010-05-10",
+          "legs": [
+            {
+              "osi_symbol": "SPY   100618C00120000",
+              "ratio": 1
+            },
+            {
+              "osi_symbol": "SPY   100618P00120000",
+              "ratio": 1
+            }
+          ],
+          "entry_signal": -0.338574,
+          "exit_reason": "profit_target"
+        },
+        {
+          "position_id": 5,
+          "structure": "long_straddle",
+          "opened": "2010-05-28",
+          "closed": "2010-06-30",
+          "legs": [
+            {
+              "osi_symbol": "SPY   100716C00110000",
+              "ratio": 1
+            },
+            {
+              "osi_symbol": "SPY   100716P00110000",
+              "ratio": 1
+            }
+          ],
+          "entry_signal": -0.164755,
+          "exit_reason": "signal"
+        },
+        {
+          "position_id": 6,
+          "structure": "long_straddle",
+          "opened": "2010-06-22",
+          "closed": "2010-06-30",
+          "legs": [
+            {
+              "osi_symbol": "SPY   100820C00111000",
+              "ratio": 1
+            },
+            {
+              "osi_symbol": "SPY   100820P00111000",
+              "ratio": 1
+            }
+          ],
+          "entry_signal": -0.130631,
+          "exit_reason": "signal"
+        },
+        {
+          "position_id": 7,
+          "structure": "long_straddle",
+          "opened": "2010-07-21",
+          "closed": "2010-08-16",
+          "legs": [
+            {
+              "osi_symbol": "SPY   100917C00108000",
+              "ratio": 1
+            },
+            {
+              "osi_symbol": "SPY   100917P00108000",
+              "ratio": 1
+            }
+          ],
+          "entry_signal": -0.031895,
+          "exit_reason": "signal"
+        },
+        {
+          "position_id": 8,
+          "structure": "long_straddle",
+          "opened": "2010-09-27",
+          "closed": "2010-10-04",
+          "legs": [
+            {
+              "osi_symbol": "SPY   101119C00115000",
+              "ratio": 1
+            },
+            {
+              "osi_symbol": "SPY   101119P00115000",
+              "ratio": 1
+            }
+          ],
+          "entry_signal": -0.061077,
+          "exit_reason": "signal"
+        },
+        {
+          "position_id": 9,
+          "structure": "long_straddle",
+          "opened": "2010-11-23",
+          "closed": "2011-01-07",
+          "legs": [
+            {
+              "osi_symbol": "SPY   110121C00119000",
+              "ratio": 1
+            },
+            {
+              "osi_symbol": "SPY   110121P00119000",
+              "ratio": 1
+            }
+          ],
+          "entry_signal": -0.045343,
+          "exit_reason": "dte"
+        },
+        {
+          "position_id": 10,
+          "structure": "long_straddle",
+          "opened": "2010-12-21",
+          "closed": "2011-02-04",
+          "legs": [
+            {
+              "osi_symbol": "SPY   110218C00125000",
+              "ratio": 1
+            },
+            {
+              "osi_symbol": "SPY   110218P00125000",
+              "ratio": 1
+            }
+          ],
+          "entry_signal": -0.147743,
+          "exit_reason": "dte"
+        },
+        {
+          "position_id": 11,
+          "structure": "long_straddle",
+          "opened": "2011-01-26",
+          "closed": "2011-03-04",
+          "legs": [
+            {
+              "osi_symbol": "SPY   110318C00129000",
+              "ratio": 1
+            },
+            {
+              "osi_symbol": "SPY   110318P00129000",
+              "ratio": 1
+            }
+          ],
+          "entry_signal": -0.08903,
+          "exit_reason": "dte"
+        },
+        {
+          "position_id": 12,
+          "structure": "long_straddle",
+          "opened": "2011-02-15",
+          "closed": "2011-03-17",
+          "legs": [
+            {
+              "osi_symbol": "SPY   110415C00133000",
+              "ratio": 1
+            },
+            {
+              "osi_symbol": "SPY   110415P00133000",
+              "ratio": 1
+            }
+          ],
+          "entry_signal": -0.143673,
+          "exit_reason": "signal"
+        },
+        {
+          "position_id": 13,
+          "structure": "long_straddle",
+          "opened": "2011-03-22",
+          "closed": "2011-05-06",
+          "legs": [
+            {
+              "osi_symbol": "SPY   110520C00130000",
+              "ratio": 1
+            },
+            {
+              "osi_symbol": "SPY   110520P00130000",
+              "ratio": 1
+            }
+          ],
+          "entry_signal": -0.277852,
+          "exit_reason": "dte"
+        },
+        {
+          "position_id": 14,
+          "structure": "long_straddle",
+          "opened": "2011-04-19",
+          "closed": "2011-06-03",
+          "legs": [
+            {
+              "osi_symbol": "SPY   110617C00130000",
+              "ratio": 1
+            },
+            {
+              "osi_symbol": "SPY   110617P00130000",
+              "ratio": 1
+            }
+          ],
+          "entry_signal": -0.012107,
+          "exit_reason": "dte"
+        },
+        {
+          "position_id": 15,
+          "structure": "long_straddle",
+          "opened": "2011-05-17",
+          "closed": "2011-07-01",
+          "legs": [
+            {
+              "osi_symbol": "SPY   110715C00133000",
+              "ratio": 1
+            },
+            {
+              "osi_symbol": "SPY   110715P00133000",
+              "ratio": 1
+            }
+          ],
+          "entry_signal": -0.005843,
+          "exit_reason": "dte"
+        },
+        {
+          "position_id": 16,
+          "structure": "long_straddle",
+          "opened": "2011-06-22",
+          "closed": "2011-08-01",
+          "legs": [
+            {
+              "osi_symbol": "SPY   110819C00129000",
+              "ratio": 1
+            },
+            {
+              "osi_symbol": "SPY   110819P00129000",
+              "ratio": 1
+            }
+          ],
+          "entry_signal": -0.120409,
+          "exit_reason": "signal"
+        },
+        {
+          "position_id": 17,
+          "structure": "long_straddle",
+          "opened": "2011-07-20",
+          "closed": "2011-08-01",
+          "legs": [
+            {
+              "osi_symbol": "SPY   110916C00132000",
+              "ratio": 1
+            },
+            {
+              "osi_symbol": "SPY   110916P00132000",
+              "ratio": 1
+            }
+          ],
+          "entry_signal": -0.141323,
+          "exit_reason": "signal"
+        },
+        {
+          "position_id": 18,
+          "structure": "long_straddle",
+          "opened": "2011-08-24",
+          "closed": "2011-09-21",
+          "legs": [
+            {
+              "osi_symbol": "SPY   111021C00116000",
+              "ratio": 1
+            },
+            {
+              "osi_symbol": "SPY   111021P00116000",
+              "ratio": 1
+            }
+          ],
+          "entry_signal": -0.389903,
+          "exit_reason": "signal"
+        },
+        {
+          "position_id": 19,
+          "structure": "long_straddle",
+          "opened": "2011-10-19",
+          "closed": "2011-11-18",
+          "legs": [
+            {
+              "osi_symbol": "SPY   111216C00122000",
+              "ratio": 1
+            },
+            {
+              "osi_symbol": "SPY   111216P00122000",
+              "ratio": 1
+            }
+          ],
+          "entry_signal": -0.003979,
+          "exit_reason": "signal"
+        },
+        {
+          "position_id": 20,
+          "structure": "long_straddle",
+          "opened": "2011-12-01",
+          "closed": "2011-12-08",
+          "legs": [
+            {
+              "osi_symbol": "SPY   120120C00124000",
+              "ratio": 1
+            },
+            {
+              "osi_symbol": "SPY   120120P00124000",
+              "ratio": 1
+            }
+          ],
+          "entry_signal": -0.507978,
+          "exit_reason": "signal"
+        },
+        {
+          "position_id": 21,
+          "structure": "long_straddle",
+          "opened": "2011-12-21",
+          "closed": "2012-02-03",
+          "legs": [
+            {
+              "osi_symbol": "SPY   120217C00124000",
+              "ratio": 1
+            },
+            {
+              "osi_symbol": "SPY   120217P00124000",
+              "ratio": 1
+            }
+          ],
+          "entry_signal": -0.226813,
+          "exit_reason": "dte"
+        },
+        {
+          "position_id": 22,
+          "structure": "long_straddle",
+          "opened": "2012-01-20",
+          "closed": "2012-02-13",
+          "legs": [
+            {
+              "osi_symbol": "SPY   120316C00131000",
+              "ratio": 1
+            },
+            {
+              "osi_symbol": "SPY   120316P00131000",
+              "ratio": 1
+            }
+          ],
+          "entry_signal": -0.012273,
+          "exit_reason": "signal"
+        },
+        {
+          "position_id": 23,
+          "structure": "long_straddle",
+          "opened": "2012-02-24",
+          "closed": "2012-04-09",
+          "legs": [
+            {
+              "osi_symbol": "SPY   120420C00136000",
+              "ratio": 1
+            },
+            {
+              "osi_symbol": "SPY   120420P00136000",
+              "ratio": 1
+            }
+          ],
+          "entry_signal": -0.058419,
+          "exit_reason": "dte"
+        },
+        {
+          "position_id": 24,
+          "structure": "long_straddle",
+          "opened": "2012-03-20",
+          "closed": "2012-05-04",
+          "legs": [
+            {
+              "osi_symbol": "SPY   120518C00141000",
+              "ratio": 1
+            },
+            {
+              "osi_symbol": "SPY   120518P00141000",
+              "ratio": 1
+            }
+          ],
+          "entry_signal": -0.391188,
+          "exit_reason": "dte"
+        },
+        {
+          "position_id": 25,
+          "structure": "long_straddle",
+          "opened": "2012-04-18",
+          "closed": "2012-05-14",
+          "legs": [
+            {
+              "osi_symbol": "SPY   120615C00138000",
+              "ratio": 1
+            },
+            {
+              "osi_symbol": "SPY   120615P00138000",
+              "ratio": 1
+            }
+          ],
+          "entry_signal": -0.220701,
+          "exit_reason": "signal"
+        },
+        {
+          "position_id": 26,
+          "structure": "long_straddle",
+          "opened": "2012-06-19",
+          "closed": "2012-08-03",
+          "legs": [
+            {
+              "osi_symbol": "SPY   120817C00134000",
+              "ratio": 1
+            },
+            {
+              "osi_symbol": "SPY   120817P00134000",
+              "ratio": 1
+            }
+          ],
+          "entry_signal": -0.131197,
+          "exit_reason": "dte"
+        },
+        {
+          "position_id": 27,
+          "structure": "long_straddle",
+          "opened": "2012-07-24",
+          "closed": "2012-09-07",
+          "legs": [
+            {
+              "osi_symbol": "SPY   120921C00134000",
+              "ratio": 1
+            },
+            {
+              "osi_symbol": "SPY   120921P00134000",
+              "ratio": 1
+            }
+          ],
+          "entry_signal": -0.1654,
+          "exit_reason": "dte"
+        },
+        {
+          "position_id": 28,
+          "structure": "long_straddle",
+          "opened": "2012-08-21",
+          "closed": "2012-10-05",
+          "legs": [
+            {
+              "osi_symbol": "SPY   121019C00141000",
+              "ratio": 1
+            },
+            {
+              "osi_symbol": "SPY   121019P00141000",
+              "ratio": 1
+            }
+          ],
+          "entry_signal": -0.384494,
+          "exit_reason": "dte"
+        },
+        {
+          "position_id": 29,
+          "structure": "long_straddle",
+          "opened": "2012-09-18",
+          "closed": "2012-11-02",
+          "legs": [
+            {
+              "osi_symbol": "SPY   121116C00146000",
+              "ratio": 1
+            },
+            {
+              "osi_symbol": "SPY   121116P00146000",
+              "ratio": 1
+            }
+          ],
+          "entry_signal": -0.386155,
+          "exit_reason": "dte"
+        },
+        {
+          "position_id": 30,
+          "structure": "long_straddle",
+          "opened": "2012-10-23",
+          "closed": "2012-12-07",
+          "legs": [
+            {
+              "osi_symbol": "SPY   121221C00143000",
+              "ratio": 1
+            },
+            {
+              "osi_symbol": "SPY   121221P00143000",
+              "ratio": 1
+            }
+          ],
+          "entry_signal": -0.225695,
+          "exit_reason": "dte"
+        },
+        {
+          "position_id": 31,
+          "structure": "long_straddle",
+          "opened": "2012-11-20",
+          "closed": "2012-12-28",
+          "legs": [
+            {
+              "osi_symbol": "SPY   130118C00138000",
+              "ratio": 1
+            },
+            {
+              "osi_symbol": "SPY   130118P00138000",
+              "ratio": 1
+            }
+          ],
+          "entry_signal": -0.561949,
+          "exit_reason": "signal"
+        },
+        {
+          "position_id": 32,
+          "structure": "long_straddle",
+          "opened": "2012-12-18",
+          "closed": "2012-12-28",
+          "legs": [
+            {
+              "osi_symbol": "SPY   130215C00143000",
+              "ratio": 1
+            },
+            {
+              "osi_symbol": "SPY   130215P00143000",
+              "ratio": 1
+            }
+          ],
+          "entry_signal": -0.030124,
+          "exit_reason": "signal"
+        },
+        {
+          "position_id": 33,
+          "structure": "long_straddle",
+          "opened": "2013-01-15",
+          "closed": "2013-03-01",
+          "legs": [
+            {
+              "osi_symbol": "SPY   130315C00146000",
+              "ratio": 1
+            },
+            {
+              "osi_symbol": "SPY   130315P00146000",
+              "ratio": 1
+            }
+          ],
+          "entry_signal": -0.455971,
+          "exit_reason": "dte"
+        },
+        {
+          "position_id": 34,
+          "structure": "long_straddle",
+          "opened": "2013-02-20",
+          "closed": "2013-04-05",
+          "legs": [
+            {
+              "osi_symbol": "SPY   130419C00153000",
+              "ratio": 1
+            },
+            {
+              "osi_symbol": "SPY   130419P00153000",
+              "ratio": 1
+            }
+          ],
+          "entry_signal": -0.630599,
+          "exit_reason": "dte"
+        },
+        {
+          "position_id": 35,
+          "structure": "long_straddle",
+          "opened": "2013-03-19",
+          "closed": "2013-05-03",
+          "legs": [
+            {
+              "osi_symbol": "SPY   130517C00155000",
+              "ratio": 1
+            },
+            {
+              "osi_symbol": "SPY   130517P00155000",
+              "ratio": 1
+            }
+          ],
+          "entry_signal": -0.448657,
+          "exit_reason": "dte"
+        },
+        {
+          "position_id": 36,
+          "structure": "long_straddle",
+          "opened": "2013-04-23",
+          "closed": "2013-06-07",
+          "legs": [
+            {
+              "osi_symbol": "SPY   130621C00155000",
+              "ratio": 1
+            },
+            {
+              "osi_symbol": "SPY   130621P00155000",
+              "ratio": 1
+            }
+          ],
+          "entry_signal": -0.689351,
+          "exit_reason": "dte"
+        },
+        {
+          "position_id": 37,
+          "structure": "long_straddle",
+          "opened": "2013-05-21",
+          "closed": "2013-07-05",
+          "legs": [
+            {
+              "osi_symbol": "SPY   130719C00166000",
+              "ratio": 1
+            },
+            {
+              "osi_symbol": "SPY   130719P00166000",
+              "ratio": 1
+            }
+          ],
+          "entry_signal": -0.512011,
+          "exit_reason": "dte"
+        },
+        {
+          "position_id": 38,
+          "structure": "long_straddle",
+          "opened": "2013-06-18",
+          "closed": "2013-08-02",
+          "legs": [
+            {
+              "osi_symbol": "SPY   130816C00164000",
+              "ratio": 1
+            },
+            {
+              "osi_symbol": "SPY   130816P00164000",
+              "ratio": 1
+            }
+          ],
+          "entry_signal": -0.173787,
+          "exit_reason": "dte"
+        },
+        {
+          "position_id": 39,
+          "structure": "long_straddle",
+          "opened": "2013-07-23",
+          "closed": "2013-09-06",
+          "legs": [
+            {
+              "osi_symbol": "SPY   130920C00169000",
+              "ratio": 1
+            },
+            {
+              "osi_symbol": "SPY   130920P00169000",
+              "ratio": 1
+            }
+          ],
+          "entry_signal": -0.6466,
+          "exit_reason": "dte"
+        },
+        {
+          "position_id": 40,
+          "structure": "long_straddle",
+          "opened": "2013-08-20",
+          "closed": "2013-10-04",
+          "legs": [
+            {
+              "osi_symbol": "SPY   131018C00164000",
+              "ratio": 1
+            },
+            {
+              "osi_symbol": "SPY   131018P00164000",
+              "ratio": 1
+            }
+          ],
+          "entry_signal": -0.070699,
+          "exit_reason": "dte"
+        },
+        {
+          "position_id": 41,
+          "structure": "long_straddle",
+          "opened": "2013-09-17",
+          "closed": "2013-11-01",
+          "legs": [
+            {
+              "osi_symbol": "SPY   131115C00170000",
+              "ratio": 1
+            },
+            {
+              "osi_symbol": "SPY   131115P00170000",
+              "ratio": 1
+            }
+          ],
+          "entry_signal": -0.266553,
+          "exit_reason": "dte"
+        },
+        {
+          "position_id": 42,
+          "structure": "long_straddle",
+          "opened": "2013-10-22",
+          "closed": "2013-12-06",
+          "legs": [
+            {
+              "osi_symbol": "SPY   131220C00173000",
+              "ratio": 1
+            },
+            {
+              "osi_symbol": "SPY   131220P00173000",
+              "ratio": 1
+            }
+          ],
+          "entry_signal": -0.818773,
+          "exit_reason": "dte"
+        },
+        {
+          "position_id": 43,
+          "structure": "long_straddle",
+          "opened": "2013-11-19",
+          "closed": "2014-01-03",
+          "legs": [
+            {
+              "osi_symbol": "SPY   140117C00178000",
+              "ratio": 1
+            },
+            {
+              "osi_symbol": "SPY   140117P00178000",
+              "ratio": 1
+            }
+          ],
+          "entry_signal": -0.513781,
+          "exit_reason": "dte"
+        },
+        {
+          "position_id": 44,
+          "structure": "long_straddle",
+          "opened": "2013-12-24",
+          "closed": "2014-02-07",
+          "legs": [
+            {
+              "osi_symbol": "SPY   140221C00183000",
+              "ratio": 1
+            },
+            {
+              "osi_symbol": "SPY   140221P00183000",
+              "ratio": 1
+            }
+          ],
+          "entry_signal": -0.67893,
+          "exit_reason": "dte"
+        },
+        {
+          "position_id": 45,
+          "structure": "long_straddle",
+          "opened": "2014-01-22",
+          "closed": "2014-03-07",
+          "legs": [
+            {
+              "osi_symbol": "SPY   140321C00183000",
+              "ratio": 1
+            },
+            {
+              "osi_symbol": "SPY   140321P00183000",
+              "ratio": 1
+            }
+          ],
+          "entry_signal": -0.637745,
+          "exit_reason": "dte"
+        },
+        {
+          "position_id": 46,
+          "structure": "long_straddle",
+          "opened": "2014-02-19",
+          "closed": "2014-04-03",
+          "legs": [
+            {
+              "osi_symbol": "SPY   140417C00184000",
+              "ratio": 1
+            },
+            {
+              "osi_symbol": "SPY   140417P00184000",
+              "ratio": 1
+            }
+          ],
+          "entry_signal": -0.631571,
+          "exit_reason": "dte"
+        },
+        {
+          "position_id": 47,
+          "structure": "long_straddle",
+          "opened": "2014-03-18",
+          "closed": "2014-05-02",
+          "legs": [
+            {
+              "osi_symbol": "SPY   140516C00186000",
+              "ratio": 1
+            },
+            {
+              "osi_symbol": "SPY   140516P00186000",
+              "ratio": 1
+            }
+          ],
+          "entry_signal": -0.200602,
+          "exit_reason": "dte"
+        },
+        {
+          "position_id": 48,
+          "structure": "long_straddle",
+          "opened": "2014-04-22",
+          "closed": "2014-06-06",
+          "legs": [
+            {
+              "osi_symbol": "SPY   140620C00186000",
+              "ratio": 1
+            },
+            {
+              "osi_symbol": "SPY   140620P00186000",
+              "ratio": 1
+            }
+          ],
+          "entry_signal": -0.595914,
+          "exit_reason": "dte"
+        },
+        {
+          "position_id": 49,
+          "structure": "long_straddle",
+          "opened": "2014-05-20",
+          "closed": "2014-07-07",
+          "legs": [
+            {
+              "osi_symbol": "SPY   140718C00188000",
+              "ratio": 1
+            },
+            {
+              "osi_symbol": "SPY   140718P00188000",
+              "ratio": 1
+            }
+          ],
+          "entry_signal": -0.429194,
+          "exit_reason": "dte"
+        },
+        {
+          "position_id": 50,
+          "structure": "long_straddle",
+          "opened": "2014-06-17",
+          "closed": "2014-08-01",
+          "legs": [
+            {
+              "osi_symbol": "SPY   140815C00193000",
+              "ratio": 1
+            },
+            {
+              "osi_symbol": "SPY   140815P00193000",
+              "ratio": 1
+            }
+          ],
+          "entry_signal": -0.402155,
+          "exit_reason": "dte"
+        },
+        {
+          "position_id": 51,
+          "structure": "long_straddle",
+          "opened": "2014-07-22",
+          "closed": "2014-09-05",
+          "legs": [
+            {
+              "osi_symbol": "SPY   140919C00196000",
+              "ratio": 1
+            },
+            {
+              "osi_symbol": "SPY   140919P00196000",
+              "ratio": 1
+            }
+          ],
+          "entry_signal": -0.67906,
+          "exit_reason": "dte"
+        },
+        {
+          "position_id": 52,
+          "structure": "long_straddle",
+          "opened": "2014-08-19",
+          "closed": "2014-10-03",
+          "legs": [
+            {
+              "osi_symbol": "SPY   141017C00196000",
+              "ratio": 1
+            },
+            {
+              "osi_symbol": "SPY   141017P00196000",
+              "ratio": 1
+            }
+          ],
+          "entry_signal": -0.737446,
+          "exit_reason": "dte"
+        },
+        {
+          "position_id": 53,
+          "structure": "long_straddle",
+          "opened": "2014-09-23",
+          "closed": "2014-10-17",
+          "legs": [
+            {
+              "osi_symbol": "SPY   141121C00199000",
+              "ratio": 1
+            },
+            {
+              "osi_symbol": "SPY   141121P00199000",
+              "ratio": 1
+            }
+          ],
+          "entry_signal": -0.402387,
+          "exit_reason": "signal"
+        },
+        {
+          "position_id": 54,
+          "structure": "long_straddle",
+          "opened": "2014-10-21",
+          "closed": "2014-12-05",
+          "legs": [
+            {
+              "osi_symbol": "SPY   141219C00189000",
+              "ratio": 1
+            },
+            {
+              "osi_symbol": "SPY   141219P00189000",
+              "ratio": 1
+            }
+          ],
+          "entry_signal": -0.104104,
+          "exit_reason": "dte"
+        },
+        {
+          "position_id": 55,
+          "structure": "long_straddle",
+          "opened": "2014-11-18",
+          "closed": "2014-12-17",
+          "legs": [
+            {
+              "osi_symbol": "SPY   150116C00203000",
+              "ratio": 1
+            },
+            {
+              "osi_symbol": "SPY   150116P00203000",
+              "ratio": 1
+            }
+          ],
+          "entry_signal": -0.375121,
+          "exit_reason": "signal"
+        },
+        {
+          "position_id": 56,
+          "structure": "long_straddle",
+          "opened": "2014-12-23",
+          "closed": "2015-02-06",
+          "legs": [
+            {
+              "osi_symbol": "SPY   150220C00208000",
+              "ratio": 1
+            },
+            {
+              "osi_symbol": "SPY   150220P00208000",
+              "ratio": 1
+            }
+          ],
+          "entry_signal": -0.650833,
+          "exit_reason": "dte"
+        },
+        {
+          "position_id": 57,
+          "structure": "long_straddle",
+          "opened": "2015-01-22",
+          "closed": "2015-03-06",
+          "legs": [
+            {
+              "osi_symbol": "SPY   150320C00202000",
+              "ratio": 1
+            },
+            {
+              "osi_symbol": "SPY   150320P00202000",
+              "ratio": 1
+            }
+          ],
+          "entry_signal": -0.051038,
+          "exit_reason": "dte"
+        },
+        {
+          "position_id": 58,
+          "structure": "long_straddle",
+          "opened": "2015-02-18",
+          "closed": "2015-04-06",
+          "legs": [
+            {
+              "osi_symbol": "SPY   150417C00209000",
+              "ratio": 1
+            },
+            {
+              "osi_symbol": "SPY   150417P00209000",
+              "ratio": 1
+            }
+          ],
+          "entry_signal": -0.396482,
+          "exit_reason": "dte"
+        },
+        {
+          "position_id": 59,
+          "structure": "long_straddle",
+          "opened": "2015-03-17",
+          "closed": "2015-05-01",
+          "legs": [
+            {
+              "osi_symbol": "SPY   150515C00208000",
+              "ratio": 1
+            },
+            {
+              "osi_symbol": "SPY   150515P00208000",
+              "ratio": 1
+            }
+          ],
+          "entry_signal": -0.355336,
+          "exit_reason": "dte"
+        },
+        {
+          "position_id": 60,
+          "structure": "long_straddle",
+          "opened": "2015-04-21",
+          "closed": "2015-06-05",
+          "legs": [
+            {
+              "osi_symbol": "SPY   150619C00209000",
+              "ratio": 1
+            },
+            {
+              "osi_symbol": "SPY   150619P00209000",
+              "ratio": 1
+            }
+          ],
+          "entry_signal": -0.522011,
+          "exit_reason": "dte"
+        },
+        {
+          "position_id": 61,
+          "structure": "long_straddle",
+          "opened": "2015-05-19",
+          "closed": "2015-07-06",
+          "legs": [
+            {
+              "osi_symbol": "SPY   150717C00212000",
+              "ratio": 1
+            },
+            {
+              "osi_symbol": "SPY   150717P00212000",
+              "ratio": 1
+            }
+          ],
+          "entry_signal": -0.487081,
+          "exit_reason": "dte"
+        },
+        {
+          "position_id": 62,
+          "structure": "long_straddle",
+          "opened": "2015-06-23",
+          "closed": "2015-08-07",
+          "legs": [
+            {
+              "osi_symbol": "SPY   150821C00212000",
+              "ratio": 1
+            },
+            {
+              "osi_symbol": "SPY   150821P00212000",
+              "ratio": 1
+            }
+          ],
+          "entry_signal": -0.45786,
+          "exit_reason": "dte"
+        },
+        {
+          "position_id": 63,
+          "structure": "long_straddle",
+          "opened": "2015-07-21",
+          "closed": "2015-09-04",
+          "legs": [
+            {
+              "osi_symbol": "SPY   150918C00212000",
+              "ratio": 1
+            },
+            {
+              "osi_symbol": "SPY   150918P00212000",
+              "ratio": 1
+            }
+          ],
+          "entry_signal": -0.688278,
+          "exit_reason": "dte"
+        },
+        {
+          "position_id": 64,
+          "structure": "long_straddle",
+          "opened": "2015-08-18",
+          "closed": "2015-08-25",
+          "legs": [
+            {
+              "osi_symbol": "SPY   151016C00209000",
+              "ratio": 1
+            },
+            {
+              "osi_symbol": "SPY   151016P00209000",
+              "ratio": 1
+            }
+          ],
+          "entry_signal": -0.279288,
+          "exit_reason": "profit_target"
+        },
+        {
+          "position_id": 65,
+          "structure": "long_straddle",
+          "opened": "2015-09-22",
+          "closed": "2015-11-06",
+          "legs": [
+            {
+              "osi_symbol": "SPY   151120C00196000",
+              "ratio": 1
+            },
+            {
+              "osi_symbol": "SPY   151120P00196000",
+              "ratio": 1
+            }
+          ],
+          "entry_signal": -0.636788,
+          "exit_reason": "dte"
+        },
+        {
+          "position_id": 66,
+          "structure": "long_straddle",
+          "opened": "2015-10-20",
+          "closed": "2015-12-04",
+          "legs": [
+            {
+              "osi_symbol": "SPY   151219C00202000",
+              "ratio": 1
+            },
+            {
+              "osi_symbol": "SPY   151219P00202000",
+              "ratio": 1
+            }
+          ],
+          "entry_signal": -0.608899,
+          "exit_reason": "dte"
+        },
+        {
+          "position_id": 67,
+          "structure": "long_straddle",
+          "opened": "2015-11-17",
+          "closed": "2015-12-14",
+          "legs": [
+            {
+              "osi_symbol": "SPY   160115C00204000",
+              "ratio": 1
+            },
+            {
+              "osi_symbol": "SPY   160115P00204000",
+              "ratio": 1
+            }
+          ],
+          "entry_signal": -0.160281,
+          "exit_reason": "signal"
+        },
+        {
+          "position_id": 68,
+          "structure": "long_straddle",
+          "opened": "2015-12-22",
+          "closed": "2016-02-05",
+          "legs": [
+            {
+              "osi_symbol": "SPY   160219C00202000",
+              "ratio": 1
+            },
+            {
+              "osi_symbol": "SPY   160219P00202000",
+              "ratio": 1
+            }
+          ],
+          "entry_signal": -0.170022,
+          "exit_reason": "dte"
+        },
+        {
+          "position_id": 69,
+          "structure": "long_straddle",
+          "opened": "2016-01-25",
+          "closed": "2016-02-12",
+          "legs": [
+            {
+              "osi_symbol": "SPY   160318C00190000",
+              "ratio": 1
+            },
+            {
+              "osi_symbol": "SPY   160318P00190000",
+              "ratio": 1
+            }
+          ],
+          "entry_signal": -0.096985,
+          "exit_reason": "signal"
+        },
+        {
+          "position_id": 70,
+          "structure": "long_straddle",
+          "opened": "2016-02-17",
+          "closed": "2016-04-01",
+          "legs": [
+            {
+              "osi_symbol": "SPY   160415C00189000",
+              "ratio": 1
+            },
+            {
+              "osi_symbol": "SPY   160415P00189000",
+              "ratio": 1
+            }
+          ],
+          "entry_signal": -0.017453,
+          "exit_reason": "dte"
+        },
+        {
+          "position_id": 71,
+          "structure": "long_straddle",
+          "opened": "2016-03-22",
+          "closed": "2016-05-06",
+          "legs": [
+            {
+              "osi_symbol": "SPY   160520C00205000",
+              "ratio": 1
+            },
+            {
+              "osi_symbol": "SPY   160520P00205000",
+              "ratio": 1
+            }
+          ],
+          "entry_signal": -0.399932,
+          "exit_reason": "dte"
+        },
+        {
+          "position_id": 72,
+          "structure": "long_straddle",
+          "opened": "2016-04-20",
+          "closed": "2016-06-03",
+          "legs": [
+            {
+              "osi_symbol": "SPY   160617C00208000",
+              "ratio": 1
+            },
+            {
+              "osi_symbol": "SPY   160617P00208000",
+              "ratio": 1
+            }
+          ],
+          "entry_signal": -0.429574,
+          "exit_reason": "dte"
+        },
+        {
+          "position_id": 73,
+          "structure": "long_straddle",
+          "opened": "2016-05-17",
+          "closed": "2016-06-14",
+          "legs": [
+            {
+              "osi_symbol": "SPY   160715C00206000",
+              "ratio": 1
+            },
+            {
+              "osi_symbol": "SPY   160715P00206000",
+              "ratio": 1
+            }
+          ],
+          "entry_signal": -0.14652,
+          "exit_reason": "signal"
+        },
+        {
+          "position_id": 74,
+          "structure": "long_straddle",
+          "opened": "2016-06-24",
+          "closed": "2016-08-05",
+          "legs": [
+            {
+              "osi_symbol": "SPY   160819C00211000",
+              "ratio": 1
+            },
+            {
+              "osi_symbol": "SPY   160819P00211000",
+              "ratio": 1
+            }
+          ],
+          "entry_signal": -0.012004,
+          "exit_reason": "dte"
+        },
+        {
+          "position_id": 75,
+          "structure": "long_straddle",
+          "opened": "2016-07-19",
+          "closed": "2016-09-02",
+          "legs": [
+            {
+              "osi_symbol": "SPY   160916C00215000",
+              "ratio": 1
+            },
+            {
+              "osi_symbol": "SPY   160916P00215000",
+              "ratio": 1
+            }
+          ],
+          "entry_signal": -1.044559,
+          "exit_reason": "dte"
+        },
+        {
+          "position_id": 76,
+          "structure": "long_straddle",
+          "opened": "2016-08-23",
+          "closed": "2016-10-07",
+          "legs": [
+            {
+              "osi_symbol": "SPY   161021C00218000",
+              "ratio": 1
+            },
+            {
+              "osi_symbol": "SPY   161021P00218000",
+              "ratio": 1
+            }
+          ],
+          "entry_signal": -0.388113,
+          "exit_reason": "dte"
+        },
+        {
+          "position_id": 77,
+          "structure": "long_straddle",
+          "opened": "2016-09-20",
+          "closed": "2016-11-02",
+          "legs": [
+            {
+              "osi_symbol": "SPY   161118C00214000",
+              "ratio": 1
+            },
+            {
+              "osi_symbol": "SPY   161118P00214000",
+              "ratio": 1
+            }
+          ],
+          "entry_signal": -0.268421,
+          "exit_reason": "signal"
+        },
+        {
+          "position_id": 78,
+          "structure": "long_straddle",
+          "opened": "2016-10-19",
+          "closed": "2016-11-02",
+          "legs": [
+            {
+              "osi_symbol": "SPY   161216C00213000",
+              "ratio": 1
+            },
+            {
+              "osi_symbol": "SPY   161216P00213000",
+              "ratio": 1
+            }
+          ],
+          "entry_signal": -0.001496,
+          "exit_reason": "signal"
+        },
+        {
+          "position_id": 79,
+          "structure": "long_straddle",
+          "opened": "2016-11-22",
+          "closed": "2017-01-06",
+          "legs": [
+            {
+              "osi_symbol": "SPY   170120C00219000",
+              "ratio": 1
+            },
+            {
+              "osi_symbol": "SPY   170120P00219000",
+              "ratio": 1
+            }
+          ],
+          "entry_signal": -0.577074,
+          "exit_reason": "dte"
+        },
+        {
+          "position_id": 80,
+          "structure": "long_straddle",
+          "opened": "2016-12-20",
+          "closed": "2017-02-03",
+          "legs": [
+            {
+              "osi_symbol": "SPY   170217C00226000",
+              "ratio": 1
+            },
+            {
+              "osi_symbol": "SPY   170217P00226000",
+              "ratio": 1
+            }
+          ],
+          "entry_signal": -0.567592,
+          "exit_reason": "dte"
+        },
+        {
+          "position_id": 81,
+          "structure": "long_straddle",
+          "opened": "2017-01-18",
+          "closed": "2017-03-03",
+          "legs": [
+            {
+              "osi_symbol": "SPY   170317C00226000",
+              "ratio": 1
+            },
+            {
+              "osi_symbol": "SPY   170317P00226000",
+              "ratio": 1
+            }
+          ],
+          "entry_signal": -0.494276,
+          "exit_reason": "dte"
+        },
+        {
+          "position_id": 82,
+          "structure": "long_straddle",
+          "opened": "2017-02-22",
+          "closed": "2017-04-07",
+          "legs": [
+            {
+              "osi_symbol": "SPY   170421C00236000",
+              "ratio": 1
+            },
+            {
+              "osi_symbol": "SPY   170421P00236000",
+              "ratio": 1
+            }
+          ],
+          "entry_signal": -0.657427,
+          "exit_reason": "dte"
+        },
+        {
+          "position_id": 83,
+          "structure": "long_straddle",
+          "opened": "2017-03-21",
+          "closed": "2017-05-05",
+          "legs": [
+            {
+              "osi_symbol": "SPY   170519C00237000",
+              "ratio": 1
+            },
+            {
+              "osi_symbol": "SPY   170519P00237000",
+              "ratio": 1
+            }
+          ],
+          "entry_signal": -0.748242,
+          "exit_reason": "dte"
+        },
+        {
+          "position_id": 84,
+          "structure": "long_straddle",
+          "opened": "2017-04-18",
+          "closed": "2017-06-02",
+          "legs": [
+            {
+              "osi_symbol": "SPY   170616C00234000",
+              "ratio": 1
+            },
+            {
+              "osi_symbol": "SPY   170616P00234000",
+              "ratio": 1
+            }
+          ],
+          "entry_signal": -0.211065,
+          "exit_reason": "dte"
+        },
+        {
+          "position_id": 85,
+          "structure": "long_straddle",
+          "opened": "2017-05-23",
+          "closed": "2017-07-07",
+          "legs": [
+            {
+              "osi_symbol": "SPY   170721C00239000",
+              "ratio": 1
+            },
+            {
+              "osi_symbol": "SPY   170721P00239000",
+              "ratio": 1
+            }
+          ],
+          "entry_signal": -1.045381,
+          "exit_reason": "dte"
+        },
+        {
+          "position_id": 86,
+          "structure": "long_straddle",
+          "opened": "2017-06-20",
+          "closed": "2017-08-04",
+          "legs": [
+            {
+              "osi_symbol": "SPY   170818C00245000",
+              "ratio": 1
+            },
+            {
+              "osi_symbol": "SPY   170818P00245000",
+              "ratio": 1
+            }
+          ],
+          "entry_signal": -1.008668,
+          "exit_reason": "dte"
+        },
+        {
+          "position_id": 87,
+          "structure": "long_straddle",
+          "opened": "2017-07-18",
+          "closed": "2017-09-01",
+          "legs": [
+            {
+              "osi_symbol": "SPY   170915C00245000",
+              "ratio": 1
+            },
+            {
+              "osi_symbol": "SPY   170915P00245000",
+              "ratio": 1
+            }
+          ],
+          "entry_signal": -1.148511,
+          "exit_reason": "dte"
+        },
+        {
+          "position_id": 88,
+          "structure": "long_straddle",
+          "opened": "2017-08-22",
+          "closed": "2017-10-06",
+          "legs": [
+            {
+              "osi_symbol": "SPY   171020C00242000",
+              "ratio": 1
+            },
+            {
+              "osi_symbol": "SPY   171020P00242000",
+              "ratio": 1
+            }
+          ],
+          "entry_signal": -0.453004,
+          "exit_reason": "dte"
+        },
+        {
+          "position_id": 89,
+          "structure": "long_straddle",
+          "opened": "2017-09-19",
+          "closed": "2017-11-03",
+          "legs": [
+            {
+              "osi_symbol": "SPY   171117C00250000",
+              "ratio": 1
+            },
+            {
+              "osi_symbol": "SPY   171117P00250000",
+              "ratio": 1
+            }
+          ],
+          "entry_signal": -1.224705,
+          "exit_reason": "dte"
+        },
+        {
+          "position_id": 90,
+          "structure": "long_straddle",
+          "opened": "2017-10-17",
+          "closed": "2017-12-01",
+          "legs": [
+            {
+              "osi_symbol": "SPY   171215C00255000",
+              "ratio": 1
+            },
+            {
+              "osi_symbol": "SPY   171215P00255000",
+              "ratio": 1
+            }
+          ],
+          "entry_signal": -1.088483,
+          "exit_reason": "dte"
+        },
+        {
+          "position_id": 91,
+          "structure": "long_straddle",
+          "opened": "2017-11-21",
+          "closed": "2018-01-05",
+          "legs": [
+            {
+              "osi_symbol": "SPY   180119C00258000",
+              "ratio": 1
+            },
+            {
+              "osi_symbol": "SPY   180119P00258000",
+              "ratio": 1
+            }
+          ],
+          "entry_signal": -0.883225,
+          "exit_reason": "dte"
+        },
+        {
+          "position_id": 92,
+          "structure": "long_straddle",
+          "opened": "2017-12-19",
+          "closed": "2018-02-02",
+          "legs": [
+            {
+              "osi_symbol": "SPY   180216C00269000",
+              "ratio": 1
+            },
+            {
+              "osi_symbol": "SPY   180216P00269000",
+              "ratio": 1
+            }
+          ],
+          "entry_signal": -1.070664,
+          "exit_reason": "dte"
+        },
+        {
+          "position_id": 93,
+          "structure": "long_straddle",
+          "opened": "2018-01-17",
+          "closed": "2018-02-06",
+          "legs": [
+            {
+              "osi_symbol": "SPY   180316C00277000",
+              "ratio": 1
+            },
+            {
+              "osi_symbol": "SPY   180316P00277000",
+              "ratio": 1
+            }
+          ],
+          "entry_signal": -0.594552,
+          "exit_reason": "profit_target"
+        },
+        {
+          "position_id": 94,
+          "structure": "long_straddle",
+          "opened": "2018-02-21",
+          "closed": "2018-04-06",
+          "legs": [
+            {
+              "osi_symbol": "SPY   180420C00271000",
+              "ratio": 1
+            },
+            {
+              "osi_symbol": "SPY   180420P00271000",
+              "ratio": 1
+            }
+          ],
+          "entry_signal": -0.647855,
+          "exit_reason": "dte"
+        },
+        {
+          "position_id": 95,
+          "structure": "long_straddle",
+          "opened": "2018-03-20",
+          "closed": "2018-05-04",
+          "legs": [
+            {
+              "osi_symbol": "SPY   180518C00272000",
+              "ratio": 1
+            },
+            {
+              "osi_symbol": "SPY   180518P00272000",
+              "ratio": 1
+            }
+          ],
+          "entry_signal": -0.258964,
+          "exit_reason": "dte"
+        },
+        {
+          "position_id": 96,
+          "structure": "long_straddle",
+          "opened": "2018-04-17",
+          "closed": "2018-06-01",
+          "legs": [
+            {
+              "osi_symbol": "SPY   180615C00267000",
+              "ratio": 1
+            },
+            {
+              "osi_symbol": "SPY   180615P00267000",
+              "ratio": 1
+            }
+          ],
+          "entry_signal": -0.833567,
+          "exit_reason": "dte"
+        },
+        {
+          "position_id": 97,
+          "structure": "long_straddle",
+          "opened": "2018-05-22",
+          "closed": "2018-07-06",
+          "legs": [
+            {
+              "osi_symbol": "SPY   180720C00273000",
+              "ratio": 1
+            },
+            {
+              "osi_symbol": "SPY   180720P00273000",
+              "ratio": 1
+            }
+          ],
+          "entry_signal": -0.55261,
+          "exit_reason": "dte"
+        },
+        {
+          "position_id": 98,
+          "structure": "long_straddle",
+          "opened": "2018-06-19",
+          "closed": "2018-08-03",
+          "legs": [
+            {
+              "osi_symbol": "SPY   180817C00278000",
+              "ratio": 1
+            },
+            {
+              "osi_symbol": "SPY   180817P00278000",
+              "ratio": 1
+            }
+          ],
+          "entry_signal": -0.624844,
+          "exit_reason": "dte"
+        },
+        {
+          "position_id": 99,
+          "structure": "long_straddle",
+          "opened": "2018-07-24",
+          "closed": "2018-09-07",
+          "legs": [
+            {
+              "osi_symbol": "SPY   180921C00280000",
+              "ratio": 1
+            },
+            {
+              "osi_symbol": "SPY   180921P00280000",
+              "ratio": 1
+            }
+          ],
+          "entry_signal": -0.711638,
+          "exit_reason": "dte"
+        },
+        {
+          "position_id": 100,
+          "structure": "long_straddle",
+          "opened": "2018-08-21",
+          "closed": "2018-10-05",
+          "legs": [
+            {
+              "osi_symbol": "SPY   181019C00285000",
+              "ratio": 1
+            },
+            {
+              "osi_symbol": "SPY   181019P00285000",
+              "ratio": 1
+            }
+          ],
+          "entry_signal": -0.787946,
+          "exit_reason": "dte"
+        },
+        {
+          "position_id": 101,
+          "structure": "long_straddle",
+          "opened": "2018-09-18",
+          "closed": "2018-10-25",
+          "legs": [
+            {
+              "osi_symbol": "SPY   181116C00289000",
+              "ratio": 1
+            },
+            {
+              "osi_symbol": "SPY   181116P00289000",
+              "ratio": 1
+            }
+          ],
+          "entry_signal": -0.557416,
+          "exit_reason": "profit_target"
+        },
+        {
+          "position_id": 102,
+          "structure": "long_straddle",
+          "opened": "2018-10-23",
+          "closed": "2018-12-07",
+          "legs": [
+            {
+              "osi_symbol": "SPY   181221C00275000",
+              "ratio": 1
+            },
+            {
+              "osi_symbol": "SPY   181221P00275000",
+              "ratio": 1
+            }
+          ],
+          "entry_signal": -0.281462,
+          "exit_reason": "dte"
+        },
+        {
+          "position_id": 103,
+          "structure": "long_straddle",
+          "opened": "2018-11-20",
+          "closed": "2019-01-04",
+          "legs": [
+            {
+              "osi_symbol": "SPY   190118C00269000",
+              "ratio": 1
+            },
+            {
+              "osi_symbol": "SPY   190118P00269000",
+              "ratio": 1
+            }
+          ],
+          "entry_signal": -0.081383,
+          "exit_reason": "dte"
+        },
+        {
+          "position_id": 104,
+          "structure": "long_straddle",
+          "opened": "2018-12-27",
+          "closed": "2019-02-01",
+          "legs": [
+            {
+              "osi_symbol": "SPY   190215C00247000",
+              "ratio": 1
+            },
+            {
+              "osi_symbol": "SPY   190215P00247000",
+              "ratio": 1
+            }
+          ],
+          "entry_signal": -0.406395,
+          "exit_reason": "dte"
+        },
+        {
+          "position_id": 105,
+          "structure": "long_straddle",
+          "opened": "2019-01-15",
+          "closed": "2019-03-04",
+          "legs": [
+            {
+              "osi_symbol": "SPY   190315C00258000",
+              "ratio": 1
+            },
+            {
+              "osi_symbol": "SPY   190315P00258000",
+              "ratio": 1
+            }
+          ],
+          "entry_signal": -0.626291,
+          "exit_reason": "dte"
+        },
+        {
+          "position_id": 106,
+          "structure": "long_straddle",
+          "opened": "2019-02-20",
+          "closed": "2019-04-04",
+          "legs": [
+            {
+              "osi_symbol": "SPY   190418C00278000",
+              "ratio": 1
+            },
+            {
+              "osi_symbol": "SPY   190418P00278000",
+              "ratio": 1
+            }
+          ],
+          "entry_signal": -0.408633,
+          "exit_reason": "dte"
+        },
+        {
+          "position_id": 107,
+          "structure": "long_straddle",
+          "opened": "2019-03-19",
+          "closed": "2019-05-03",
+          "legs": [
+            {
+              "osi_symbol": "SPY   190517C00284000",
+              "ratio": 1
+            },
+            {
+              "osi_symbol": "SPY   190517P00284000",
+              "ratio": 1
+            }
+          ],
+          "entry_signal": -0.364118,
+          "exit_reason": "dte"
+        },
+        {
+          "position_id": 108,
+          "structure": "long_straddle",
+          "opened": "2019-04-23",
+          "closed": "2019-06-10",
+          "legs": [
+            {
+              "osi_symbol": "SPY   190621C00290000",
+              "ratio": 1
+            },
+            {
+              "osi_symbol": "SPY   190621P00290000",
+              "ratio": 1
+            }
+          ],
+          "entry_signal": -0.546383,
+          "exit_reason": "dte"
+        },
+        {
+          "position_id": 109,
+          "structure": "long_straddle",
+          "opened": "2019-05-21",
+          "closed": "2019-07-05",
+          "legs": [
+            {
+              "osi_symbol": "SPY   190719C00284000",
+              "ratio": 1
+            },
+            {
+              "osi_symbol": "SPY   190719P00284000",
+              "ratio": 1
+            }
+          ],
+          "entry_signal": -0.079023,
+          "exit_reason": "dte"
+        },
+        {
+          "position_id": 110,
+          "structure": "long_straddle",
+          "opened": "2019-06-18",
+          "closed": "2019-08-02",
+          "legs": [
+            {
+              "osi_symbol": "SPY   190816C00289000",
+              "ratio": 1
+            },
+            {
+              "osi_symbol": "SPY   190816P00289000",
+              "ratio": 1
+            }
+          ],
+          "entry_signal": -0.010672,
+          "exit_reason": "dte"
+        },
+        {
+          "position_id": 111,
+          "structure": "long_straddle",
+          "opened": "2019-07-23",
+          "closed": "2019-08-26",
+          "legs": [
+            {
+              "osi_symbol": "SPY   190920C00298000",
+              "ratio": 1
+            },
+            {
+              "osi_symbol": "SPY   190920P00298000",
+              "ratio": 1
+            }
+          ],
+          "entry_signal": -0.318864,
+          "exit_reason": "profit_target"
+        },
+        {
+          "position_id": 112,
+          "structure": "long_straddle",
+          "opened": "2019-08-20",
+          "closed": "2019-10-04",
+          "legs": [
+            {
+              "osi_symbol": "SPY   191018C00292000",
+              "ratio": 1
+            },
+            {
+              "osi_symbol": "SPY   191018P00292000",
+              "ratio": 1
+            }
+          ],
+          "entry_signal": -0.840956,
+          "exit_reason": "dte"
+        },
+        {
+          "position_id": 113,
+          "structure": "long_straddle",
+          "opened": "2019-09-17",
+          "closed": "2019-11-01",
+          "legs": [
+            {
+              "osi_symbol": "SPY   191115C00300000",
+              "ratio": 1
+            },
+            {
+              "osi_symbol": "SPY   191115P00300000",
+              "ratio": 1
+            }
+          ],
+          "entry_signal": -0.422723,
+          "exit_reason": "dte"
+        },
+        {
+          "position_id": 114,
+          "structure": "long_straddle",
+          "opened": "2019-10-22",
+          "closed": "2019-12-06",
+          "legs": [
+            {
+              "osi_symbol": "SPY   191220C00300000",
+              "ratio": 1
+            },
+            {
+              "osi_symbol": "SPY   191220P00300000",
+              "ratio": 1
+            }
+          ],
+          "entry_signal": -0.453028,
+          "exit_reason": "dte"
+        },
+        {
+          "position_id": 115,
+          "structure": "long_straddle",
+          "opened": "2019-11-19",
+          "closed": null,
+          "legs": [
+            {
+              "osi_symbol": "SPY   200117C00311000",
+              "ratio": 1
+            },
+            {
+              "osi_symbol": "SPY   200117P00311000",
+              "ratio": 1
+            }
+          ],
+          "entry_signal": -0.274339,
+          "exit_reason": null
+        },
+        {
+          "position_id": 116,
+          "structure": "long_straddle",
+          "opened": "2019-12-24",
+          "closed": null,
+          "legs": [
+            {
+              "osi_symbol": "SPY   200221C00322000",
+              "ratio": 1
+            },
+            {
+              "osi_symbol": "SPY   200221P00322000",
+              "ratio": 1
+            }
+          ],
+          "entry_signal": -0.409252,
+          "exit_reason": null
+        }
+      ]
+    },
+    {
+      "run": {
+        "run_id": "2f71c4d6ec9a29e9d03cb13578639306b72328dfbc7d61bd06a898b5c8347335",
+        "config_hash": "5031dbe136a30ce35efab52ca37d0ae1e25f4ba12783a8ab6a479d05446cb853",
+        "data_fingerprint": "e9462197b8358236fa2a1ad7c89d19dc681ef47ffa6df74c6d54a3bdf5565f98",
+        "engine_commit": "3dd868e11683480f2a9dcc921df83cbb69d955a3-dirty",
+        "data_source": "optionsdx",
+        "execution_mode": "quote",
+        "fill_timing": "next_close",
+        "cap_mode": "hard_only",
+        "chain_mask": "none",
+        "split": "development",
+        "run_purpose": "trial",
+        "strategy": "VolStrategy",
+        "status": "ok",
+        "sample_start": "2010-01-04",
+        "sample_end": "2019-12-31"
+      },
+      "strategy": "VolStrategy",
+      "params": {
+        "delta": 0.25,
+        "entry": {
+          "gate": "above",
+          "theta": 0.0
+        },
+        "entry_dte": [
+          50,
+          60
+        ],
+        "exits": {
+          "exit_dte": 14,
+          "signal_above": null,
+          "signal_below": -0.4,
+          "stop": 1.0,
+          "target": 0.5
+        },
+        "max_open": 2,
+        "side": "short",
+        "signal": {
+          "horizon": 21,
+          "min_pairs": 504,
+          "rv_model": "har",
+          "source": "optionsdx",
+          "window_days": 30
+        },
+        "sizer": {
+          "n": 10,
+          "name": "FixedPackages"
+        },
+        "structure": "short_strangle"
+      },
+      "trial_group": "m4_vol",
+      "n_trials_group": 36,
+      "positions": [
+        {
+          "position_id": 1,
+          "structure": "short_strangle",
+          "opened": "2010-01-22",
+          "closed": "2010-03-05",
+          "legs": [
+            {
+              "osi_symbol": "SPY   100319C00117000",
+              "ratio": -1
+            },
+            {
+              "osi_symbol": "SPY   100319P00105000",
+              "ratio": -1
+            }
+          ],
+          "entry_signal": 0.082858,
+          "exit_reason": "dte"
+        },
+        {
+          "position_id": 2,
+          "structure": "short_strangle",
+          "opened": "2010-02-24",
+          "closed": "2010-04-05",
+          "legs": [
+            {
+              "osi_symbol": "SPY   100416C00114000",
+              "ratio": -1
+            },
+            {
+              "osi_symbol": "SPY   100416P00103000",
+              "ratio": -1
+            }
+          ],
+          "entry_signal": 0.045415,
+          "exit_reason": "dte"
+        },
+        {
+          "position_id": 3,
+          "structure": "short_strangle",
+          "opened": "2010-03-23",
+          "closed": "2010-05-07",
+          "legs": [
+            {
+              "osi_symbol": "SPY   100521C00121000",
+              "ratio": -1
+            },
+            {
+              "osi_symbol": "SPY   100521P00111000",
+              "ratio": -1
+            }
+          ],
+          "entry_signal": 0.018325,
+          "exit_reason": "dte"
+        },
+        {
+          "position_id": 4,
+          "structure": "short_strangle",
+          "opened": "2010-04-27",
+          "closed": "2010-05-11",
+          "legs": [
+            {
+              "osi_symbol": "SPY   100618C00125000",
+              "ratio": -1
+            },
+            {
+              "osi_symbol": "SPY   100618P00115000",
+              "ratio": -1
+            }
+          ],
+          "entry_signal": 0.027711,
+          "exit_reason": "signal"
+        },
+        {
+          "position_id": 5,
+          "structure": "short_strangle",
+          "opened": "2010-05-18",
+          "closed": "2010-07-02",
+          "legs": [
+            {
+              "osi_symbol": "SPY   100716C00121000",
+              "ratio": -1
+            },
+            {
+              "osi_symbol": "SPY   100716P00105000",
+              "ratio": -1
+            }
+          ],
+          "entry_signal": 0.213049,
+          "exit_reason": "dte"
+        },
+        {
+          "position_id": 6,
+          "structure": "short_strangle",
+          "opened": "2010-06-23",
+          "closed": "2010-08-06",
+          "legs": [
+            {
+              "osi_symbol": "SPY   100820C00116000",
+              "ratio": -1
+            },
+            {
+              "osi_symbol": "SPY   100820P00102000",
+              "ratio": -1
+            }
+          ],
+          "entry_signal": 0.186766,
+          "exit_reason": "dte"
+        },
+        {
+          "position_id": 7,
+          "structure": "short_strangle",
+          "opened": "2010-07-20",
+          "closed": "2010-09-03",
+          "legs": [
+            {
+              "osi_symbol": "SPY   100917C00113000",
+              "ratio": -1
+            },
+            {
+              "osi_symbol": "SPY   100917P00099000",
+              "ratio": -1
+            }
+          ],
+          "entry_signal": 0.078735,
+          "exit_reason": "dte"
+        },
+        {
+          "position_id": 8,
+          "structure": "short_strangle",
+          "opened": "2010-08-17",
+          "closed": "2010-10-01",
+          "legs": [
+            {
+              "osi_symbol": "SPY   101015C00114000",
+              "ratio": -1
+            },
+            {
+              "osi_symbol": "SPY   101015P00100000",
+              "ratio": -1
+            }
+          ],
+          "entry_signal": 0.286112,
+          "exit_reason": "dte"
+        },
+        {
+          "position_id": 9,
+          "structure": "short_strangle",
+          "opened": "2010-09-21",
+          "closed": "2010-11-04",
+          "legs": [
+            {
+              "osi_symbol": "SPY   101119C00120000",
+              "ratio": -1
+            },
+            {
+              "osi_symbol": "SPY   101119P00107000",
+              "ratio": -1
+            }
+          ],
+          "entry_signal": 0.019343,
+          "exit_reason": "profit_target"
+        },
+        {
+          "position_id": 10,
+          "structure": "short_strangle",
+          "opened": "2010-10-19",
+          "closed": "2010-12-03",
+          "legs": [
+            {
+              "osi_symbol": "SPY   101217C00124000",
+              "ratio": -1
+            },
+            {
+              "osi_symbol": "SPY   101217P00111000",
+              "ratio": -1
+            }
+          ],
+          "entry_signal": 0.177891,
+          "exit_reason": "dte"
+        },
+        {
+          "position_id": 11,
+          "structure": "short_strangle",
+          "opened": "2010-11-24",
+          "closed": "2011-01-07",
+          "legs": [
+            {
+              "osi_symbol": "SPY   110121C00123000",
+              "ratio": -1
+            },
+            {
+              "osi_symbol": "SPY   110121P00111000",
+              "ratio": -1
+            }
+          ],
+          "entry_signal": 0.135552,
+          "exit_reason": "dte"
+        },
+        {
+          "position_id": 12,
+          "structure": "short_strangle",
+          "opened": "2010-12-28",
+          "closed": "2011-01-26",
+          "legs": [
+            {
+              "osi_symbol": "SPY   110218C00131000",
+              "ratio": -1
+            },
+            {
+              "osi_symbol": "SPY   110218P00120000",
+              "ratio": -1
+            }
+          ],
+          "entry_signal": 0.090101,
+          "exit_reason": "profit_target"
+        },
+        {
+          "position_id": 13,
+          "structure": "short_strangle",
+          "opened": "2011-01-27",
+          "closed": "2011-03-04",
+          "legs": [
+            {
+              "osi_symbol": "SPY   110318C00134000",
+              "ratio": -1
+            },
+            {
+              "osi_symbol": "SPY   110318P00124000",
+              "ratio": -1
+            }
+          ],
+          "entry_signal": 0.05302,
+          "exit_reason": "dte"
+        },
+        {
+          "position_id": 14,
+          "structure": "short_strangle",
+          "opened": "2011-02-23",
+          "closed": "2011-04-01",
+          "legs": [
+            {
+              "osi_symbol": "SPY   110415C00137000",
+              "ratio": -1
+            },
+            {
+              "osi_symbol": "SPY   110415P00125000",
+              "ratio": -1
+            }
+          ],
+          "entry_signal": 0.012859,
+          "exit_reason": "dte"
+        },
+        {
+          "position_id": 15,
+          "structure": "short_strangle",
+          "opened": "2011-03-29",
+          "closed": "2011-04-19",
+          "legs": [
+            {
+              "osi_symbol": "SPY   110520C00136000",
+              "ratio": -1
+            },
+            {
+              "osi_symbol": "SPY   110520P00125000",
+              "ratio": -1
+            }
+          ],
+          "entry_signal": 0.034743,
+          "exit_reason": "profit_target"
+        },
+        {
+          "position_id": 16,
+          "structure": "short_strangle",
+          "opened": "2011-05-18",
+          "closed": "2011-07-01",
+          "legs": [
+            {
+              "osi_symbol": "SPY   110715C00137000",
+              "ratio": -1
+            },
+            {
+              "osi_symbol": "SPY   110715P00125000",
+              "ratio": -1
+            }
+          ],
+          "entry_signal": 0.214927,
+          "exit_reason": "signal"
+        },
+        {
+          "position_id": 17,
+          "structure": "short_strangle",
+          "opened": "2011-06-21",
+          "closed": "2011-07-01",
+          "legs": [
+            {
+              "osi_symbol": "SPY   110819C00133000",
+              "ratio": -1
+            },
+            {
+              "osi_symbol": "SPY   110819P00121000",
+              "ratio": -1
+            }
+          ],
+          "entry_signal": 0.048476,
+          "exit_reason": "signal"
+        },
+        {
+          "position_id": 18,
+          "structure": "short_strangle",
+          "opened": "2011-07-19",
+          "closed": "2011-08-10",
+          "legs": [
+            {
+              "osi_symbol": "SPY   110916C00136000",
+              "ratio": -1
+            },
+            {
+              "osi_symbol": "SPY   110916P00123000",
+              "ratio": -1
+            }
+          ],
+          "entry_signal": 0.230628,
+          "exit_reason": "signal"
+        },
+        {
+          "position_id": 19,
+          "structure": "short_strangle",
+          "opened": "2011-08-26",
+          "closed": "2011-08-30",
+          "legs": [
+            {
+              "osi_symbol": "SPY   111021C00125000",
+              "ratio": -1
+            },
+            {
+              "osi_symbol": "SPY   111021P00105000",
+              "ratio": -1
+            }
+          ],
+          "entry_signal": 0.060817,
+          "exit_reason": "signal"
+        },
+        {
+          "position_id": 20,
+          "structure": "short_strangle",
+          "opened": "2011-09-20",
+          "closed": "2011-10-28",
+          "legs": [
+            {
+              "osi_symbol": "SPY   111118C00129000",
+              "ratio": -1
+            },
+            {
+              "osi_symbol": "SPY   111118P00110000",
+              "ratio": -1
+            }
+          ],
+          "entry_signal": 0.305344,
+          "exit_reason": "signal"
+        },
+        {
+          "position_id": 21,
+          "structure": "short_strangle",
+          "opened": "2011-10-18",
+          "closed": "2011-10-28",
+          "legs": [
+            {
+              "osi_symbol": "SPY   111216C00128000",
+              "ratio": -1
+            },
+            {
+              "osi_symbol": "SPY   111216P00110000",
+              "ratio": -1
+            }
+          ],
+          "entry_signal": 0.231742,
+          "exit_reason": "signal"
+        },
+        {
+          "position_id": 22,
+          "structure": "short_strangle",
+          "opened": "2011-11-22",
+          "closed": "2011-12-01",
+          "legs": [
+            {
+              "osi_symbol": "SPY   120120C00128000",
+              "ratio": -1
+            },
+            {
+              "osi_symbol": "SPY   120120P00109000",
+              "ratio": -1
+            }
+          ],
+          "entry_signal": 0.394152,
+          "exit_reason": "signal"
+        },
+        {
+          "position_id": 23,
+          "structure": "short_strangle",
+          "opened": "2011-12-20",
+          "closed": "2012-01-23",
+          "legs": [
+            {
+              "osi_symbol": "SPY   120217C00128000",
+              "ratio": -1
+            },
+            {
+              "osi_symbol": "SPY   120217P00112000",
+              "ratio": -1
+            }
+          ],
+          "entry_signal": 0.327204,
+          "exit_reason": "profit_target"
+        },
+        {
+          "position_id": 24,
+          "structure": "short_strangle",
+          "opened": "2012-01-18",
+          "closed": "2012-02-24",
+          "legs": [
+            {
+              "osi_symbol": "SPY   120316C00135000",
+              "ratio": -1
+            },
+            {
+              "osi_symbol": "SPY   120316P00121000",
+              "ratio": -1
+            }
+          ],
+          "entry_signal": 0.269717,
+          "exit_reason": "profit_target"
+        },
+        {
+          "position_id": 25,
+          "structure": "short_strangle",
+          "opened": "2012-02-22",
+          "closed": "2012-03-14",
+          "legs": [
+            {
+              "osi_symbol": "SPY   120420C00141000",
+              "ratio": -1
+            },
+            {
+              "osi_symbol": "SPY   120420P00129000",
+              "ratio": -1
+            }
+          ],
+          "entry_signal": 0.059853,
+          "exit_reason": "signal"
+        },
+        {
+          "position_id": 26,
+          "structure": "short_strangle",
+          "opened": "2012-04-17",
+          "closed": "2012-06-01",
+          "legs": [
+            {
+              "osi_symbol": "SPY   120615C00142000",
+              "ratio": -1
+            },
+            {
+              "osi_symbol": "SPY   120615P00129000",
+              "ratio": -1
+            }
+          ],
+          "entry_signal": 0.010692,
+          "exit_reason": "dte"
+        },
+        {
+          "position_id": 27,
+          "structure": "short_strangle",
+          "opened": "2012-05-22",
+          "closed": "2012-07-02",
+          "legs": [
+            {
+              "osi_symbol": "SPY   120720C00138000",
+              "ratio": -1
+            },
+            {
+              "osi_symbol": "SPY   120720P00123000",
+              "ratio": -1
+            }
+          ],
+          "entry_signal": 0.187421,
+          "exit_reason": "signal"
+        },
+        {
+          "position_id": 28,
+          "structure": "short_strangle",
+          "opened": "2012-07-25",
+          "closed": "2012-07-30",
+          "legs": [
+            {
+              "osi_symbol": "SPY   120921C00139000",
+              "ratio": -1
+            },
+            {
+              "osi_symbol": "SPY   120921P00126000",
+              "ratio": -1
+            }
+          ],
+          "entry_signal": 0.056646,
+          "exit_reason": "signal"
+        },
+        {
+          "position_id": 29,
+          "structure": "short_strangle",
+          "opened": "2012-08-29",
+          "closed": "2012-09-14",
+          "legs": [
+            {
+              "osi_symbol": "SPY   121019C00146000",
+              "ratio": -1
+            },
+            {
+              "osi_symbol": "SPY   121019P00134000",
+              "ratio": -1
+            }
+          ],
+          "entry_signal": 0.106523,
+          "exit_reason": "signal"
+        },
+        {
+          "position_id": 30,
+          "structure": "short_strangle",
+          "opened": "2012-10-26",
+          "closed": "2012-11-20",
+          "legs": [
+            {
+              "osi_symbol": "SPY   121221C00146000",
+              "ratio": -1
+            },
+            {
+              "osi_symbol": "SPY   121221P00134000",
+              "ratio": -1
+            }
+          ],
+          "entry_signal": 0.023223,
+          "exit_reason": "signal"
+        },
+        {
+          "position_id": 31,
+          "structure": "short_strangle",
+          "opened": "2012-12-21",
+          "closed": "2013-01-03",
+          "legs": [
+            {
+              "osi_symbol": "SPY   130215C00150000",
+              "ratio": -1
+            },
+            {
+              "osi_symbol": "SPY   130215P00138000",
+              "ratio": -1
+            }
+          ],
+          "entry_signal": 0.056892,
+          "exit_reason": "signal"
+        },
+        {
+          "position_id": 32,
+          "structure": "short_strangle",
+          "opened": "2013-08-30",
+          "closed": "2013-09-23",
+          "legs": [
+            {
+              "osi_symbol": "SPY   131018C00169000",
+              "ratio": -1
+            },
+            {
+              "osi_symbol": "SPY   131018P00156000",
+              "ratio": -1
+            }
+          ],
+          "entry_signal": 0.061254,
+          "exit_reason": "signal"
+        },
+        {
+          "position_id": 33,
+          "structure": "short_strangle",
+          "opened": "2015-01-21",
+          "closed": "2015-02-04",
+          "legs": [
+            {
+              "osi_symbol": "SPY   150320C00209000",
+              "ratio": -1
+            },
+            {
+              "osi_symbol": "SPY   150320P00191000",
+              "ratio": -1
+            }
+          ],
+          "entry_signal": 0.039595,
+          "exit_reason": "signal"
+        },
+        {
+          "position_id": 34,
+          "structure": "short_strangle",
+          "opened": "2015-06-30",
+          "closed": "2015-07-14",
+          "legs": [
+            {
+              "osi_symbol": "SPY   150821C00213000",
+              "ratio": -1
+            },
+            {
+              "osi_symbol": "SPY   150821P00196000",
+              "ratio": -1
+            }
+          ],
+          "entry_signal": 0.040316,
+          "exit_reason": "signal"
+        },
+        {
+          "position_id": 35,
+          "structure": "short_strangle",
+          "opened": "2015-08-21",
+          "closed": "2015-08-27",
+          "legs": [
+            {
+              "osi_symbol": "SPY   151016C00211000",
+              "ratio": -1
+            },
+            {
+              "osi_symbol": "SPY   151016P00193000",
+              "ratio": -1
+            }
+          ],
+          "entry_signal": 0.083541,
+          "exit_reason": "signal"
+        },
+        {
+          "position_id": 36,
+          "structure": "short_strangle",
+          "opened": "2015-09-28",
+          "closed": "2015-10-16",
+          "legs": [
+            {
+              "osi_symbol": "SPY   151120C00202000",
+              "ratio": -1
+            },
+            {
+              "osi_symbol": "SPY   151120P00182000",
+              "ratio": -1
+            }
+          ],
+          "entry_signal": 0.085868,
+          "exit_reason": "signal"
+        },
+        {
+          "position_id": 37,
+          "structure": "short_strangle",
+          "opened": "2016-01-20",
+          "closed": "2016-03-02",
+          "legs": [
+            {
+              "osi_symbol": "SPY   160318C00197000",
+              "ratio": -1
+            },
+            {
+              "osi_symbol": "SPY   160318P00175000",
+              "ratio": -1
+            }
+          ],
+          "entry_signal": 0.009496,
+          "exit_reason": "signal"
+        },
+        {
+          "position_id": 38,
+          "structure": "short_strangle",
+          "opened": "2016-02-25",
+          "closed": "2016-03-02",
+          "legs": [
+            {
+              "osi_symbol": "SPY   160415C00200000",
+              "ratio": -1
+            },
+            {
+              "osi_symbol": "SPY   160415P00182000",
+              "ratio": -1
+            }
+          ],
+          "entry_signal": 0.023261,
+          "exit_reason": "signal"
+        },
+        {
+          "position_id": 39,
+          "structure": "short_strangle",
+          "opened": "2016-05-18",
+          "closed": "2016-05-31",
+          "legs": [
+            {
+              "osi_symbol": "SPY   160715C00211000",
+              "ratio": -1
+            },
+            {
+              "osi_symbol": "SPY   160715P00194000",
+              "ratio": -1
+            }
+          ],
+          "entry_signal": 0.026195,
+          "exit_reason": "signal"
+        },
+        {
+          "position_id": 40,
+          "structure": "short_strangle",
+          "opened": "2016-06-21",
+          "closed": "2016-06-29",
+          "legs": [
+            {
+              "osi_symbol": "SPY   160819C00215000",
+              "ratio": -1
+            },
+            {
+              "osi_symbol": "SPY   160819P00198000",
+              "ratio": -1
+            }
+          ],
+          "entry_signal": 0.322178,
+          "exit_reason": "signal"
+        },
+        {
+          "position_id": 41,
+          "structure": "short_strangle",
+          "opened": "2016-10-18",
+          "closed": "2016-11-10",
+          "legs": [
+            {
+              "osi_symbol": "SPY   161216C00219000",
+              "ratio": -1
+            },
+            {
+              "osi_symbol": "SPY   161216P00202000",
+              "ratio": -1
+            }
+          ],
+          "entry_signal": 0.088102,
+          "exit_reason": "signal"
+        },
+        {
+          "position_id": 42,
+          "structure": "short_strangle",
+          "opened": "2018-03-26",
+          "closed": "2018-03-27",
+          "legs": [
+            {
+              "osi_symbol": "SPY   180518C00271000",
+              "ratio": -1
+            },
+            {
+              "osi_symbol": "SPY   180518P00244000",
+              "ratio": -1
+            }
+          ],
+          "entry_signal": 0.01687,
+          "exit_reason": "signal"
+        },
+        {
+          "position_id": 43,
+          "structure": "short_strangle",
+          "opened": "2018-06-28",
+          "closed": "2018-07-09",
+          "legs": [
+            {
+              "osi_symbol": "SPY   180817C00278000",
+              "ratio": -1
+            },
+            {
+              "osi_symbol": "SPY   180817P00259000",
+              "ratio": -1
+            }
+          ],
+          "entry_signal": 0.017834,
+          "exit_reason": "signal"
+        },
+        {
+          "position_id": 44,
+          "structure": "short_strangle",
+          "opened": "2018-10-24",
+          "closed": "2018-11-02",
+          "legs": [
+            {
+              "osi_symbol": "SPY   181221C00284000",
+              "ratio": -1
+            },
+            {
+              "osi_symbol": "SPY   181221P00259000",
+              "ratio": -1
+            }
+          ],
+          "entry_signal": 0.088574,
+          "exit_reason": "signal"
+        },
+        {
+          "position_id": 45,
+          "structure": "short_strangle",
+          "opened": "2018-12-18",
+          "closed": "2018-12-27",
+          "legs": [
+            {
+              "osi_symbol": "SPY   190215C00269000",
+              "ratio": -1
+            },
+            {
+              "osi_symbol": "SPY   190215P00240000",
+              "ratio": -1
+            }
+          ],
+          "entry_signal": 0.111566,
+          "exit_reason": "signal"
+        },
+        {
+          "position_id": 46,
+          "structure": "short_strangle",
+          "opened": "2019-05-28",
+          "closed": "2019-06-06",
+          "legs": [
+            {
+              "osi_symbol": "SPY   190719C00292000",
+              "ratio": -1
+            },
+            {
+              "osi_symbol": "SPY   190719P00269000",
+              "ratio": -1
+            }
+          ],
+          "entry_signal": 0.003281,
+          "exit_reason": "signal"
+        },
+        {
+          "position_id": 47,
+          "structure": "short_strangle",
+          "opened": "2019-06-28",
+          "closed": "2019-07-02",
+          "legs": [
+            {
+              "osi_symbol": "SPY   190816C00302000",
+              "ratio": -1
+            },
+            {
+              "osi_symbol": "SPY   190816P00281000",
+              "ratio": -1
+            }
+          ],
+          "entry_signal": 0.00276,
+          "exit_reason": "signal"
+        },
+        {
+          "position_id": 48,
+          "structure": "short_strangle",
+          "opened": "2019-08-02",
+          "closed": "2019-08-09",
+          "legs": [
+            {
+              "osi_symbol": "SPY   190920C00304000",
+              "ratio": -1
+            },
+            {
+              "osi_symbol": "SPY   190920P00282000",
+              "ratio": -1
+            }
+          ],
+          "entry_signal": 0.273105,
+          "exit_reason": "signal"
+        },
+        {
+          "position_id": 49,
+          "structure": "short_strangle",
+          "opened": "2019-09-25",
+          "closed": "2019-10-15",
+          "legs": [
+            {
+              "osi_symbol": "SPY   191115C00306000",
+              "ratio": -1
+            },
+            {
+              "osi_symbol": "SPY   191115P00283000",
+              "ratio": -1
+            }
+          ],
+          "entry_signal": 0.042642,
+          "exit_reason": "signal"
+        },
+        {
+          "position_id": 50,
+          "structure": "short_strangle",
+          "opened": "2019-12-31",
+          "closed": null,
+          "legs": [
+            {
+              "osi_symbol": "SPY   200221C00331000",
+              "ratio": -1
+            },
+            {
+              "osi_symbol": "SPY   200221P00309000",
+              "ratio": -1
+            }
+          ],
+          "entry_signal": 0.042883,
+          "exit_reason": null
+        }
+      ]
+    },
+    {
+      "run": {
+        "run_id": "72be51efadce59b72392908d1838dbd5763a35ff1c8d77e3b3b52562d93f13d6",
+        "config_hash": "8a0be41131b77e09d51d494f37fcbd4f9d0a81734a29151fe9848ebce8ebaff5",
+        "data_fingerprint": "e9462197b8358236fa2a1ad7c89d19dc681ef47ffa6df74c6d54a3bdf5565f98",
+        "engine_commit": "3dd868e11683480f2a9dcc921df83cbb69d955a3-dirty",
+        "data_source": "optionsdx",
+        "execution_mode": "quote",
+        "fill_timing": "next_close",
+        "cap_mode": "hard_only",
+        "chain_mask": "none",
+        "split": "development",
+        "run_purpose": "trial",
+        "strategy": "VolStrategy",
+        "status": "ok",
+        "sample_start": "2010-01-04",
+        "sample_end": "2019-12-31"
+      },
+      "strategy": "VolStrategy",
+      "params": {
+        "entry": {
+          "gate": "above",
+          "theta": 0.0
+        },
+        "exits": {
+          "exit_dte": 14,
+          "signal_above": null,
+          "signal_below": -0.4,
+          "stop": 1.0,
+          "target": 0.5
+        },
+        "front_dte": [
+          22,
+          35
+        ],
+        "max_open": 2,
+        "side": "short",
+        "signal": {
+          "horizon": 21,
+          "min_pairs": 504,
+          "rv_model": "har",
+          "source": "optionsdx",
+          "window_days": 30
+        },
+        "sizer": {
+          "n": 10,
+          "name": "FixedPackages"
+        },
+        "structure": "straddle_calendar"
+      },
+      "trial_group": "m4_vol",
+      "n_trials_group": 36,
+      "positions": [
+        {
+          "position_id": 1,
+          "structure": "straddle_calendar",
+          "opened": "2010-01-22",
+          "closed": "2010-02-05",
+          "legs": [
+            {
+              "osi_symbol": "SPY   100219C00112000",
+              "ratio": -1
+            },
+            {
+              "osi_symbol": "SPY   100219P00112000",
+              "ratio": -1
+            },
+            {
+              "osi_symbol": "SPY   100319C00112000",
+              "ratio": 1
+            },
+            {
+              "osi_symbol": "SPY   100319P00112000",
+              "ratio": 1
+            }
+          ],
+          "entry_signal": 0.082858,
+          "exit_reason": "dte"
+        },
+        {
+          "position_id": 2,
+          "structure": "straddle_calendar",
+          "opened": "2010-02-16",
+          "closed": "2010-03-05",
+          "legs": [
+            {
+              "osi_symbol": "SPY   100319C00108000",
+              "ratio": -1
+            },
+            {
+              "osi_symbol": "SPY   100319P00108000",
+              "ratio": -1
+            },
+            {
+              "osi_symbol": "SPY   100416C00108000",
+              "ratio": 1
+            },
+            {
+              "osi_symbol": "SPY   100416P00108000",
+              "ratio": 1
+            }
+          ],
+          "entry_signal": 0.349383,
+          "exit_reason": "dte"
+        },
+        {
+          "position_id": 3,
+          "structure": "straddle_calendar",
+          "opened": "2010-03-15",
+          "closed": "2010-04-05",
+          "legs": [
+            {
+              "osi_symbol": "SPY   100416C00115000",
+              "ratio": -1
+            },
+            {
+              "osi_symbol": "SPY   100416P00115000",
+              "ratio": -1
+            },
+            {
+              "osi_symbol": "SPY   100521C00115000",
+              "ratio": 1
+            },
+            {
+              "osi_symbol": "SPY   100521P00115000",
+              "ratio": 1
+            }
+          ],
+          "entry_signal": 0.286385,
+          "exit_reason": "dte"
+        },
+        {
+          "position_id": 4,
+          "structure": "straddle_calendar",
+          "opened": "2010-04-27",
+          "closed": "2010-05-07",
+          "legs": [
+            {
+              "osi_symbol": "SPY   100521C00121000",
+              "ratio": -1
+            },
+            {
+              "osi_symbol": "SPY   100521P00121000",
+              "ratio": -1
+            },
+            {
+              "osi_symbol": "SPY   100618C00121000",
+              "ratio": 1
+            },
+            {
+              "osi_symbol": "SPY   100618P00121000",
+              "ratio": 1
+            }
+          ],
+          "entry_signal": 0.027711,
+          "exit_reason": "dte"
+        },
+        {
+          "position_id": 5,
+          "structure": "straddle_calendar",
+          "opened": "2010-05-18",
+          "closed": "2010-06-04",
+          "legs": [
+            {
+              "osi_symbol": "SPY   100618C00114000",
+              "ratio": -1
+            },
+            {
+              "osi_symbol": "SPY   100618P00114000",
+              "ratio": -1
+            },
+            {
+              "osi_symbol": "SPY   100716C00114000",
+              "ratio": 1
+            },
+            {
+              "osi_symbol": "SPY   100716P00114000",
+              "ratio": 1
+            }
+          ],
+          "entry_signal": 0.213049,
+          "exit_reason": "dte"
+        },
+        {
+          "position_id": 6,
+          "structure": "straddle_calendar",
+          "opened": "2010-06-14",
+          "closed": "2010-07-02",
+          "legs": [
+            {
+              "osi_symbol": "SPY   100716C00109000",
+              "ratio": -1
+            },
+            {
+              "osi_symbol": "SPY   100716P00109000",
+              "ratio": -1
+            },
+            {
+              "osi_symbol": "SPY   100820C00109000",
+              "ratio": 1
+            },
+            {
+              "osi_symbol": "SPY   100820P00109000",
+              "ratio": 1
+            }
+          ],
+          "entry_signal": 0.049786,
+          "exit_reason": "dte"
+        },
+        {
+          "position_id": 7,
+          "structure": "straddle_calendar",
+          "opened": "2010-07-19",
+          "closed": "2010-08-06",
+          "legs": [
+            {
+              "osi_symbol": "SPY   100820C00107000",
+              "ratio": -1
+            },
+            {
+              "osi_symbol": "SPY   100820P00107000",
+              "ratio": -1
+            },
+            {
+              "osi_symbol": "SPY   100917C00107000",
+              "ratio": 1
+            },
+            {
+              "osi_symbol": "SPY   100917P00107000",
+              "ratio": 1
+            }
+          ],
+          "entry_signal": 0.218658,
+          "exit_reason": "dte"
+        },
+        {
+          "position_id": 8,
+          "structure": "straddle_calendar",
+          "opened": "2010-08-16",
+          "closed": "2010-09-03",
+          "legs": [
+            {
+              "osi_symbol": "SPY   100917C00108000",
+              "ratio": -1
+            },
+            {
+              "osi_symbol": "SPY   100917P00108000",
+              "ratio": -1
+            },
+            {
+              "osi_symbol": "SPY   101015C00108000",
+              "ratio": 1
+            },
+            {
+              "osi_symbol": "SPY   101015P00108000",
+              "ratio": 1
+            }
+          ],
+          "entry_signal": 0.409045,
+          "exit_reason": "dte"
+        },
+        {
+          "position_id": 9,
+          "structure": "straddle_calendar",
+          "opened": "2010-09-13",
+          "closed": "2010-10-01",
+          "legs": [
+            {
+              "osi_symbol": "SPY   101015C00111000",
+              "ratio": -1
+            },
+            {
+              "osi_symbol": "SPY   101015P00111000",
+              "ratio": -1
+            },
+            {
+              "osi_symbol": "SPY   101119C00111000",
+              "ratio": 1
+            },
+            {
+              "osi_symbol": "SPY   101119P00111000",
+              "ratio": 1
+            }
+          ],
+          "entry_signal": 0.082198,
+          "exit_reason": "dte"
+        },
+        {
+          "position_id": 10,
+          "structure": "straddle_calendar",
+          "opened": "2010-10-18",
+          "closed": "2010-11-05",
+          "legs": [
+            {
+              "osi_symbol": "SPY   101119C00118000",
+              "ratio": -1
+            },
+            {
+              "osi_symbol": "SPY   101119P00118000",
+              "ratio": -1
+            },
+            {
+              "osi_symbol": "SPY   101217C00118000",
+              "ratio": 1
+            },
+            {
+              "osi_symbol": "SPY   101217P00118000",
+              "ratio": 1
+            }
+          ],
+          "entry_signal": 0.370567,
+          "exit_reason": "dte"
+        },
+        {
+          "position_id": 11,
+          "structure": "straddle_calendar",
+          "opened": "2010-11-16",
+          "closed": "2010-12-03",
+          "legs": [
+            {
+              "osi_symbol": "SPY   101217C00120000",
+              "ratio": -1
+            },
+            {
+              "osi_symbol": "SPY   101217P00120000",
+              "ratio": -1
+            },
+            {
+              "osi_symbol": "SPY   110121C00120000",
+              "ratio": 1
+            },
+            {
+              "osi_symbol": "SPY   110121P00120000",
+              "ratio": 1
+            }
+          ],
+          "entry_signal": 0.433597,
+          "exit_reason": "dte"
+        },
+        {
+          "position_id": 12,
+          "structure": "straddle_calendar",
+          "opened": "2010-12-28",
+          "closed": "2011-01-07",
+          "legs": [
+            {
+              "osi_symbol": "SPY   110121C00126000",
+              "ratio": -1
+            },
+            {
+              "osi_symbol": "SPY   110121P00126000",
+              "ratio": -1
+            },
+            {
+              "osi_symbol": "SPY   110218C00126000",
+              "ratio": 1
+            },
+            {
+              "osi_symbol": "SPY   110218P00126000",
+              "ratio": 1
+            }
+          ],
+          "entry_signal": 0.090101,
+          "exit_reason": "dte"
+        },
+        {
+          "position_id": 13,
+          "structure": "straddle_calendar",
+          "opened": "2011-01-18",
+          "closed": "2011-02-04",
+          "legs": [
+            {
+              "osi_symbol": "SPY   110218C00129000",
+              "ratio": -1
+            },
+            {
+              "osi_symbol": "SPY   110218P00129000",
+              "ratio": -1
+            },
+            {
+              "osi_symbol": "SPY   110318C00129000",
+              "ratio": 1
+            },
+            {
+              "osi_symbol": "SPY   110318P00129000",
+              "ratio": 1
+            }
+          ],
+          "entry_signal": 0.035401,
+          "exit_reason": "dte"
+        },
+        {
+          "position_id": 14,
+          "structure": "straddle_calendar",
+          "opened": "2011-02-23",
+          "closed": "2011-03-04",
+          "legs": [
+            {
+              "osi_symbol": "SPY   110318C00131000",
+              "ratio": -1
+            },
+            {
+              "osi_symbol": "SPY   110318P00131000",
+              "ratio": -1
+            },
+            {
+              "osi_symbol": "SPY   110415C00131000",
+              "ratio": 1
+            },
+            {
+              "osi_symbol": "SPY   110415P00131000",
+              "ratio": 1
+            }
+          ],
+          "entry_signal": 0.012859,
+          "exit_reason": "dte"
+        },
+        {
+          "position_id": 15,
+          "structure": "straddle_calendar",
+          "opened": "2011-03-14",
+          "closed": "2011-04-01",
+          "legs": [
+            {
+              "osi_symbol": "SPY   110415C00130000",
+              "ratio": -1
+            },
+            {
+              "osi_symbol": "SPY   110415P00130000",
+              "ratio": -1
+            },
+            {
+              "osi_symbol": "SPY   110520C00130000",
+              "ratio": 1
+            },
+            {
+              "osi_symbol": "SPY   110520P00130000",
+              "ratio": 1
+            }
+          ],
+          "entry_signal": 0.13044,
+          "exit_reason": "dte"
+        },
+        {
+          "position_id": 16,
+          "structure": "straddle_calendar",
+          "opened": "2011-04-18",
+          "closed": "2011-04-21",
+          "legs": [
+            {
+              "osi_symbol": "SPY   110520C00132000",
+              "ratio": -1
+            },
+            {
+              "osi_symbol": "SPY   110520P00132000",
+              "ratio": -1
+            },
+            {
+              "osi_symbol": "SPY   110617C00132000",
+              "ratio": 1
+            },
+            {
+              "osi_symbol": "SPY   110617P00132000",
+              "ratio": 1
+            }
+          ],
+          "entry_signal": 0.038526,
+          "exit_reason": "signal"
+        },
+        {
+          "position_id": 17,
+          "structure": "straddle_calendar",
+          "opened": "2011-05-16",
+          "closed": "2011-06-03",
+          "legs": [
+            {
+              "osi_symbol": "SPY   110617C00133000",
+              "ratio": -1
+            },
+            {
+              "osi_symbol": "SPY   110617P00133000",
+              "ratio": -1
+            },
+            {
+              "osi_symbol": "SPY   110715C00133000",
+              "ratio": 1
+            },
+            {
+              "osi_symbol": "SPY   110715P00133000",
+              "ratio": 1
+            }
+          ],
+          "entry_signal": 0.072021,
+          "exit_reason": "dte"
+        },
+        {
+          "position_id": 18,
+          "structure": "straddle_calendar",
+          "opened": "2011-06-13",
+          "closed": "2011-07-01",
+          "legs": [
+            {
+              "osi_symbol": "SPY   110715C00127000",
+              "ratio": -1
+            },
+            {
+              "osi_symbol": "SPY   110715P00127000",
+              "ratio": -1
+            },
+            {
+              "osi_symbol": "SPY   110819C00127000",
+              "ratio": 1
+            },
+            {
+              "osi_symbol": "SPY   110819P00127000",
+              "ratio": 1
+            }
+          ],
+          "entry_signal": 0.124126,
+          "exit_reason": "signal"
+        },
+        {
+          "position_id": 19,
+          "structure": "straddle_calendar",
+          "opened": "2011-07-18",
+          "closed": "2011-08-05",
+          "legs": [
+            {
+              "osi_symbol": "SPY   110819C00132000",
+              "ratio": -1
+            },
+            {
+              "osi_symbol": "SPY   110819P00132000",
+              "ratio": -1
+            },
+            {
+              "osi_symbol": "SPY   110916C00132000",
+              "ratio": 1
+            },
+            {
+              "osi_symbol": "SPY   110916P00132000",
+              "ratio": 1
+            }
+          ],
+          "entry_signal": 0.007742,
+          "exit_reason": "dte"
+        },
+        {
+          "position_id": 20,
+          "structure": "straddle_calendar",
+          "opened": "2011-08-19",
+          "closed": "2011-08-25",
+          "legs": [
+            {
+              "osi_symbol": "SPY   110916C00114000",
+              "ratio": -1
+            },
+            {
+              "osi_symbol": "SPY   110916P00114000",
+              "ratio": -1
+            },
+            {
+              "osi_symbol": "SPY   111021C00114000",
+              "ratio": 1
+            },
+            {
+              "osi_symbol": "SPY   111021P00114000",
+              "ratio": 1
+            }
+          ],
+          "entry_signal": 0.061659,
+          "exit_reason": "signal"
+        },
+        {
+          "position_id": 21,
+          "structure": "straddle_calendar",
+          "opened": "2011-09-19",
+          "closed": "2011-10-07",
+          "legs": [
+            {
+              "osi_symbol": "SPY   111021C00122000",
+              "ratio": -1
+            },
+            {
+              "osi_symbol": "SPY   111021P00122000",
+              "ratio": -1
+            },
+            {
+              "osi_symbol": "SPY   111118C00122000",
+              "ratio": 1
+            },
+            {
+              "osi_symbol": "SPY   111118P00122000",
+              "ratio": 1
+            }
+          ],
+          "entry_signal": 0.295265,
+          "exit_reason": "dte"
+        },
+        {
+          "position_id": 22,
+          "structure": "straddle_calendar",
+          "opened": "2011-10-18",
+          "closed": "2011-10-28",
+          "legs": [
+            {
+              "osi_symbol": "SPY   111118C00120000",
+              "ratio": -1
+            },
+            {
+              "osi_symbol": "SPY   111118P00120000",
+              "ratio": -1
+            },
+            {
+              "osi_symbol": "SPY   111216C00120000",
+              "ratio": 1
+            },
+            {
+              "osi_symbol": "SPY   111216P00120000",
+              "ratio": 1
+            }
+          ],
+          "entry_signal": 0.231742,
+          "exit_reason": "signal"
+        },
+        {
+          "position_id": 23,
+          "structure": "straddle_calendar",
+          "opened": "2011-11-17",
+          "closed": "2011-12-01",
+          "legs": [
+            {
+              "osi_symbol": "SPY   111216C00123000",
+              "ratio": -1
+            },
+            {
+              "osi_symbol": "SPY   111216P00123000",
+              "ratio": -1
+            },
+            {
+              "osi_symbol": "SPY   120120C00123000",
+              "ratio": 1
+            },
+            {
+              "osi_symbol": "SPY   120120P00123000",
+              "ratio": 1
+            }
+          ],
+          "entry_signal": 0.353714,
+          "exit_reason": "signal"
+        },
+        {
+          "position_id": 24,
+          "structure": "straddle_calendar",
+          "opened": "2011-12-20",
+          "closed": "2012-01-06",
+          "legs": [
+            {
+              "osi_symbol": "SPY   120120C00120000",
+              "ratio": -1
+            },
+            {
+              "osi_symbol": "SPY   120120P00120000",
+              "ratio": -1
+            },
+            {
+              "osi_symbol": "SPY   120217C00120000",
+              "ratio": 1
+            },
+            {
+              "osi_symbol": "SPY   120217P00120000",
+              "ratio": 1
+            }
+          ],
+          "entry_signal": 0.327204,
+          "exit_reason": "dte"
+        },
+        {
+          "position_id": 25,
+          "structure": "straddle_calendar",
+          "opened": "2012-01-17",
+          "closed": "2012-02-03",
+          "legs": [
+            {
+              "osi_symbol": "SPY   120217C00129000",
+              "ratio": -1
+            },
+            {
+              "osi_symbol": "SPY   120217P00129000",
+              "ratio": -1
+            },
+            {
+              "osi_symbol": "SPY   120316C00129000",
+              "ratio": 1
+            },
+            {
+              "osi_symbol": "SPY   120316P00129000",
+              "ratio": 1
+            }
+          ],
+          "entry_signal": 0.342988,
+          "exit_reason": "dte"
+        },
+        {
+          "position_id": 26,
+          "structure": "straddle_calendar",
+          "opened": "2012-02-13",
+          "closed": "2012-03-02",
+          "legs": [
+            {
+              "osi_symbol": "SPY   120316C00134000",
+              "ratio": -1
+            },
+            {
+              "osi_symbol": "SPY   120316P00134000",
+              "ratio": -1
+            },
+            {
+              "osi_symbol": "SPY   120420C00134000",
+              "ratio": 1
+            },
+            {
+              "osi_symbol": "SPY   120420P00134000",
+              "ratio": 1
+            }
+          ],
+          "entry_signal": 0.505905,
+          "exit_reason": "dte"
+        },
+        {
+          "position_id": 27,
+          "structure": "straddle_calendar",
+          "opened": "2012-04-17",
+          "closed": "2012-05-04",
+          "legs": [
+            {
+              "osi_symbol": "SPY   120518C00137000",
+              "ratio": -1
+            },
+            {
+              "osi_symbol": "SPY   120518P00137000",
+              "ratio": -1
+            },
+            {
+              "osi_symbol": "SPY   120615C00137000",
+              "ratio": 1
+            },
+            {
+              "osi_symbol": "SPY   120615P00137000",
+              "ratio": 1
+            }
+          ],
+          "entry_signal": 0.010692,
+          "exit_reason": "dte"
+        },
+        {
+          "position_id": 28,
+          "structure": "straddle_calendar",
+          "opened": "2012-05-14",
+          "closed": "2012-06-01",
+          "legs": [
+            {
+              "osi_symbol": "SPY   120615C00135000",
+              "ratio": -1
+            },
+            {
+              "osi_symbol": "SPY   120615P00135000",
+              "ratio": -1
+            },
+            {
+              "osi_symbol": "SPY   120720C00135000",
+              "ratio": 1
+            },
+            {
+              "osi_symbol": "SPY   120720P00135000",
+              "ratio": 1
+            }
+          ],
+          "entry_signal": 0.462401,
+          "exit_reason": "dte"
+        },
+        {
+          "position_id": 29,
+          "structure": "straddle_calendar",
+          "opened": "2012-06-18",
+          "closed": "2012-07-02",
+          "legs": [
+            {
+              "osi_symbol": "SPY   120720C00134000",
+              "ratio": -1
+            },
+            {
+              "osi_symbol": "SPY   120720P00134000",
+              "ratio": -1
+            },
+            {
+              "osi_symbol": "SPY   120817C00134000",
+              "ratio": 1
+            },
+            {
+              "osi_symbol": "SPY   120817P00134000",
+              "ratio": 1
+            }
+          ],
+          "entry_signal": 0.103357,
+          "exit_reason": "signal"
+        },
+        {
+          "position_id": 30,
+          "structure": "straddle_calendar",
+          "opened": "2012-07-25",
+          "closed": "2012-07-30",
+          "legs": [
+            {
+              "osi_symbol": "SPY   120817C00134000",
+              "ratio": -1
+            },
+            {
+              "osi_symbol": "SPY   120817P00134000",
+              "ratio": -1
+            },
+            {
+              "osi_symbol": "SPY   120921C00134000",
+              "ratio": 1
+            },
+            {
+              "osi_symbol": "SPY   120921P00134000",
+              "ratio": 1
+            }
+          ],
+          "entry_signal": 0.056646,
+          "exit_reason": "signal"
+        },
+        {
+          "position_id": 31,
+          "structure": "straddle_calendar",
+          "opened": "2012-08-29",
+          "closed": "2012-09-07",
+          "legs": [
+            {
+              "osi_symbol": "SPY   120921C00141000",
+              "ratio": -1
+            },
+            {
+              "osi_symbol": "SPY   120921P00141000",
+              "ratio": -1
+            },
+            {
+              "osi_symbol": "SPY   121019C00141000",
+              "ratio": 1
+            },
+            {
+              "osi_symbol": "SPY   121019P00141000",
+              "ratio": 1
+            }
+          ],
+          "entry_signal": 0.106523,
+          "exit_reason": "dte"
+        },
+        {
+          "position_id": 32,
+          "structure": "straddle_calendar",
+          "opened": "2012-10-15",
+          "closed": "2012-11-02",
+          "legs": [
+            {
+              "osi_symbol": "SPY   121116C00143000",
+              "ratio": -1
+            },
+            {
+              "osi_symbol": "SPY   121116P00143000",
+              "ratio": -1
+            },
+            {
+              "osi_symbol": "SPY   121221C00143000",
+              "ratio": 1
+            },
+            {
+              "osi_symbol": "SPY   121221P00143000",
+              "ratio": 1
+            }
+          ],
+          "entry_signal": 0.004332,
+          "exit_reason": "dte"
+        },
+        {
+          "position_id": 33,
+          "structure": "straddle_calendar",
+          "opened": "2012-11-19",
+          "closed": "2012-11-20",
+          "legs": [
+            {
+              "osi_symbol": "SPY   121221C00135000",
+              "ratio": -1
+            },
+            {
+              "osi_symbol": "SPY   121221P00135000",
+              "ratio": -1
+            },
+            {
+              "osi_symbol": "SPY   130118C00135000",
+              "ratio": 1
+            },
+            {
+              "osi_symbol": "SPY   130118P00135000",
+              "ratio": 1
+            }
+          ],
+          "entry_signal": 0.045923,
+          "exit_reason": "signal"
+        },
+        {
+          "position_id": 34,
+          "structure": "straddle_calendar",
+          "opened": "2012-12-17",
+          "closed": "2013-01-03",
+          "legs": [
+            {
+              "osi_symbol": "SPY   130118C00141000",
+              "ratio": -1
+            },
+            {
+              "osi_symbol": "SPY   130118P00141000",
+              "ratio": -1
+            },
+            {
+              "osi_symbol": "SPY   130215C00141000",
+              "ratio": 1
+            },
+            {
+              "osi_symbol": "SPY   130215P00141000",
+              "ratio": 1
+            }
+          ],
+          "entry_signal": 0.248683,
+          "exit_reason": "signal"
+        },
+        {
+          "position_id": 35,
+          "structure": "straddle_calendar",
+          "opened": "2013-08-30",
+          "closed": "2013-09-06",
+          "legs": [
+            {
+              "osi_symbol": "SPY   130920C00163000",
+              "ratio": -1
+            },
+            {
+              "osi_symbol": "SPY   130920P00163000",
+              "ratio": -1
+            },
+            {
+              "osi_symbol": "SPY   131018C00163000",
+              "ratio": 1
+            },
+            {
+              "osi_symbol": "SPY   131018P00163000",
+              "ratio": 1
+            }
+          ],
+          "entry_signal": 0.061254,
+          "exit_reason": "dte"
+        },
+        {
+          "position_id": 36,
+          "structure": "straddle_calendar",
+          "opened": "2013-12-16",
+          "closed": "2013-12-19",
+          "legs": [
+            {
+              "osi_symbol": "SPY   140117C00177000",
+              "ratio": -1
+            },
+            {
+              "osi_symbol": "SPY   140117P00177000",
+              "ratio": -1
+            },
+            {
+              "osi_symbol": "SPY   140221C00177000",
+              "ratio": 1
+            },
+            {
+              "osi_symbol": "SPY   140221P00177000",
+              "ratio": 1
+            }
+          ],
+          "entry_signal": 0.091159,
+          "exit_reason": "signal"
+        },
+        {
+          "position_id": 37,
+          "structure": "straddle_calendar",
+          "opened": "2014-03-17",
+          "closed": "2014-04-02",
+          "legs": [
+            {
+              "osi_symbol": "SPY   140417C00184000",
+              "ratio": -1
+            },
+            {
+              "osi_symbol": "SPY   140417P00184000",
+              "ratio": -1
+            },
+            {
+              "osi_symbol": "SPY   140516C00184000",
+              "ratio": 1
+            },
+            {
+              "osi_symbol": "SPY   140516P00184000",
+              "ratio": 1
+            }
+          ],
+          "entry_signal": 0.250961,
+          "exit_reason": "signal"
+        },
+        {
+          "position_id": 38,
+          "structure": "straddle_calendar",
+          "opened": "2014-10-20",
+          "closed": "2014-10-22",
+          "legs": [
+            {
+              "osi_symbol": "SPY   141121C00189000",
+              "ratio": -1
+            },
+            {
+              "osi_symbol": "SPY   141121P00189000",
+              "ratio": -1
+            },
+            {
+              "osi_symbol": "SPY   141219C00189000",
+              "ratio": 1
+            },
+            {
+              "osi_symbol": "SPY   141219P00189000",
+              "ratio": 1
+            }
+          ],
+          "entry_signal": 0.13621,
+          "exit_reason": "signal"
+        },
+        {
+          "position_id": 39,
+          "structure": "straddle_calendar",
+          "opened": "2014-12-15",
+          "closed": "2014-12-19",
+          "legs": [
+            {
+              "osi_symbol": "SPY   150116C00200000",
+              "ratio": -1
+            },
+            {
+              "osi_symbol": "SPY   150116P00200000",
+              "ratio": -1
+            },
+            {
+              "osi_symbol": "SPY   150220C00200000",
+              "ratio": 1
+            },
+            {
+              "osi_symbol": "SPY   150220P00200000",
+              "ratio": 1
+            }
+          ],
+          "entry_signal": 0.368511,
+          "exit_reason": "signal"
+        },
+        {
+          "position_id": 40,
+          "structure": "straddle_calendar",
+          "opened": "2015-01-20",
+          "closed": "2015-02-04",
+          "legs": [
+            {
+              "osi_symbol": "SPY   150220C00202000",
+              "ratio": -1
+            },
+            {
+              "osi_symbol": "SPY   150220P00202000",
+              "ratio": -1
+            },
+            {
+              "osi_symbol": "SPY   150320C00202000",
+              "ratio": 1
+            },
+            {
+              "osi_symbol": "SPY   150320P00202000",
+              "ratio": 1
+            }
+          ],
+          "entry_signal": 0.139214,
+          "exit_reason": "signal"
+        },
+        {
+          "position_id": 41,
+          "structure": "straddle_calendar",
+          "opened": "2015-08-21",
+          "closed": "2015-08-27",
+          "legs": [
+            {
+              "osi_symbol": "SPY   150918C00203000",
+              "ratio": -1
+            },
+            {
+              "osi_symbol": "SPY   150918P00203000",
+              "ratio": -1
+            },
+            {
+              "osi_symbol": "SPY   151016C00203000",
+              "ratio": 1
+            },
+            {
+              "osi_symbol": "SPY   151016P00203000",
+              "ratio": 1
+            }
+          ],
+          "entry_signal": 0.083541,
+          "exit_reason": "signal"
+        },
+        {
+          "position_id": 42,
+          "structure": "straddle_calendar",
+          "opened": "2015-11-16",
+          "closed": "2015-11-19",
+          "legs": [
+            {
+              "osi_symbol": "SPY   151219C00201000",
+              "ratio": -1
+            },
+            {
+              "osi_symbol": "SPY   151219P00201000",
+              "ratio": -1
+            },
+            {
+              "osi_symbol": "SPY   160115C00201000",
+              "ratio": 1
+            },
+            {
+              "osi_symbol": "SPY   160115P00201000",
+              "ratio": 1
+            }
+          ],
+          "entry_signal": 0.229289,
+          "exit_reason": "signal"
+        },
+        {
+          "position_id": 43,
+          "structure": "straddle_calendar",
+          "opened": "2015-12-14",
+          "closed": "2015-12-24",
+          "legs": [
+            {
+              "osi_symbol": "SPY   160115C00201000",
+              "ratio": -1
+            },
+            {
+              "osi_symbol": "SPY   160115P00201000",
+              "ratio": -1
+            },
+            {
+              "osi_symbol": "SPY   160219C00201000",
+              "ratio": 1
+            },
+            {
+              "osi_symbol": "SPY   160219P00201000",
+              "ratio": 1
+            }
+          ],
+          "entry_signal": 0.427253,
+          "exit_reason": "signal"
+        },
+        {
+          "position_id": 44,
+          "structure": "straddle_calendar",
+          "opened": "2016-01-19",
+          "closed": "2016-02-05",
+          "legs": [
+            {
+              "osi_symbol": "SPY   160219C00188000",
+              "ratio": -1
+            },
+            {
+              "osi_symbol": "SPY   160219P00188000",
+              "ratio": -1
+            },
+            {
+              "osi_symbol": "SPY   160318C00188000",
+              "ratio": 1
+            },
+            {
+              "osi_symbol": "SPY   160318P00188000",
+              "ratio": 1
+            }
+          ],
+          "entry_signal": 0.127844,
+          "exit_reason": "dte"
+        },
+        {
+          "position_id": 45,
+          "structure": "straddle_calendar",
+          "opened": "2016-02-16",
+          "closed": "2016-03-02",
+          "legs": [
+            {
+              "osi_symbol": "SPY   160318C00186000",
+              "ratio": -1
+            },
+            {
+              "osi_symbol": "SPY   160318P00186000",
+              "ratio": -1
+            },
+            {
+              "osi_symbol": "SPY   160415C00186000",
+              "ratio": 1
+            },
+            {
+              "osi_symbol": "SPY   160415P00186000",
+              "ratio": 1
+            }
+          ],
+          "entry_signal": 0.24128,
+          "exit_reason": "signal"
+        },
+        {
+          "position_id": 46,
+          "structure": "straddle_calendar",
+          "opened": "2016-05-16",
+          "closed": "2016-05-31",
+          "legs": [
+            {
+              "osi_symbol": "SPY   160617C00204000",
+              "ratio": -1
+            },
+            {
+              "osi_symbol": "SPY   160617P00204000",
+              "ratio": -1
+            },
+            {
+              "osi_symbol": "SPY   160715C00204000",
+              "ratio": 1
+            },
+            {
+              "osi_symbol": "SPY   160715P00204000",
+              "ratio": 1
+            }
+          ],
+          "entry_signal": 0.018832,
+          "exit_reason": "signal"
+        },
+        {
+          "position_id": 47,
+          "structure": "straddle_calendar",
+          "opened": "2016-06-13",
+          "closed": "2016-06-29",
+          "legs": [
+            {
+              "osi_symbol": "SPY   160715C00209000",
+              "ratio": -1
+            },
+            {
+              "osi_symbol": "SPY   160715P00209000",
+              "ratio": -1
+            },
+            {
+              "osi_symbol": "SPY   160819C00209000",
+              "ratio": 1
+            },
+            {
+              "osi_symbol": "SPY   160819P00209000",
+              "ratio": 1
+            }
+          ],
+          "entry_signal": 0.174797,
+          "exit_reason": "signal"
+        },
+        {
+          "position_id": 48,
+          "structure": "straddle_calendar",
+          "opened": "2016-10-17",
+          "closed": "2016-11-04",
+          "legs": [
+            {
+              "osi_symbol": "SPY   161118C00213000",
+              "ratio": -1
+            },
+            {
+              "osi_symbol": "SPY   161118P00213000",
+              "ratio": -1
+            },
+            {
+              "osi_symbol": "SPY   161216C00213000",
+              "ratio": 1
+            },
+            {
+              "osi_symbol": "SPY   161216P00213000",
+              "ratio": 1
+            }
+          ],
+          "entry_signal": 0.108002,
+          "exit_reason": "dte"
+        },
+        {
+          "position_id": 49,
+          "structure": "straddle_calendar",
+          "opened": "2018-03-26",
+          "closed": "2018-03-27",
+          "legs": [
+            {
+              "osi_symbol": "SPY   180420C00259000",
+              "ratio": -1
+            },
+            {
+              "osi_symbol": "SPY   180420P00259000",
+              "ratio": -1
+            },
+            {
+              "osi_symbol": "SPY   180518C00259000",
+              "ratio": 1
+            },
+            {
+              "osi_symbol": "SPY   180518P00259000",
+              "ratio": 1
+            }
+          ],
+          "entry_signal": 0.01687,
+          "exit_reason": "signal"
+        },
+        {
+          "position_id": 50,
+          "structure": "straddle_calendar",
+          "opened": "2018-06-28",
+          "closed": "2018-07-06",
+          "legs": [
+            {
+              "osi_symbol": "SPY   180720C00270000",
+              "ratio": -1
+            },
+            {
+              "osi_symbol": "SPY   180720P00270000",
+              "ratio": -1
+            },
+            {
+              "osi_symbol": "SPY   180817C00270000",
+              "ratio": 1
+            },
+            {
+              "osi_symbol": "SPY   180817P00270000",
+              "ratio": 1
+            }
+          ],
+          "entry_signal": 0.017834,
+          "exit_reason": "dte"
+        },
+        {
+          "position_id": 51,
+          "structure": "straddle_calendar",
+          "opened": "2018-10-24",
+          "closed": "2018-11-02",
+          "legs": [
+            {
+              "osi_symbol": "SPY   181116C00274000",
+              "ratio": -1
+            },
+            {
+              "osi_symbol": "SPY   181116P00274000",
+              "ratio": -1
+            },
+            {
+              "osi_symbol": "SPY   181221C00274000",
+              "ratio": 1
+            },
+            {
+              "osi_symbol": "SPY   181221P00274000",
+              "ratio": 1
+            }
+          ],
+          "entry_signal": 0.088574,
+          "exit_reason": "signal"
+        },
+        {
+          "position_id": 52,
+          "structure": "straddle_calendar",
+          "opened": "2018-12-17",
+          "closed": "2018-12-27",
+          "legs": [
+            {
+              "osi_symbol": "SPY   190118C00260000",
+              "ratio": -1
+            },
+            {
+              "osi_symbol": "SPY   190118P00260000",
+              "ratio": -1
+            },
+            {
+              "osi_symbol": "SPY   190215C00260000",
+              "ratio": 1
+            },
+            {
+              "osi_symbol": "SPY   190215P00260000",
+              "ratio": 1
+            }
+          ],
+          "entry_signal": 0.141114,
+          "exit_reason": "signal"
+        },
+        {
+          "position_id": 53,
+          "structure": "straddle_calendar",
+          "opened": "2019-05-28",
+          "closed": "2019-06-06",
+          "legs": [
+            {
+              "osi_symbol": "SPY   190621C00282000",
+              "ratio": -1
+            },
+            {
+              "osi_symbol": "SPY   190621P00282000",
+              "ratio": -1
+            },
+            {
+              "osi_symbol": "SPY   190719C00282000",
+              "ratio": 1
+            },
+            {
+              "osi_symbol": "SPY   190719P00282000",
+              "ratio": 1
+            }
+          ],
+          "entry_signal": 0.003281,
+          "exit_reason": "signal"
+        },
+        {
+          "position_id": 54,
+          "structure": "straddle_calendar",
+          "opened": "2019-06-17",
+          "closed": "2019-07-02",
+          "legs": [
+            {
+              "osi_symbol": "SPY   190719C00288000",
+              "ratio": -1
+            },
+            {
+              "osi_symbol": "SPY   190719P00288000",
+              "ratio": -1
+            },
+            {
+              "osi_symbol": "SPY   190816C00288000",
+              "ratio": 1
+            },
+            {
+              "osi_symbol": "SPY   190816P00288000",
+              "ratio": 1
+            }
+          ],
+          "entry_signal": 0.059292,
+          "exit_reason": "signal"
+        },
+        {
+          "position_id": 55,
+          "structure": "straddle_calendar",
+          "opened": "2019-09-25",
+          "closed": "2019-10-04",
+          "legs": [
+            {
+              "osi_symbol": "SPY   191018C00296000",
+              "ratio": -1
+            },
+            {
+              "osi_symbol": "SPY   191018P00296000",
+              "ratio": -1
+            },
+            {
+              "osi_symbol": "SPY   191115C00296000",
+              "ratio": 1
+            },
+            {
+              "osi_symbol": "SPY   191115P00296000",
+              "ratio": 1
+            }
+          ],
+          "entry_signal": 0.042642,
+          "exit_reason": "dte"
+        }
+      ]
+    }
+  ]
+}

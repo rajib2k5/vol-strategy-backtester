@@ -1,7 +1,7 @@
 {
   "schema_version": "0.5.0",
-  "generated_at": "2026-11-10T15:08:08Z",
-  "source_commit": "16513caffe40a394a6d0e9b9063d3e13d6f2213a",
+  "generated_at": "2026-11-18T01:07:26Z",
+  "source_commit": "3dd868e11683480f2a9dcc921df83cbb69d955a3-dirty",
   "datasets": [
     {
       "name": "illustrative_surface",
@@ -31,6 +31,18 @@
       "name": "positions_timeline",
       "path": "positions_timeline.json",
       "description": "Milestone-3 positions of the same run, from open to close, and the count open each session. Not a strategy result; no P&L.",
+      "schema_version": "0.5.0"
+    },
+    {
+      "name": "signals_timeline",
+      "path": "signals_timeline.json",
+      "description": "Milestone-4 VRP signal of one development run: IV30, the forecast and ex-post realised vol, the log variance ratio, the HAR fits and the forecast test. In-sample development data; no P&L.",
+      "schema_version": "0.5.0"
+    },
+    {
+      "name": "strategy_positions",
+      "path": "strategy_positions.json",
+      "description": "Milestone-4 positions of development runs of the four structures: legs, entry signal and exit reason. Development trials; no prices, no P&L.",
       "schema_version": "0.5.0"
     }
   ]

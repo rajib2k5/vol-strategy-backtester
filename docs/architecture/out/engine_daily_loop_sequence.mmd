@@ -11,7 +11,8 @@ sequenceDiagram
     participant Settle as settlement.py
     participant Mark as marks.py
     participant Hedge as hedge.py
-    participant Strat as Strategy (RollingShortStraddle)
+    participant Sig as Signal (VrpSignal)
+    participant Strat as Strategy (VolStrategy)
     participant Early as early.py
     participant Led as Ledger
     Eng->>View: step_01_load#58; create the view with as_of = t and the run's split
@@ -57,13 +58,25 @@ sequenceDiagram
     Eng->>Mark: step_07_snapshot#58; NAV_mid, NAV_liq, the model-marked share of gross option value
     Mark-->>Eng: OK, or DEGRADED above 20#37;
     Eng->>Led: daily_pnl row for t (the attribution and margin columns stay null until M5 and M6)
+    Eng->>Led: position_daily row for each open position#58; its hedged P&L from fills, open marks, settled lots and its share of the hedge (positions.py)
+    Note right of Led: The stop and the profit target read it at step 9. Only where the book hedges daily at the close, with fills at the next close#59; else the P&L is null
     alt step_08_eod_risk#58; NAV_mid above 0
-        Eng->>Strat: step_09_decide#58; decide(view, book.state(t), ctx)
-        Note right of Strat: book.state is a frozen copy#58; the strategy cannot move the book
+        Eng->>Eng: step_09_decide#58; update_signals first. n_window = the sessions in (t, t + 30 days], read from the session calendar (D3)
+        Eng->>Sig: update(view, n_window)#58; once per signal the strategy declares, through the view of t
+        Note right of Sig: The engine owns the signal objects and calls reset() on each before the first session, so no fit survives from another run
+        Sig->>View: spy_bars, dividends, smiles and vix, up to as_of only
+        View-->>Sig: bars and dividends to t, the smiles of t, VIX before t
+        Sig->>Sig: total returns, HAR forecast (refitted on the month's first session, pairs ended by then), IV30 at 30 days, s = ln(IV30^2 / RV^2)
+        Note right of Sig: NaN when there is no snapshot, no usable smile, no fit or an empty window#59; the flags say which
+        Sig-->>Eng: SignalValue#58; s_t, iv30, rv_forecast, rv_model, model_fit_date, n_window, flags, lagged regime
+        Eng->>Led: signals row for t, then the values go to the strategy in ctx.signals (a read-only mapping)
+        Eng->>Strat: decide(view, book.state(t), ctx)
+        Note right of Strat: book.state is a frozen copy#58; the strategy cannot move the book. The position P&L and premium of each open position are in it
         Strat->>View: forwards and quotes at t, up to as_of only
         View-->>Strat: the chain of t
-        Strat-->>Eng: order intents#58; open a short straddle when flat#59; close when DTE at the next session is at most exit_dte (0 holds to expiry)
-        Eng->>Eng: check_intent, stamp the order-date volume V_t on each leg, create the orders for t+1
+        Strat-->>Eng: order intents#58; one close per position on the first exit that holds (stop, profit_target, signal, dte at the next session)#59; one open when the entry rule allows s_t, at the standard monthly 50-60 days out (22-35 for the calendar's front)
+        Eng->>Eng: check_intent (an opening leg more than 180 days out is refused), stamp the order-date volume V_t on each leg, create the orders for t+1
+        Note right of Eng: The orders fill against the snapshot of t+1#58; a signal at t trades at t+1 (ADR-0002)
         opt fill_timing is same_close
             Eng->>Fill: pass 9b#58; today's new option orders against snapshot t, stamped t (D17)
             Fill-->>Eng: fills dated t#59; the new lots are marked at t and the daily_pnl row of t is recomputed
@@ -79,6 +92,6 @@ sequenceDiagram
     end
     Eng->>Led: step_11_write#58; position_marks rows of t#59; keep the close (cash, shares, NAV, surface, marks) for t+1
     Eng->>Eng: on_session_end(t, book)
-    Eng->>Led: run_backtest, after the last session#58; runs, positions, orders, order_legs and lots rows#59; all 12 tables written to a .tmp folder
+    Eng->>Led: run_backtest, after the last session#58; runs, positions, orders, order_legs and lots rows#59; all 14 tables written to a .tmp folder
     Note right of Led: Once per run, not per session. The store is checked again first#58; an input file that changed while the run read it raises StoreChanged and no ledger is written
     Led-->>Eng: SHA-256 of each file in run_meta.json#59; the folder is renamed to runs/run_id=ID, with ID = SHA-256(config_hash, data_fingerprint, commit, code_fingerprint)

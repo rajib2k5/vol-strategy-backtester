@@ -24,17 +24,21 @@ erDiagram
         DATE last_session
         VARCHAR status
     }
-    signals["signals (planned, M4)"] {
+    signals {
         DATE session_date PK
         VARCHAR signal_name PK
         DOUBLE iv30 "nullable"
+        INTEGER iv30_flags
         DOUBLE rv_forecast "nullable"
         VARCHAR rv_model
         DATE model_fit_date "nullable"
         DOUBLE vrp_spread "nullable"
         DOUBLE zscore "nullable"
-        VARCHAR vix_bucket
-        VARCHAR vol_regime
+        VARCHAR vix_bucket "nullable"
+        VARCHAR vol_regime "nullable"
+        DOUBLE log_var_ratio "nullable"
+        INTEGER n_window
+        INTEGER flags
     }
     positions {
         BIGINT position_id PK
@@ -46,6 +50,19 @@ erDiagram
         VARCHAR status
         DOUBLE entry_signal "nullable"
         VARCHAR exit_reason "nullable"
+    }
+    position_daily {
+        DATE session_date PK
+        BIGINT position_id PK, FK
+        VARCHAR status
+        INTEGER n_open_lots
+        DOUBLE premium_usd
+        DOUBLE fills_usd
+        DOUBLE open_value_usd
+        DOUBLE settled_usd
+        DOUBLE hedge_usd "nullable"
+        DOUBLE pnl_usd "nullable"
+        DOUBLE delta_shares "nullable"
     }
     orders {
         BIGINT order_id PK
@@ -260,6 +277,7 @@ erDiagram
         DOUBLE[] total_var_nodes
     }
     spy_bars ||--o{ daily_pnl : "session of"
+    positions ||--o{ position_daily : "valued daily"
     positions ||--o{ lots : "holds"
     positions |o--o{ orders : "opened and closed by"
     orders ||--o{ order_legs : "has legs"
@@ -272,4 +290,4 @@ erDiagram
     smile_fits |o--o{ position_marks : "model mark source"
     dividends |o--o{ expiry_events : "early-exercise test"
     spy_bars ||--o{ hedges : "hedge price"
-    vix ||--o{ signals : "regime label"
+    vix |o--o{ signals : "regime label"

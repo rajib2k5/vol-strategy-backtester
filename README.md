@@ -31,7 +31,16 @@ log ratio), four strategy structures with their entry and exit rules, and a test
 against a naive one whose threshold and data were fixed before it was scored. It was scored once:
 HAR, p = 0.0139 against the threshold 0.025, on QLIKE, a proxy loss, over 2010-2019 development data.
 At that threshold the test rejects simulated true nulls about 5% of the time (weighted over the
-nulls nearest the data; 19% on the worst one), so read it as roughly 5%-level evidence ([ledger](docs/validation/04-ledger.md)). Its walkthrough comes with part B2. Until
+nulls nearest the data; 19% on the worst one), so read it as roughly 5%-level evidence ([ledger](docs/validation/04-ledger.md)). The grid of 36 development
+configurations has run (in-sample, selection-biased, no claim, and no performance shown). The walkthrough,
+which follows one position from its signal to its exit, is [milestone 4](docs/milestones/04-strategies-and-signal.md).
+The concept notes are [19 realised variance](docs/concepts/19-realised-variance-from-daily-bars.md),
+[20 HAR and causal refits](docs/concepts/20-har-and-causal-refits.md),
+[21 IV30 and the log variance ratio](docs/concepts/21-iv30-log-variance-ratio-and-calendar-time.md),
+[22 structures and contract selection](docs/concepts/22-structures-and-contract-selection.md),
+[23 exits on a hedged book](docs/concepts/23-exits-on-a-hedged-book.md) and
+[24 pre-registration and block inference](docs/concepts/24-pre-registration-and-block-inference.md).
+The decisions are in [ADR-0011](docs/adr/0011-vrp-signal-and-strategy-rules.md). Until
 the owner decides on ADR-0008's proposed per-expiry rate, strategies trade expiries of at most 180
 days ([milestone 2](docs/milestones/02-pricing-core.md), [its ledger](docs/validation/02-ledger.md)).
 No strategy results exist yet. The results table below fills in at milestone 6, and every number in

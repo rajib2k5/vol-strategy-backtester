@@ -384,6 +384,7 @@ def _main_frames(monkeypatch, tmp_path, *frame_args) -> tuple:
     monkeypatch.setattr(export_app_data, "surface_frames_body", lambda store, frames: seen.append(frames) or {})
     monkeypatch.setattr(export_app_data, "build_payloads", lambda *args, **kwargs: {})
     monkeypatch.setattr(export_app_data, "engine_bodies", lambda run_dir, splits: ({}, {}))
+    monkeypatch.setattr(export_app_data, "m4_bodies", lambda store, trial_log, runs_root: ({}, {}))
     args = ["--store", str(tmp_path), "--out-dir", str(tmp_path / "out"), "--run-dir", str(tmp_path)]
     for text in frame_args:
         args += ["--frame", text]

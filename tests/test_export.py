@@ -250,7 +250,7 @@ def test_script_runs_as_a_plain_script_from_another_directory(tmp_path):
     script = REPO / "tools" / "export_app_data.py"
     result = subprocess.run(
         [sys.executable, str(script), "--out-dir", str(out), "--store", str(store.root), "--frame", "2023-06-15=made up",
-         "--run-dir", str(run_dir), "--allow-split", "validation"],
+         "--run-dir", str(run_dir), "--allow-split", "validation", "--without-m4"],
         cwd=elsewhere, capture_output=True, text=True,
     )
     assert result.returncode == 0, result.stderr
@@ -318,6 +318,12 @@ def committed_body(committed_dir, name):
     return {key: value for key, value in written.items() if key not in ENVELOPE}
 
 
+def m4_body(committed_dir, name):
+    """A milestone-4 dataset's content after the envelope, as committed, or None when it is not there (the manifest
+    comparison then fails if the committed manifest lists it). tests/test_real_m4.py rebuilds it from the grid's runs."""
+    return committed_body(committed_dir, name) if (committed_dir / name).exists() else None
+
+
 def committed_quality_body(committed_dir):
     """data_quality.json's content after the envelope, as committed. The default run has no store to
     rebuild it from; tests/test_export_data_quality.py (marked real_data) does that comparison."""
@@ -340,13 +346,16 @@ def assert_matches_a_fresh_export(committed_dir, fresh_dir, name):
                                    quality_body=committed_quality_body(committed_dir),
                                    frames_body=committed_frames_body(committed_dir),
                                    blotter_body=committed_body(committed_dir, "blotter.json"),
-                                   positions_body=committed_body(committed_dir, "positions_timeline.json"))
+                                   positions_body=committed_body(committed_dir, "positions_timeline.json"),
+                                   signals_body=m4_body(committed_dir, "signals_timeline.json"),
+                                   strategy_body=m4_body(committed_dir, "strategy_positions.json"))
     assert (fresh_dir / name).read_bytes() == (committed_dir / name).read_bytes(), (
         f"app/public/data/{name} is stale; run: uv run python tools/export_app_data.py")
 
 
 @pytest.mark.parametrize("name", ["manifest.json", "illustrative_surface.json", "data_quality.json",
-                                  "surface_frames.json", "blotter.json", "positions_timeline.json"])
+                                  "surface_frames.json", "blotter.json", "positions_timeline.json",
+                                  "signals_timeline.json", "strategy_positions.json"])
 def test_committed_app_data_matches_a_fresh_export_byte_for_byte(tmp_path, name):
     # Catches "changed the model, forgot to re-run the exporter".
     if not (COMMITTED_DIR / name).exists():

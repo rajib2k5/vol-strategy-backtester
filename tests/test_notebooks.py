@@ -138,6 +138,88 @@ def test_daily_engine_notebook_copies_of_the_config_and_flags_equal_the_real_one
         assert getattr(flags, name) == value, name
 
 
+STRATEGIES = REPO / "notebooks" / "04_strategies_and_signal.ipynb"
+
+
+def test_committed_strategies_notebook_equals_a_fresh_build():
+    assert STRATEGIES.exists(), "run: uv run python tools/build_notebooks.py"
+    fresh = build_notebooks.render_notebooks()["04_strategies_and_signal.ipynb"]
+    assert STRATEGIES.read_bytes() == fresh.encode("utf-8"), (
+        "notebooks/04_strategies_and_signal.ipynb is stale; run: uv run python tools/build_notebooks.py")
+
+
+def run_strategies_notebook() -> dict:
+    """Execute every code cell of notebook 04 in an empty namespace; return the namespace."""
+    nb = json.loads(STRATEGIES.read_text(encoding="utf-8"))
+    sources = ["".join(c["source"]) for c in nb["cells"] if c["cell_type"] == "code"]
+    assert not any("import volbt" in s or "from volbt" in s for s in sources)
+    namespace = {}
+    for source in sources:
+        exec(source, namespace)
+    return namespace
+
+
+def test_strategies_notebook_runs_without_volbt_and_shows_the_hand_checked_numbers(capsys):
+    run_strategies_notebook()
+    printed = capsys.readouterr().out
+    # the dividend is added back: the ex-date's price drop is not a return
+    assert "ex-date return without the dividend: -0.00499" in printed
+    assert "ex-date return with the dividend:    0.0" in printed
+    # the window-matched horizon: ln(21/17) is the bias of a fixed 21-session year on a 17-session window
+    assert "ln(21/17) = 0.2113" in printed
+    # the docstrings' hand-checked numbers
+    assert "qlike: 0.3069 0.1931" in printed
+    assert "mb_se: 0.57735 ewc_t: 2.2417076" in printed
+    assert "acf: [ 1.    0.25 -0.3  -0.45]" in printed
+    # the regime labels and the lag
+    assert "[None, 'calm', 'shock', 'post_shock', 'post_shock']" in printed
+    assert "('20-30', 'shock') (None, None)" in printed
+
+
+def test_strategies_notebook_fit_ignores_the_future_and_a_full_sample_fit_does_not(capsys):
+    # The notebook's own causal check: ADR-0001 test 6 in miniature. The first two lines must hold, and the third is
+    # the control that makes them non-vacuous.
+    run_strategies_notebook()
+    printed = capsys.readouterr().out
+    assert "fit unchanged by the future: True" in printed
+    assert "forecast unchanged by the future: True flags 0" in printed
+    assert "a full-sample fit moves when the future moves: True" in printed
+
+
+def test_strategies_notebook_copies_equal_the_real_modules():
+    # The notebook cannot import volbt, so it holds its own constants and HarFit; its copied functions must also
+    # give the real modules' numbers on the notebook's own data.
+    import dataclasses
+
+    import numpy as np
+
+    from volbt.analytics import inference
+    from volbt.signals import base, har, iv30, regime, vrp
+
+    ns = run_strategies_notebook()
+    assert (ns["RV_FALLBACK"], ns["RV_MISSING"]) == (base.RV_FALLBACK, base.RV_MISSING)
+    assert (ns["DAYS"], ns["DAYS_PER_YEAR"]) == (iv30.DAYS, iv30.DAYS_PER_YEAR)
+    assert (ns["BOUNDS"], ns["BUCKETS"]) == (regime.BOUNDS, regime.BUCKETS)
+    assert [f.name for f in dataclasses.fields(ns["HarFit"])] == [f.name for f in dataclasses.fields(har.HarFit)]
+    fit_date = ns["fit_a"].fit_date
+    real = har.fit(ns["v"], ns["dates"], fit_date)
+    assert real is not None and real.coef == ns["fit_a"].coef and real.n_pairs == ns["fit_a"].n_pairs
+    assert vrp.rv_hat(17, 8.4e-5) == ns["rv_hat"](17, 8.4e-5)
+    t0 = ns["t0"]
+    assert har.har_forecast(real, ns["v"][:t0 + 1]) == (ns["forecast_a"], 0)
+    expected = inference.ewc_bootstrap(ns["d"], 4, 21, draws=999, seed=1)
+    assert expected["p"] == ns["test"]["p"] and expected["t"] == ns["test"]["t"]
+    assert np.isfinite(expected["ci"]).all()
+
+
+def test_strategies_notebook_test_controls_behave():
+    ns = run_strategies_notebook()
+    assert ns["test"]["p"] < 0.05 and ns["test"]["t"] > 0       # a positive mean is found
+    assert ns["ewc_bootstrap"](-ns["d"], 4, 21, draws=999, seed=1)["p"] > 0.5      # -d is not
+    with pytest.raises(ValueError, match="no low-frequency variation"):
+        ns["ewc_bootstrap"]([0.0] * 100, 4, 21, draws=99, seed=1)
+
+
 def test_the_prefix_keeps_ids_of_two_modules_apart(tmp_path):
     path = write_module(tmp_path, """
         import os
@@ -208,7 +290,8 @@ def test_check_names_a_notebook_that_changed_by_one_character(tmp_path):
 
 def test_check_names_a_missing_notebook(tmp_path):
     assert build_notebooks.drifted_notebooks(tmp_path) == ["00_scaffold_tour.ipynb", "01_data_layer.ipynb",
-                                                           "02_pricing_core.ipynb", "03_daily_engine.ipynb"]
+                                                           "02_pricing_core.ipynb", "03_daily_engine.ipynb",
+                                                           "04_strategies_and_signal.ipynb"]
 
 
 def test_check_cli_exits_nonzero_and_names_the_notebook_on_drift(tmp_path, monkeypatch, capsys):
@@ -557,7 +640,8 @@ def test_a_module_with_different_content_still_builds_with_stable_ids(tmp_path):
 # --- .gitattributes: line endings are pinned by git itself -----------------------------------
 
 @pytest.mark.parametrize("path", [
-    "notebooks/00_scaffold_tour.ipynb", "notebooks/03_daily_engine.ipynb", "app/public/data/manifest.json",
+    "notebooks/00_scaffold_tour.ipynb", "notebooks/03_daily_engine.ipynb", "notebooks/04_strategies_and_signal.ipynb",
+    "app/public/data/manifest.json",
     "tools/build_notebooks.py", "src/volbt/contract.py",
     "docs/architecture/out/architecture.svg", "docs/architecture/out/architecture.mmd",
     "README.md", "app/src/lib/contract.ts", "app/src/App.tsx"])

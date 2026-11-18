@@ -397,20 +397,24 @@ def real_store():
 
 @pytest.mark.real_data
 @pytest.mark.parametrize("name", ["manifest.json", "illustrative_surface.json", "data_quality.json",
-                                  "surface_frames.json", "blotter.json", "positions_timeline.json"])
+                                  "surface_frames.json", "blotter.json", "positions_timeline.json",
+                                  "signals_timeline.json", "strategy_positions.json"])
 def test_the_committed_files_equal_a_fresh_export_from_the_real_store(tmp_path, real_store, name):
     # Catches "rebuilt the store or changed the report, forgot to re-run the exporter". The engine datasets come
-    # from the development run tools/run_backtest.py --for-app recorded (milestone 3).
+    # from the development run tools/run_backtest.py --for-app recorded (milestone 3); the M4 datasets from the M4
+    # grid's runs of record that docs/validation/trials/m4.jsonl names (tools/run_m4_grid.py, milestone 4).
     stamp = read_json(COMMITTED_DIR / "manifest.json")
     now = datetime.strptime(stamp["generated_at"], "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=timezone.utc)
     try:
         blotter, positions = export_app_data.engine_bodies(export_app_data.app_run_dir())
-    except FileNotFoundError:
-        pytest.skip("no recorded development run: tools/run_backtest.py ... --for-app")
+        signals, strategy = export_app_data.m4_bodies(real_store)
+    except FileNotFoundError as error:
+        pytest.skip(f"no recorded development run or M4 grid run: {error}")
     export_app_data.build_payloads(tmp_path, lookup_for(stamp["source_commit"]), now,
                                    quality_body=export_app_data.data_quality_body(real_store),
                                    frames_body=export_app_data.surface_frames_body(real_store),
-                                   blotter_body=blotter, positions_body=positions)
+                                   blotter_body=blotter, positions_body=positions, signals_body=signals,
+                                   strategy_body=strategy)
     assert (tmp_path / name).read_bytes() == (COMMITTED_DIR / name).read_bytes(), (
         f"app/public/data/{name} is stale; run: uv run python tools/export_app_data.py")
 

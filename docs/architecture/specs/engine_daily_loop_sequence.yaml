@@ -1,8 +1,12 @@
 # One trading session t of the daily engine, as built in milestone 3: the eleven steps of volbt.engine.loop.Run.session, in the
 # order the code runs them (ADR-0001 section 1). Orders created on day t fill at the next session's snapshot (ADR-0002); hedges
 # trade at the same close (ADR-0005). Message labels start with the step function that runs them.
-# Rewritten after M3 (2026-10-30) against src/volbt/engine/loop.py. What is NOT drawn because it is not built: signals (M4); the
+# Rewritten after M3 (2026-10-30) against src/volbt/engine/loop.py. What is NOT drawn because it is not built: the
 # pre-trade check, the end-of-day budgets, margin and the hedge sweep (M5); greeks_snapshots and P&L attribution (M5, M6).
+# Revised after M4 (2026-11-17) against volbt.engine.loop (update_signals, step_09_decide, check_intent, position_rows): step 9 now first updates
+# the strategy's signals through the session's view and writes their `signals` rows, then calls decide with the values in ctx.signals; step 7
+# also writes a position_daily row for each open position; check_intent refuses an opening leg more than 180 days out. The strategy is
+# VolStrategy (the M3 RollingShortStraddle is the reference strategy and is not drawn).
 # The earlier version of this spec (the ADR design, with a Signals and a Risk participant) was converted from a hand-written Mermaid file.
 # The kit has no syntax for "Note over" or a shaded "rect", so a note rides on the message it describes (drawn right of the to lifeline).
 # The ledger is held in memory during the run and written once at the end, in run_backtest (the last two messages), not per session.
@@ -19,7 +23,8 @@ participants:
   - {id: Settle, label: "settlement.py", type: process}
   - {id: Mark, label: "marks.py", type: process}
   - {id: Hedge, label: "hedge.py", type: process}
-  - {id: Strat, label: "Strategy (RollingShortStraddle)", type: process}
+  - {id: Sig, label: "Signal (VrpSignal)", type: process}
+  - {id: Strat, label: "Strategy (VolStrategy)", type: process}
   - {id: Early, label: "early.py", type: process}
   - {id: Led, label: "Ledger", type: store}
 messages:
@@ -72,16 +77,24 @@ messages:
   - {from: Eng, to: Mark, label: "step_07_snapshot: NAV_mid, NAV_liq, the model-marked share of gross option value"}
   - {from: Mark, to: Eng, label: "OK, or DEGRADED above 20%", kind: return}
   - {from: Eng, to: Led, label: "daily_pnl row for t (the attribution and margin columns stay null until M5 and M6)"}
+  - {from: Eng, to: Led, label: "position_daily row for each open position: its hedged P&L from fills, open marks, settled lots and its share of the hedge (positions.py)", note: "The stop and the profit target read it at step 9. Only where the book hedges daily at the close, with fills at the next close; else the P&L is null"}
   # step 8
   - alt:
       - when: "step_08_eod_risk: NAV_mid above 0"
         messages:
           # step 9
-          - {from: Eng, to: Strat, label: "step_09_decide: decide(view, book.state(t), ctx)", note: "book.state is a frozen copy: the strategy cannot move the book"}
+          - {from: Eng, to: Eng, label: "step_09_decide: update_signals first. n_window = the sessions in (t, t + 30 days], read from the session calendar (D3)"}
+          - {from: Eng, to: Sig, label: "update(view, n_window): once per signal the strategy declares, through the view of t", note: "The engine owns the signal objects and calls reset() on each before the first session, so no fit survives from another run"}
+          - {from: Sig, to: View, label: "spy_bars, dividends, smiles and vix, up to as_of only"}
+          - {from: View, to: Sig, label: "bars and dividends to t, the smiles of t, VIX before t", kind: return}
+          - {from: Sig, to: Sig, label: "total returns, HAR forecast (refitted on the month's first session, pairs ended by then), IV30 at 30 days, s = ln(IV30^2 / RV^2)", note: "NaN when there is no snapshot, no usable smile, no fit or an empty window; the flags say which"}
+          - {from: Sig, to: Eng, label: "SignalValue: s_t, iv30, rv_forecast, rv_model, model_fit_date, n_window, flags, lagged regime", kind: return}
+          - {from: Eng, to: Led, label: "signals row for t, then the values go to the strategy in ctx.signals (a read-only mapping)"}
+          - {from: Eng, to: Strat, label: "decide(view, book.state(t), ctx)", note: "book.state is a frozen copy: the strategy cannot move the book. The position P&L and premium of each open position are in it"}
           - {from: Strat, to: View, label: "forwards and quotes at t, up to as_of only"}
           - {from: View, to: Strat, label: "the chain of t", kind: return}
-          - {from: Strat, to: Eng, label: "order intents: open a short straddle when flat; close when DTE at the next session is at most exit_dte (0 holds to expiry)", kind: return}
-          - {from: Eng, to: Eng, label: "check_intent, stamp the order-date volume V_t on each leg, create the orders for t+1"}
+          - {from: Strat, to: Eng, label: "order intents: one close per position on the first exit that holds (stop, profit_target, signal, dte at the next session); one open when the entry rule allows s_t, at the standard monthly 50-60 days out (22-35 for the calendar's front)", kind: return}
+          - {from: Eng, to: Eng, label: "check_intent (an opening leg more than 180 days out is refused), stamp the order-date volume V_t on each leg, create the orders for t+1", note: "The orders fill against the snapshot of t+1: a signal at t trades at t+1 (ADR-0002)"}
           - opt: "fill_timing is same_close"
             messages:
               - {from: Eng, to: Fill, label: "pass 9b: today's new option orders against snapshot t, stamped t (D17)"}
@@ -99,5 +112,5 @@ messages:
   - {from: Eng, to: Led, label: "step_11_write: position_marks rows of t; keep the close (cash, shares, NAV, surface, marks) for t+1"}
   - {from: Eng, to: Eng, label: "on_session_end(t, book)"}
   # after the last session
-  - {from: Eng, to: Led, label: "run_backtest, after the last session: runs, positions, orders, order_legs and lots rows; all 12 tables written to a .tmp folder", note: "Once per run, not per session. The store is checked again first: an input file that changed while the run read it raises StoreChanged and no ledger is written"}
+  - {from: Eng, to: Led, label: "run_backtest, after the last session: runs, positions, orders, order_legs and lots rows; all 14 tables written to a .tmp folder", note: "Once per run, not per session. The store is checked again first: an input file that changed while the run read it raises StoreChanged and no ledger is written"}
   - {from: Led, to: Eng, label: "SHA-256 of each file in run_meta.json; the folder is renamed to runs/run_id=ID, with ID = SHA-256(config_hash, data_fingerprint, commit, code_fingerprint)", kind: return}

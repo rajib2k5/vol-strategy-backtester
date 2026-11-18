@@ -26,11 +26,12 @@ Three datasets:
   strategy_positions.json    RV^, ex-post RV, log variance ratio, the HAR fits, the forecast test's result or null)
                              and the positions of development runs of the M4 strategies (legs, entry signal, exit
                              reason; no prices, no P&L). signals_timeline_body and strategy_positions_body refuse a
-                             run that is not on the development split and any date after 2019-12-31. They are built
-                             and tested here; the real export waits for the forecast test and the grid (part B2). The forecast test's result is
-                             checked against its pre-registration in docs/validation/prereg (id, SHA-256, threshold,
-                             fragile band, simulated sizes; see checked_forecast_test). main() does not build these
-                             two files yet, so no CLI path feeds a result in.
+                             run that is not on the development split and any date after 2019-12-31. main() builds
+                             them from the M4 grid's runs of record (m4_bodies): the runs tools/run_m4_grid.py logged
+                             in docs/validation/trials/m4.jsonl (--trial-log, --runs-root), the RV model the forecast
+                             test chose (run_m4_grid.decided_rv_model) and its committed result, checked against its
+                             pre-registration in docs/validation/prereg (id, SHA-256, threshold, fragile band,
+                             simulated sizes; see checked_forecast_test). The export runs no backtest.
 """
 
 from __future__ import annotations
@@ -701,6 +702,79 @@ def app_run_dir(runs_root: Path | None = None) -> Path:
     return Path(json.loads(path.read_text(encoding="utf-8"))["run_dir"])
 
 
+# The runs the two M4 files show, chosen before the grid ran (default taken 2026-11-17, owner can override): per
+# structure, the gated configuration with every exit on (plan section 8), at the lower entry threshold (0.0, the only
+# one the long straddle has). The signal is the short straddle's run: every grid run computes the same signal.
+SIGNAL_LABEL = "short_straddle/above_0.0/dte+signal+pt_sl"
+STRATEGY_LABELS = {"short_straddle": "short_straddle/above_0.0/dte+signal+pt_sl",
+                   "long_straddle": "long_straddle/below_0.0/dte+signal+pt_sl",
+                   "short_strangle": "short_strangle/above_0.0/dte+signal+pt_sl",
+                   "straddle_calendar": "straddle_calendar/above_0.0/dte+signal+pt_sl"}
+
+
+def strategy_banner(trials: int) -> str:
+    return f"{trials} development trials; no performance shown before M6"
+
+
+def m4_tools():
+    """tools/prereg.py and tools/run_m4_grid.py, imported when the M4 files are built: they are siblings of this
+    script, on sys.path when it runs as a script, but not under `python -I` with runpy (tests/test_export.py)."""
+    import prereg
+    import run_m4_grid
+    return prereg, run_m4_grid
+
+
+def m4_bodies(store: Store, trial_log: Path | None = None, runs_root: Path | None = None,
+              repo: Path = REPO_ROOT, *, splits: tuple[str, ...] = ("development",),
+              last_date: date = DEVELOPMENT_END, prereg_id: str | None = None,
+              pins: dict | None = None) -> tuple[dict, dict]:
+    """(signals_timeline, strategy_positions) after the envelope, from the M4 grid's runs of record (task 13).
+
+    The RV model is the one the forecast test chose (run_m4_grid.decided_rv_model: the committed result, checked); the
+    timeline is SIGNAL_LABEL's run's signal "vrp_<model>" with the result's forecast_test block (checked_forecast_test
+    against the pre-registration in `repo`'s prereg folder); the positions are STRATEGY_LABELS' runs, each with the
+    trial log's trial count (run_m4_grid.trials) as n_trials_group. Each run is the last line of its label in
+    `trial_log` (run_m4_grid.latest_by_label), read from its folder run_id=<the line's run_id> under runs_root
+    (default work_dir()/runs), whose runs table must give the line's config_hash, trial group, split, code and data
+    fingerprints and commit (the bodies' check_ledger then checks the folder's name is the run_id these derive): the
+    export shows grid runs only and runs nothing. FileNotFoundError when a label has no line or a run no folder
+    (run tools/run_m4_grid.py first); run_m4_grid.DecisionError when the result does not check. `splits` and
+    `last_date` widen the guard, and `pins` (run_m4_grid.decided_rv_model's) names a made-up result, for MADE-UP stores
+    only (tests); main() never widens or passes them. trial_log defaults to
+    run_m4_grid.TRIAL_LOG, prereg_id to prereg.FORECAST_ID."""
+    prereg, run_m4_grid = m4_tools()
+    trial_log = Path(trial_log) if trial_log is not None else run_m4_grid.TRIAL_LOG
+    prereg_id = prereg_id if prereg_id is not None else prereg.FORECAST_ID
+    rv_model = run_m4_grid.decided_rv_model(repo, prereg_id, pins)
+    prereg_dir = prereg.prereg_dir(repo)
+    lines = run_m4_grid.read_trials(trial_log) if trial_log.is_file() else []
+    latest = run_m4_grid.latest_by_label(lines)
+    runs_root = Path(runs_root) if runs_root is not None else config.work_dir() / "runs"
+
+    def run_dir(label: str) -> Path:
+        line = latest.get(label)
+        if line is None:
+            raise FileNotFoundError(f"{trial_log} has no line for {label}: run the grid first: uv run python "
+                                    "tools/run_m4_grid.py --workers 4")
+        folder = runs_root / f"run_id={line['run_id']}"
+        if not folder.is_dir():
+            raise FileNotFoundError(f"{folder}: the run of {label} that {trial_log} names is not there")
+        row = engine_report.table(folder, "runs")[0]
+        for key in ("config_hash", "trial_group", "split", "code_fingerprint", "data_fingerprint", "source_commit"):
+            if row[key] != line[key]:
+                raise ValueError(f"{folder}: its {key} {row[key]!r} is not the trial log's {line[key]!r} for {label}")
+        return folder
+
+    result_path = prereg_dir / f"{prereg_id}.result.json"
+    result = json.loads(result_path.read_text(encoding="utf-8"))
+    signals = signals_timeline_body(run_dir(SIGNAL_LABEL), store, f"vrp_{rv_model}", forecast_test=result,
+                                    splits=splits, last_date=last_date, prereg_dir=prereg_dir)
+    trials = len(run_m4_grid.trials(lines, splits=splits))
+    strategy = strategy_positions_body([(run_dir(STRATEGY_LABELS[s]), trials) for s in STRATEGY_STRUCTURES],
+                                       strategy_banner(trials), splits=splits, last_date=last_date)
+    return signals, strategy
+
+
 def manifest_payload(envelope: dict, engine: bool = False, m4: tuple[str, ...] = ()) -> dict:
     """The manifest.json content: the list of datasets the app can load (the engine's two when `engine`, and the
     milestone-4 datasets named in `m4`)."""
@@ -974,6 +1048,14 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--run-dir", type=Path, default=None,
                         help="the engine run (a run_id=... folder) blotter.json and positions_timeline.json come from "
                              "(default: the one tools/run_backtest.py --for-app recorded)")
+    parser.add_argument("--trial-log", type=Path, default=None,
+                        help="the M4 grid's trial log, whose runs signals_timeline.json and strategy_positions.json "
+                             "come from (default: docs/validation/trials/m4.jsonl)")
+    parser.add_argument("--runs-root", type=Path, default=None,
+                        help="the folder of the M4 grid's run_id=... folders (default: work_dir()/runs)")
+    parser.add_argument("--without-m4", action="store_true",
+                        help="write neither signals_timeline.json nor strategy_positions.json (a made-up store has no "
+                             "M4 grid run; the committed app data always has both)")
     parser.add_argument("--allow-split", action="append", default=[], choices=("validation", "holdout"),
                         help="also accept a run of this split: ONLY for a run on a made-up store (the tests'), never "
                              "for real data after 2019 (decision D19)")
@@ -983,15 +1065,18 @@ def main(argv: list[str] | None = None) -> int:
     except ValueError as error:
         parser.error(str(error))                     # exits 2 with the usage line, before any store is read
     store = Store(args.store)
+    prereg_module, grid_module = m4_tools()
+    decision_error = (grid_module.DecisionError, prereg_module.PreregError)
     try:
         body = data_quality_body(store)
         frames = surface_frames_body(store, dates)
         blotter, positions = engine_bodies(args.run_dir or app_run_dir(), ("development", *args.allow_split))
-    except FileNotFoundError as error:
+        signals, strategy = (None, None) if args.without_m4 else m4_bodies(store, args.trial_log, args.runs_root)
+    except (FileNotFoundError, *decision_error) as error:
         print(f"error: {error}", file=sys.stderr)
         return 1
     for name in build_payloads(args.out_dir, quality_body=body, frames_body=frames, blotter_body=blotter,
-                               positions_body=positions):
+                               positions_body=positions, signals_body=signals, strategy_body=strategy):
         print("wrote", args.out_dir / name)
     return 0
 
