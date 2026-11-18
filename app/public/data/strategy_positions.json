@@ -1,7 +1,7 @@
 {
   "schema_version": "0.5.0",
-  "generated_at": "2026-11-18T01:07:26Z",
-  "source_commit": "3dd868e11683480f2a9dcc921df83cbb69d955a3-dirty",
+  "generated_at": "2026-11-18T02:23:19Z",
+  "source_commit": "0e6e295a824e33d6f89175e82f12b37e6703b6ab",
   "units": {
     "ratio": "contracts per package, signed: + long, - short",
     "entry_signal": "ln(IV30^2 / RV^2) at the entry decision, dimensionless"
